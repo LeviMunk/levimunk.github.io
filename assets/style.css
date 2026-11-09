@@ -87,3 +87,15 @@
 @media(max-width:760px){.philosophy-grid{grid-template-columns:1fr;gap:12px}.philosophy-card{min-height:unset;padding:22px}.philosophy-card h3{margin:17px 0 8px}.resume-strengths{padding:23px}.resume-section-head{display:block}.resume-section-head>div:last-child{margin-top:22px}}
 @media(max-width:600px){.strengths-grid{grid-template-columns:1fr;gap:17px}.resume-introduction p{font-size:15px}.philosophy-lead{font-size:16px}.philosophy-lead-secondary{font-size:15px}}
 @media print{.resume-section .reveal,.resume-section .reveal.show{opacity:1!important;transform:none!important}.resume-section{padding:0!important}.resume-strengths,.resume-introduction{padding-bottom:10px;margin-bottom:18px}.resume-strengths{padding:12px}.resume-introduction p{font-size:12px}.resume-section-head{margin-bottom:15px}.print-hint,.resume-section-head button{display:none!important}.experience-bullets li{font-size:10px;line-height:1.4;margin-bottom:3px}.entry{padding:12px 0}.earlier-heading{margin-top:14px;padding-top:15px}.school,.sidebar{break-inside:avoid}.philosophy-section{display:none!important}}
+
+/* Editorial black-and-white hero portrait using the real supplied photograph */
+.portrait-editorial{align-self:center;justify-self:end;max-width:370px;width:100%;gap:18px}
+.portrait-frame{width:min(100%,330px);aspect-ratio:1;position:relative;background:#edf0e9;padding:7px;border:1px solid #c0cec3;box-shadow:0 20px 55px rgba(0,0,0,.28)}
+.portrait-editorial .portrait-frame img{display:block;width:100%;height:100%;aspect-ratio:1;max-width:none;object-fit:cover;object-position:center center;border:none!important;outline:1px solid #485c51;border-radius:0!important;box-shadow:none!important;filter:grayscale(1) contrast(1.06)}
+.portrait-editorial figcaption{text-align:left;width:min(100%,330px);padding-top:13px;border-top:1px solid rgba(255,255,255,.27)}
+.portrait-editorial figcaption strong{font-size:18px}
+.portrait-editorial figcaption span{letter-spacing:.025em}
+@media(max-width:960px){.portrait-editorial{max-width:285px}.portrait-frame{width:100%}}
+@media(max-width:760px){.portrait-editorial{max-width:100%;display:flex;flex-direction:row;justify-self:start;justify-content:flex-start;align-items:center;gap:18px}.portrait-editorial .portrait-frame{width:124px;flex:0 0 124px}.portrait-editorial figcaption{flex:1;width:auto;border-top:0;border-left:1px solid rgba(255,255,255,.3);padding:6px 0 6px 17px}}
+@media(max-width:380px){.portrait-editorial .portrait-frame{width:100px;flex-basis:100px}.portrait-editorial figcaption strong{font-size:15px}}
+@media print{.portrait-editorial{display:none!important}}
