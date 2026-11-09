@@ -46,3 +46,11 @@
 @media(max-width:760px){.hero-inner{grid-template-columns:1fr;padding:70px 0}.portrait{flex-direction:row;justify-content:flex-start;text-align:left;gap:16px;margin-top:14px}.portrait img{width:114px;flex-shrink:0}.portrait figcaption strong{font-size:16px}.hero h1{font-size:clamp(46px,8.8vw,70px)}}
 @media(max-width:600px){.hero h1{font-size:clamp(39px,9.2vw,57px)}.hero-inner{padding:57px 0 60px}.card-info{min-height:0;padding:26px}.card h3{font-size:28px}.section{padding:62px 0}.page-hero h1{font-size:clamp(44px,10.7vw,68px)}.project-hero h1{font-size:clamp(43px,10vw,65px)}.contact-band h2{font-size:47px}}
 @media print{.portrait{display:none!important}}
+
+/* Accessible, factual About sidebar replaces non-informative decorative card */
+.about-facts{background:#e8efe5;border:1px solid #c8d7c7;padding:35px 35px 15px;align-self:stretch}
+.about-facts-label{font:700 11px var(--display);letter-spacing:.14em;color:#4d7659;margin-bottom:16px}
+.about-facts>div:not(.about-facts-label){border-top:1px solid #c4d4c2;padding:19px 0}
+.about-facts span{display:block;font:700 10px var(--display);letter-spacing:.12em;color:#6a8571;margin-bottom:8px}
+.about-facts strong{display:block;font:600 17px/1.4 var(--display);letter-spacing:-.025em;color:#223b2a}
+@media(max-width:600px){.about-facts{padding:26px 26px 8px}}
