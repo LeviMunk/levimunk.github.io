@@ -1,0 +1,7 @@
+
+(()=>{const menu=document.querySelector('.menu'),nav=document.querySelector('.nav');
+if(menu&&nav){const close=()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')};menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open))});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',close));document.addEventListener('keydown',e=>{if(e.key==='Escape')close()})}
+document.querySelectorAll('[data-year]').forEach(e=>e.textContent=String(new Date().getFullYear()));
+const filters=[...document.querySelectorAll('[data-filter]')],cards=[...document.querySelectorAll('[data-category]')],count=document.querySelector('[data-count]');filters.forEach(b=>b.addEventListener('click',()=>{const v=b.dataset.filter;filters.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));let n=0;cards.forEach(c=>{const ok=v==='all'||c.dataset.category===v;c.hidden=!ok;if(ok)n++});if(count)count.textContent=n+' project'+(n===1?'':'s')+' shown'}));
+document.querySelectorAll('[data-print]').forEach(x=>x.addEventListener('click',()=>window.print()));
+if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const items=[...document.querySelectorAll('.reveal')];const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target)}}),{threshold:.05,rootMargin:'0px 0px 70px 0px'});items.forEach(e=>io.observe(e));document.documentElement.classList.add('js')}})();
