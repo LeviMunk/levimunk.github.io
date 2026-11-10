@@ -369,3 +369,75 @@ body.rail-layout main#main{display:block!important;height:auto!important;max-hei
 @media(prefers-reduced-motion:reduce){
 .flagship-card,.focus-project,.focus-summary-main>strong,.focus-toggle b{transition:none}
 }
+
+
+
+/* Field-specific competency snapshots, shown only when a visitor expands a focus area. */
+.focus-skills{margin-top:18px;padding:clamp(22px,2.8vw,30px);background:#eef4ec;border:1px solid #c4d8c7;border-radius:3px}
+.focus-skills-title{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px 24px;border-bottom:1px solid #c5d6c7;padding-bottom:18px}
+.focus-skills-title>span{font:700 12px/1.3 var(--display);color:#3c6248;letter-spacing:.1em}
+.focus-skills-title p{color:#607666;font-size:13px;line-height:1.5;margin:0}
+.focus-skills-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(16px,3vw,36px);padding-top:24px}
+.focus-skills h4{font:600 17px/1.35 var(--display);color:#274430;margin:0 0 17px;letter-spacing:-.025em}
+.focus-skills-capabilities ul{list-style:none;padding:0;margin:0;display:grid;gap:11px}
+.focus-skills-capabilities li{position:relative;padding-left:20px;color:#4c6853;font-size:14px;line-height:1.5}
+.focus-skills-capabilities li::before{content:"";position:absolute;left:1px;top:.55em;width:8px;height:8px;border-radius:50%;background:#759d7d}
+.focus-tool-tags{display:flex;flex-wrap:wrap;gap:8px}
+.focus-tool-tag{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;padding:9px 11px;border:1px solid #b9ceb9;background:#fffefa;color:#34513e;border-radius:4px;font:600 13px/1.45 var(--display)}
+.focus-tool-tag strong{padding:2px 6px;color:#2d633c;background:#ddecda;border-radius:3px;font:700 11px/1.4 var(--display)}
+.focus-skills-resume{display:inline-flex;margin-top:22px;font:700 13px/1.5 var(--display);color:#2b6139;text-decoration:underline;text-underline-offset:4px}
+.focus-skills-resume:hover{color:#143e23}
+@media(max-width:850px){
+.focus-skills-columns{grid-template-columns:1fr;gap:25px}
+}
+@media(max-width:560px){
+.focus-skills{padding:20px 17px}
+.focus-skills-title{display:block}
+.focus-skills-title p{margin-top:8px;font-size:13px}
+.focus-skills h4{font-size:16px}
+.focus-tool-tag{font-size:12px}
+}
+
+/* Editorial career chronology: visible spine, round milestones, clear role and dates. */
+body.rail-layout .rail-timeline{position:relative;margin:41px 0 38px;border-top:0;padding:0}
+body.rail-layout .rail-timeline::before{content:"";position:absolute;top:13px;bottom:38px;left:8px;width:2px;background:#b4c7b9}
+body.rail-layout .rail-timeline-item{position:relative;display:block;padding:0 0 42px 48px;border:0;min-height:112px}
+body.rail-layout .rail-timeline-item::before{content:"";position:absolute;z-index:1;left:2px;top:8px;width:14px;height:14px;box-sizing:border-box;border:3px solid #e9efe9;border-radius:50%;background:#678f75;box-shadow:0 0 0 1px #537c5b}
+body.rail-layout .rail-timeline-entry-head{display:flex;align-items:baseline;justify-content:space-between;gap:15px}
+body.rail-layout .rail-timeline-item h3{font:700 clamp(21px,2.3vw,30px)/1.25 var(--display);letter-spacing:-.045em;margin:0 0 12px;color:#213c2c}
+body.rail-layout .rail-timeline-item time{flex-shrink:0;font:600 13px/1.5 var(--display);color:#6a8370}
+body.rail-layout .rail-timeline-item .rail-timeline-role{font:600 16px/1.6 var(--display);color:#456650;margin:0 0 12px}
+body.rail-layout .rail-timeline-item p{font-size:16px;line-height:1.75;color:#52685a;max-width:760px;margin:0}
+body.rail-layout .rail-timeline-item:last-child{padding-bottom:6px}
+
+/* Full résumé: same timeline language applied to every employment entry. */
+body.rail-layout .resume-history{position:relative;padding-left:37px}
+body.rail-layout .resume-history::before{content:"";position:absolute;left:7px;top:18px;bottom:40px;width:2px;background:#b8cebb}
+body.rail-layout .resume-history .entry{position:relative;border-top:0!important;border-bottom:1px solid #d4e1d6;padding:29px 0 35px}
+body.rail-layout .resume-history .entry:first-child{padding-top:0}
+body.rail-layout .resume-history .entry::before{content:"";position:absolute;z-index:1;top:36px;left:-35px;width:13px;height:13px;border:3px solid #f6f7f2;background:#73967b;border-radius:50%;box-sizing:border-box;box-shadow:0 0 0 1px #78997c}
+body.rail-layout .resume-history .entry:first-child::before{top:7px}
+body.rail-layout .resume-history .entry h3{font-size:clamp(21px,2.25vw,29px);line-height:1.3;margin-bottom:8px}
+body.rail-layout .resume-history .entry time{font-size:12px;line-height:1.5;color:#64826c}
+body.rail-layout .resume-history .entry .role{font-size:15px;line-height:1.5;color:#46674e;margin-bottom:13px}
+body.rail-layout .resume-history .earlier-heading{position:relative;margin:32px 0 7px;padding:27px 0 16px;border-top:1px solid #bfd0c0;background:var(--page-bg)}
+body.rail-layout .resume-history .earlier-heading::before{content:"";position:absolute;left:-34px;top:36px;width:11px;height:11px;background:#c9dece;border:2px solid #6a8f74;border-radius:50%;box-sizing:border-box}
+@media(max-width:700px){
+body.rail-layout .rail-timeline-item{padding-left:36px;padding-bottom:36px}
+body.rail-layout .rail-timeline-entry-head{display:block}
+body.rail-layout .rail-timeline-item time{display:block;margin:0 0 10px;font-size:12px}
+body.rail-layout .rail-timeline-item h3{font-size:23px;margin-bottom:5px}
+body.rail-layout .rail-timeline-item .rail-timeline-role{font-size:15px}
+body.rail-layout .resume-history{padding-left:28px}
+body.rail-layout .resume-history::before{left:6px}
+body.rail-layout .resume-history .entry::before{left:-27px}
+body.rail-layout .resume-history .earlier-heading::before{left:-27px}
+body.rail-layout .resume-history .entry-head{display:block}
+body.rail-layout .resume-history .entry time{display:block;margin-bottom:11px}
+}
+@media print{
+.focus-skills{break-inside:avoid;background:#fff}
+body.rail-layout .rail-timeline::before,body.rail-layout .rail-timeline-item::before,body.rail-layout .resume-history::before,body.rail-layout .resume-history .entry::before,body.rail-layout .resume-history .earlier-heading::before{display:none}
+body.rail-layout .resume-history{padding-left:0}
+body.rail-layout .resume-history .entry{padding:12px 0}
+}
