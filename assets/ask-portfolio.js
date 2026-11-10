@@ -35,7 +35,7 @@
         "My workflow experience includes building an editorial queue with clear stages for planning, review, approval, publishing, and follow-up. I care about the human decision points, not just automating a process for its own sake.",
         "Outside paid work, I've experimented with apartment automation and built a digital tabletop interface for my Dungeons & Dragons group, combining software and physical interactions. It is a personal engineering project, not a claim of commercial software deployment."
       ],
-      links:[['Workflow and automation case study','projects/publishing-systems.html'],['Personal projects and interests','about.html#personal-projects'],['Skills and tools','resume.html#resume-tools']]
+      links:[['TableOS case study','projects/tableos.html'],['Publishing workflow case study','projects/publishing-systems.html'],['Skills and tools','resume.html#resume-tools']]
     },
     crossfunctional:{
       title:'How marketing and operations fit together',
