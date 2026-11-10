@@ -1538,3 +1538,68 @@ body.rail-layout .resume-history .entry .experience-bullets{
   body.rail-layout .resume-history .entry .role,
   body.rail-layout .resume-history .entry .experience-bullets{margin-left:59px}
 }
+
+
+
+/* Homepage experience: employer logos that match the detailed résumé. */
+body.rail-layout .rail-experience-section .rail-timeline-entry{
+  display:grid;grid-template-columns:62px minmax(0,1fr);
+  align-items:start;gap:19px;min-width:0
+}
+body.rail-layout .rail-experience-section .rail-timeline-body{min-width:0}
+body.rail-layout .rail-experience-section .rail-timeline-company-mark{
+  display:grid;place-items:center;position:relative;
+  box-sizing:border-box;width:62px;height:62px;min-width:0;
+  background:#fffefa;border:1px solid #cbd9cc;
+  border-radius:5px;overflow:hidden
+}
+body.rail-layout .rail-experience-section .rail-timeline-company-mark img{
+  display:block;box-sizing:border-box;width:100%;height:100%;
+  padding:5px;object-fit:contain;object-position:center
+}
+body.rail-layout .rail-experience-section .rail-timeline-company-mark .rail-timeline-logo-fallback{
+  display:none;position:absolute;inset:0;place-items:center;
+  background:#eaf1e7;color:#31533c;
+  font:800 16px/1 var(--display)
+}
+body.rail-layout .rail-experience-section .rail-timeline-company-mark:has(img:not([src])) .rail-timeline-logo-fallback{display:grid}
+body.rail-layout .rail-experience-section .rail-timeline-brand-lm{
+  background:#18392a;border-color:#426c4e;color:#d9efc7
+}
+body.rail-layout .rail-experience-section .rail-timeline-brand-lm strong{
+  font:800 22px/1 var(--display);letter-spacing:-.055em
+}
+body.rail-layout .rail-experience-section .rail-timeline-prior-logos{
+  display:flex;flex-wrap:wrap;gap:9px;margin-top:19px
+}
+body.rail-layout .rail-experience-section .rail-timeline-prior-logos .rail-timeline-company-mark{
+  width:52px;height:52px
+}
+@media(max-width:700px){
+  body.rail-layout .rail-experience-section .rail-timeline-entry{
+    grid-template-columns:52px minmax(0,1fr);gap:12px
+  }
+  body.rail-layout .rail-experience-section .rail-timeline-entry>.rail-timeline-company-mark{
+    width:52px;height:52px
+  }
+  body.rail-layout .rail-experience-section .rail-timeline-prior-logos{
+    gap:7px;margin-top:17px
+  }
+}
+@media(max-width:390px){
+  body.rail-layout .rail-experience-section .rail-timeline-entry{
+    grid-template-columns:44px minmax(0,1fr);gap:10px
+  }
+  body.rail-layout .rail-experience-section .rail-timeline-entry>.rail-timeline-company-mark{
+    width:44px;height:44px
+  }
+  body.rail-layout .rail-experience-section .rail-timeline-brand-lm strong{font-size:18px}
+}
+@media print{
+  body.rail-layout .rail-experience-section .rail-timeline-entry{
+    grid-template-columns:48px minmax(0,1fr);gap:12px
+  }
+  body.rail-layout .rail-experience-section .rail-timeline-entry>.rail-timeline-company-mark{
+    width:48px;height:48px
+  }
+}
