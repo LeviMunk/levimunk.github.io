@@ -1315,3 +1315,91 @@ body.rail-layout .case-website-connection .case-website-disclosure{
   body.rail-layout .case-video-thumb{display:none}
   body.rail-layout .case-feature-link{background:#fff}
 }
+
+
+
+/* Editorial cleanup: eliminate decorative microcopy without losing content or usable wayfinding. */
+body.rail-layout .rail-nav{padding-top:13px}
+body.rail-layout .rail-nav a{gap:9px}
+body.rail-layout .rail-intro{margin-top:clamp(38px,4vw,52px);margin-bottom:24px}
+body.rail-layout .rail-panel-section{
+  min-height:0;
+  padding-top:clamp(62px,5.6vw,84px);
+  padding-bottom:clamp(64px,5.8vw,92px)
+}
+body.rail-layout .rail-home-intro{min-height:95dvh}
+body.rail-layout .rail-panel-section h2{margin-top:0}
+body.rail-layout .rail-section-lead{margin-top:0}
+body.rail-layout .flagship-list{margin-top:32px}
+body.rail-layout .flagship-discipline{font-size:12px;letter-spacing:.06em}
+body.rail-layout .flagship-aside{gap:12px}
+body.rail-layout .focus-library-head{margin-bottom:26px}
+body.rail-layout .focus-summary-main{gap:7px}
+body.rail-layout .focus-project{
+  grid-template-columns:minmax(0,1fr) 25px;
+  gap:15px;
+  padding-inline:24px
+}
+body.rail-layout .focus-project-body{gap:6px}
+body.rail-layout .focus-project-body strong{font-size:clamp(19px,2vw,25px)}
+body.rail-layout .focus-skills-title{align-items:center}
+body.rail-layout .rail-principles h3{margin-top:0}
+body.rail-layout .about-vignettes h3{margin-top:0}
+body.rail-layout .rail-section-tail{justify-content:flex-end;margin-top:32px}
+body.rail-layout .portfolio-ask-form-bottom{justify-content:flex-end}
+body.rail-layout .portfolio-ask-heading{padding-top:0}
+body.rail-layout .portfolio-ask-disclosure{max-width:65ch}
+body.rail-layout .rail-hero-copy .rail-hero-statement{margin-top:0}
+
+/* When a real personal photograph is supplied, its placeholder can be replaced.
+   The empty numbered photo frames should not compete with the biography meanwhile. */
+body.rail-layout .about-story--with-photo{
+  display:block;max-width:850px;
+  padding-block:clamp(27px,3.2vw,44px)
+}
+body.rail-layout .about-story--with-photo .about-story-copy{max-width:750px}
+body.rail-layout .about-story-photo.photo-reserved{display:none!important}
+body.rail-layout .about-stories{border-top:0}
+body.rail-layout .about-story--with-photo .about-story-copy h3{margin-bottom:15px}
+body.rail-layout .about-story--with-photo .about-story-copy p{max-width:68ch}
+
+/* One readable project snapshot: your role and the evidence, not three repeating labels. */
+body.rail-layout .case-snapshot{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.rail-layout .case-snapshot span{
+  font:700 12px/1.4 var(--display);letter-spacing:.025em
+}
+body.rail-layout .case-snapshot strong{font-size:clamp(17px,1.65vw,21px)}
+body.rail-layout .case-panel-overline{display:none}
+body.rail-layout :is(.case-evidence-panel,.case-lesson-panel) h3{margin-top:0}
+body.rail-layout :is(.case-live-sample,.case-website-connection,.case-media-heading)>h3{margin-top:0}
+body.rail-layout .case-media-heading{padding-top:22px}
+body.rail-layout .case-video-content{gap:9px}
+body.rail-layout .case-video-content strong{font-size:clamp(18px,1.75vw,22px)}
+body.rail-layout .case-journey>div{gap:9px}
+body.rail-layout .case-journey strong{font-size:clamp(17px,1.6vw,21px)}
+body.rail-layout .project-hero .case-share{margin-top:26px}
+
+/* Removing tiny counters shouldn't compromise spacing and touch targets. */
+@media(max-width:900px){
+  body.rail-layout .rail-intro{margin-top:12px}
+  body.rail-layout .rail-panel-section{padding-block:60px 72px}
+  body.rail-layout .focus-project{
+    grid-template-columns:minmax(0,1fr) 22px;
+    gap:13px;padding-inline:16px;min-height:90px
+  }
+  body.rail-layout .about-story--with-photo{max-width:none}
+}
+@media(max-width:680px){
+  body.rail-layout .rail-panel-section{padding-block:41px 59px}
+  body.rail-layout .rail-home-intro{min-height:0}
+  body.rail-layout .focus-project{padding-inline:15px}
+  body.rail-layout .focus-project-body strong{font-size:19px}
+  body.rail-layout .rail-section-tail{justify-content:flex-start}
+  body.rail-layout .case-snapshot{grid-template-columns:1fr}
+  body.rail-layout .case-snapshot>div+div{border-left:0;border-top:1px solid #c9d9c8}
+  body.rail-layout .about-story--with-photo{padding-block:26px 31px}
+}
+@media print{
+  body.rail-layout .rail-panel-section{min-height:0}
+  body.rail-layout .about-story-photo.photo-reserved{display:none!important}
+}
