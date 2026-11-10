@@ -203,8 +203,19 @@ body.awwwards-v2 .v2-business-overlay{
 }
 body.awwwards-v2 .v2-studio-mark{
   position:absolute;z-index:2;bottom:9%;right:8%;
-  width:clamp(72px,9vw,130px);aspect-ratio:1;
-  border-radius:50%;border:3px solid #fff9;box-shadow:0 12px 35px #0006;
+  display:block;
+  box-sizing:border-box;
+  width:clamp(72px,9vw,130px);
+  height:clamp(72px,9vw,130px);
+  min-width:0;
+  aspect-ratio:1 / 1;
+  object-fit:contain;
+  object-position:center;
+  padding:6px;
+  background:rgba(255,255,255,.96);
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.6);
+  box-shadow:0 12px 35px #0006;
   transition:transform .6s cubic-bezier(.2,.8,.2,1)
 }
 body.awwwards-v2 .v2-feature-business:hover .v2-studio-mark{transform:rotate(-7deg) scale(1.06)}
