@@ -567,6 +567,8 @@ body.rail-layout .rail-portrait-feature figcaption span{
 }
 
 
+.rail-menu-backdrop{display:none} /* Inert on desktop so it cannot become a grid item. */
+
 /* Responsive finishing pass: one website, comfortable controls at mobile widths. */
 .rail-mobile-shortcuts{display:none}
 body.rail-layout .rail-sidebar a,body.rail-layout .rail-sidebar button{touch-action:manipulation}
