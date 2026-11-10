@@ -146,3 +146,71 @@
 .about-story-photo{margin-top:15px}
 .about-bridge-inner p{margin:8px 0 21px;font-size:16px}
 }
+
+/* Navigation system - Nov 2026. Persistent location cues, high-visibility categories and study controls. */
+.header{position:sticky;top:0;z-index:100;box-shadow:0 2px 0 rgba(0,0,0,.05)}
+.nav a:not(.last){display:inline-flex;align-items:center;min-height:46px;position:relative;transition:color .2s ease}
+.nav a:not(.last)[aria-current="page"]::after{content:"";height:3px;background:var(--acid);position:absolute;bottom:4px;left:0;right:0}
+.nav .last{transition:transform .2s ease,background .2s ease}
+.nav .last:hover{background:#e0ffad;transform:translateY(-2px)}
+.category-nav-wrap{position:sticky;top:82px;z-index:40;background:rgba(245,247,241,.96);border-top:1px solid #d5ded1;border-bottom:1px solid #cad7ca;backdrop-filter:blur(12px);margin:0 0 37px;padding:16px 0 18px}
+.category-nav-container{width:100%}
+.category-nav-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:10px}
+.category-nav-top .eyebrow{color:#56725b;font-size:10px}
+.category-nav-help{font-size:11px;color:#67776a}
+.portfolio-categories{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.category-tab{position:relative;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;min-height:126px;background:#fffefa;color:#24382a;border:1px solid #bfd0bd;border-top:4px solid #a3b5a1;border-radius:4px;padding:15px 15px 28px;transition:border-color .2s ease,background .2s ease,transform .2s ease,box-shadow .2s ease}
+.category-tab[data-filter="content"]{border-top-color:#bd977b}
+.category-tab[data-filter="analytics"]{border-top-color:#669bad}
+.category-tab[data-filter="business"]{border-top-color:#79a986}
+.category-tab[data-filter="systems"]{border-top-color:#bba36b}
+.category-tab:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(21,50,32,.12);border-color:#879e8b}
+.category-tab[aria-pressed="true"]{background:#173529;color:#fff;border-color:#173529;border-top-color:var(--acid);box-shadow:0 4px 0 var(--acid)}
+.category-tab-overline{font:700 9px/1.35 var(--display);letter-spacing:.07em;color:#648069}
+.category-tab[aria-pressed="true"] .category-tab-overline{color:#b4d8bd}
+.category-tab strong{font:700 clamp(12px,1.2vw,15px)/1.3 var(--display);letter-spacing:-.02em;padding-right:11px}
+.category-tab-desc{font-size:10px;line-height:1.3;color:#607267}
+.category-tab[aria-pressed="true"] .category-tab-desc{color:#c8ddcd}
+.category-tab-arrow{position:absolute;right:12px;bottom:12px;font-size:18px;font-weight:700;color:#4d6652}
+.category-tab[aria-pressed="true"] .category-tab-arrow{color:var(--acid)}
+.portfolio-result-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px;scroll-margin-top:276px}
+.portfolio-result-head .eyebrow{color:#6c896e;font-size:10px}
+.portfolio-result-head h2{font:600 clamp(26px,3.2vw,41px)/1.12 var(--display);letter-spacing:-.055em;margin:11px 0 0}
+.portfolio-result-head p{color:#526457;font:600 12px var(--display);white-space:nowrap;margin:0 0 3px}
+.browse-disciplines{padding:0 0 38px;margin-bottom:34px;border-bottom:1px solid #cdd8cd}
+.browse-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:20px}
+.browse-head .section-label{font-size:10px;margin-bottom:10px}
+.browse-head h3{font:600 clamp(24px,3vw,34px)/1.15 var(--display);letter-spacing:-.045em;margin:0}
+.browse-head .link{font-size:12px;white-space:nowrap}
+.browse-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.browse-link{position:relative;display:flex;flex-direction:column;gap:9px;min-height:150px;background:#fffefa;border:1px solid #c3d0c0;border-top:4px solid #b7c9b7;padding:18px 18px 38px;transition:background .2s ease,transform .2s ease,box-shadow .2s ease}
+.browse-link:hover{background:#e1f2d1;transform:translateY(-3px);box-shadow:0 10px 18px #263b2b1d}
+.browse-content{border-top-color:#bc967e}.browse-analytics{border-top-color:#739caf}.browse-business{border-top-color:#85ae8d}.browse-systems{border-top-color:#b7a371}
+.browse-index{font:700 10px var(--display);letter-spacing:.08em;color:#6b826e}
+.browse-link strong{font:700 clamp(14px,1.6vw,20px)/1.25 var(--display);letter-spacing:-.035em}
+.browse-desc{font:400 12px/1.4 var(--text);color:#586c60}
+.browse-arrow{position:absolute;bottom:13px;right:17px;font-size:18px;font-weight:700}
+.study-nav{position:sticky;top:82px;z-index:40;background:rgba(246,247,241,.97);backdrop-filter:blur(10px);border-bottom:1px solid #c6d4c5}
+.study-nav-inner{min-height:64px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+.study-back{font:700 12px var(--display);color:#24492f;white-space:nowrap}
+.study-back:hover{text-decoration:underline}
+.study-nav-right{display:flex;align-items:center;gap:9px}
+.study-number{font:700 10px var(--display);color:#54735a;letter-spacing:.08em;margin-right:11px;white-space:nowrap}
+.study-step{border:1px solid #a9bfab;background:#fff;padding:9px 12px;min-width:75px;text-align:center;font:700 11px var(--display);color:#253d2d;white-space:nowrap}
+.study-step:hover{background:#dceccf;border-color:#7a9e82}
+.next-links{display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.next-links a:nth-child(2){color:#b8d3c1}
+.page-jumps{position:sticky;top:82px;z-index:40;background:#eef2eb;border-bottom:1px solid #c4d5c5;box-shadow:0 4px 10px rgba(0,0,0,.035)}
+.page-jumps-inner{display:flex;align-items:center;gap:5px;min-height:62px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+.page-jumps-label{font:700 10px var(--display);letter-spacing:.1em;color:#69806d;margin-right:12px;white-space:nowrap}
+.page-jumps a{font:700 11px var(--display);color:#2e5039;white-space:nowrap;padding:9px 13px;border:1px solid transparent;border-radius:3px}
+.page-jumps a:hover,.page-jumps a:focus-visible{background:#dcead7;border-color:#c0d0bf}
+[id^="resume-"],.about-story{scroll-margin-top:160px}
+.case-grid{scroll-margin-top:162px}
+@media(max-width:1090px){.category-tab{min-height:135px;padding:12px 11px 25px;gap:7px}.category-tab strong{font-size:12px}.category-tab-desc{font-size:10px}.browse-link{padding:16px 13px 35px}.browse-link strong{font-size:16px}}
+@media(max-width:760px){.category-nav-wrap,.study-nav,.page-jumps{top:68px}.portfolio-categories{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 0 7px;scrollbar-width:thin}.category-tab{flex:0 0 180px;min-height:116px;scroll-snap-align:start}.category-tab strong{font-size:14px}.category-nav-help{display:none}.portfolio-result-head{scroll-margin-top:240px}.browse-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.study-nav-inner{min-height:56px}.study-number{display:none}.study-step{min-width:0}.page-jumps-inner{min-height:55px}.nav a:not(.last)[aria-current="page"]::after{bottom:8px}}
+@media(max-width:520px){.category-nav-wrap{margin-left:calc((100vw - 100%) / -2);margin-right:calc((100vw - 100%) / -2);padding:11px 0 10px}.category-nav-container{padding-left:0}.category-nav-top{padding-inline:0}.category-tab{flex-basis:170px;min-height:106px}.category-tab-desc{font-size:10px}.browse-grid{grid-template-columns:1fr 1fr;gap:9px}.browse-link{min-height:140px;padding:14px 12px 28px}.browse-link strong{font-size:14px}.browse-desc{font-size:11px}.browse-head{display:block}.browse-head .link{display:inline-flex;margin-top:14px}.portfolio-result-head{display:block}.portfolio-result-head p{margin-top:9px}.study-back{font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis}.study-nav-right{gap:5px}.study-step{padding:9px 8px;font-size:10px}.page-jumps-label{display:none}.page-jumps a{font-size:10px;padding:10px 12px}}
+@media(prefers-reduced-motion:reduce){.category-tab,.browse-link,.study-step,.nav .last{transition:none}}
+@media print{.study-nav,.page-jumps,.category-nav-wrap,.browse-disciplines{display:none!important}}
+
+.skip-link{position:fixed;top:-100px;left:12px;z-index:250;background:var(--acid);color:var(--dark);font:700 13px var(--display);padding:13px 18px}.skip-link:focus{top:12px}
