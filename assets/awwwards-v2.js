@@ -6,7 +6,7 @@
   const fine=window.matchMedia('(hover:hover) and (pointer:fine)');
   const hero=document.querySelector('.v2-hero-grid');
   const glow=document.querySelector('.v2-hero-glow');
-  const portrait=document.querySelector('.v2-portrait');
+  const portrait=document.querySelector('.v2-hero-outline');
   const cards=[...document.querySelectorAll('.v2-feature')];
 
   const candidates=[
