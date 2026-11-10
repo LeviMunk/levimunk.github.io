@@ -19,15 +19,15 @@
     <label class="portfolio-ask-label" for="ask-question">What would you like to know?</label>
     <textarea id="ask-question" name="question" rows="2" maxlength="300" placeholder="Ask about my experience…" autocomplete="off" required data-ask-input></textarea>
     <div class="portfolio-ask-form-bottom">
-      <span class="portfolio-ask-form-caption"><span aria-hidden="true">✧</span> Guided portfolio Q&amp;A</span>
+      <span class="portfolio-ask-form-caption"><span aria-hidden="true">✧</span> Guided portfolio Q&amp;A · Enter to explore</span>
       <button type="submit" class="portfolio-ask-submit" data-ask-submit>Explore answer <span aria-hidden="true">↑</span></button>
     </div>
   </form>
   <div class="portfolio-ask-prompts" role="group" aria-label="Suggested portfolio questions">
-    <button type="button" data-ask-topic="brief" data-ask-question="Give me the recruiter brief."><span class="portfolio-prompt-icon" aria-hidden="true">01</span><span><strong>Give me the recruiter brief.</strong><small>The 60-second overview</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
-    <button type="button" data-ask-topic="impact" data-ask-question="Show me your impact."><span class="portfolio-prompt-icon" aria-hidden="true">02</span><span><strong>Show me your impact.</strong><small>Results with context</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
-    <button type="button" data-ask-topic="systems" data-ask-question="What systems have you built?"><span class="portfolio-prompt-icon" aria-hidden="true">03</span><span><strong>What systems have you built?</strong><small>Automation and TableOS</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
-    <button type="button" data-ask-topic="crossfunctional" data-ask-question="How do you connect marketing and operations?"><span class="portfolio-prompt-icon" aria-hidden="true">04</span><span><strong>How do you connect marketing and operations?</strong><small>The cross-functional view</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
+    <button type="button" data-ask-topic="brief" aria-pressed="false" data-ask-question="Give me the recruiter brief."><span class="portfolio-prompt-icon" aria-hidden="true">01</span><span><strong>Give me the recruiter brief.</strong><small>The 60-second overview</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
+    <button type="button" data-ask-topic="impact" aria-pressed="false" data-ask-question="Show me your impact."><span class="portfolio-prompt-icon" aria-hidden="true">02</span><span><strong>Show me your impact.</strong><small>Results with context</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
+    <button type="button" data-ask-topic="systems" aria-pressed="false" data-ask-question="What systems have you built?"><span class="portfolio-prompt-icon" aria-hidden="true">03</span><span><strong>What systems have you built?</strong><small>Automation and TableOS</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
+    <button type="button" data-ask-topic="crossfunctional" aria-pressed="false" data-ask-question="How do you connect marketing and operations?"><span class="portfolio-prompt-icon" aria-hidden="true">04</span><span><strong>How do you connect marketing and operations?</strong><small>The cross-functional view</small></span><span class="portfolio-prompt-arrow" aria-hidden="true">↗</span></button>
   </div>
   <div class="portfolio-ask-answer" id="portfolio-answer" hidden tabindex="-1" aria-labelledby="portfolio-answer-title" data-ask-answer>
     <div class="portfolio-answer-top"><span>FROM MY PORTFOLIO</span><button type="button" data-ask-close aria-label="Close answer">Close ×</button></div>
@@ -35,7 +35,7 @@
     <div class="portfolio-answer-copy" data-ask-copy></div>
     <div class="portfolio-answer-links" data-ask-links></div>
   </div>
-  <p class="portfolio-ask-disclosure">This is a guided collection of prepared, fact-checked answers, not a live AI chatbot. Your question stays in your browser.</p>
+  <p class="portfolio-ask-disclosure">This is a guided collection of prepared answers based on this portfolio, not a live AI chatbot. Your question stays in your browser.</p>
 </section>
  </div></section>
 <section class="rail-panel-section rail-work-section" id="work" aria-labelledby="work-title"><div class="rail-content">

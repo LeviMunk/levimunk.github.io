@@ -113,12 +113,12 @@
   const matchers=[
     ['personal',/\b(dungeon|dnd|d&d|dog|nimbus|denmark|danish|baking|hiking|martial art|personal life|outside work|hobb(?:y|ies))\b/i],
     ['analytics',/\b(analytic|analytics|ga4|report|dashboard|data|insight|measure|measurement|attribution|kpi)\b/i],
-    ['creative',/\b(social media|content|photograph|video|reel|campaign|creative|artist|storytell)\b/i],
+    ['creative',/\b(social media|content|photography|photograph|video|reel|campaign|campaigns|creative|artist|storytelling)\b/i],
     ['business',/\b(studio|theory|theøry|owner|owning|founder|membership|customer journey|onboard|retention|crm)\b/i],
-    ['systems',/\b(automat|systems?|tableos|tabletop|software|program|coded|built|build|workflow|digital project|technical|engineering)\b/i],
-    ['skills',/\b(skills?|adobe|office|software tools?|platform|technolog|certificat|competenc)\b/i],
-    ['career',/\b(work history|previous jobs?|career|employment|theducare|thedacare|thrivent|karate america|background|roles?)\b/i],
-    ['impact',/\b(impact|results?|outcomes?|numbers?|metrics?|growth|success|achiev|roi|performance|prove|evidence)\b/i],
+    ['systems',/\b(automation|automate|automating|system|systems|tableos|tabletop|software|programming|coding|code|coded|built|build|workflow|workflows|digital project|technical|engineering)\b/i],
+    ['skills',/\b(skills?|adobe|office|software tools?|platform|platforms|technology|technologies|certification|certifications|competencies)\b/i],
+    ['career',/\b(work history|previous jobs?|career|employment|thedacare|thrivent|karate america|background|roles?)\b/i],
+    ['impact',/\b(impact|results?|outcomes?|numbers?|metrics?|growth|success|achievement|achievements|roi|performance|proof|evidence)\b/i],
     ['crossfunctional',/\b(cross.functional|connect|operations?|departments?|process|strategy|strategist|analyst|problem.solv)\b/i],
     ['contact',/\b(contact|email|hire|available|reach|recruit|job opportunity|linkedin|interview)\b/i],
     ['brief',/\b(recruiter brief|overview|summary|summari[sz]e|about levi|what do you do|who is levi|tell me about)\b/i]
@@ -152,6 +152,12 @@
     const question=input.value.trim();
     if(!question){input.focus();return;}
     render(classify(question),question);
+  });
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
+      e.preventDefault();
+      if(input.value.trim())form.requestSubmit();
+    }
   });
   suggestions.forEach(button=>button.addEventListener('click',()=>{
     input.value=button.dataset.askQuestion||'';
