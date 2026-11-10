@@ -20,3 +20,25 @@ if(filters.length){
 }
 document.querySelectorAll('[data-print]').forEach(x=>x.addEventListener('click',()=>window.print()));
 if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const items=[...document.querySelectorAll('.reveal')];const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target)}}),{threshold:.05,rootMargin:'0px 0px 70px 0px'});items.forEach(e=>io.observe(e));document.documentElement.classList.add('js')}})();
+
+
+// Let a recruiter-facing case study be copied directly from its own page.
+(()=>{
+  const button=document.querySelector('[data-copy-case]');
+  if(!button)return;
+  const status=document.querySelector('[data-copy-status]');
+  const originalText=button.textContent;
+  button.addEventListener('click',async()=>{
+    const link=window.location.href.split('#')[0];
+    try{
+      if(!navigator.clipboard || !window.isSecureContext)throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(link);
+      button.textContent='Link copied ✓';
+      if(status)status.textContent='Ready to paste into an email or message.';
+    }catch(err){
+      if(status)status.textContent='Select and copy the link from the address bar.';
+      button.textContent=originalText;
+      window.prompt('Copy this case study URL:',link);
+    }
+  });
+})();
