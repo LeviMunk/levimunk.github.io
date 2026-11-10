@@ -901,3 +901,200 @@ body.rail-layout #resume-tools .school span{font-size:14px}
  body.rail-layout .resume-history .entry-compact h3{font-size:15pt}
  body.rail-layout .resume-history .experience-bullets li{font-size:10pt;line-height:1.4}
 }
+
+
+
+/* Sitewide scan-first hierarchy: shorter reading lines, useful grouping, restrained contrast. */
+body.rail-layout main#main :is(.rail-hero-support,.rail-supporting-copy,.about-story-secondary,.resume-summary-support,.about-opening-copy p){max-width:66ch}
+body.rail-layout .rail-hero-copy .rail-hero-statement{
+  font:600 clamp(20px,2.15vw,27px)/1.38 var(--display);
+  color:#284837;letter-spacing:-.025em;
+  margin:0 0 15px;max-width:610px;text-wrap:balance
+}
+body.rail-layout .rail-hero-copy .rail-hero-support{
+  font-size:16px;line-height:1.72;color:#647d68;max-width:570px;
+  margin:0 0 28px
+}
+body.rail-layout .rail-section-lead{
+  font-size:clamp(17px,1.55vw,20px);line-height:1.65;max-width:660px;
+  margin-bottom:30px;text-wrap:pretty
+}
+body.rail-layout .rail-supporting-copy{
+  color:#607364;font-size:15px;line-height:1.65;margin:-12px 0 30px
+}
+body.rail-layout .rail-tools .rail-tool-columns{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(15px,2.8vw,30px);padding:21px 0 20px
+}
+body.rail-layout .rail-tools .rail-tool-columns>div{
+  border-top:2px solid #a8c2ac;padding-top:13px;min-width:0
+}
+body.rail-layout .rail-tools .rail-tool-columns strong{
+  display:block;font:700 11px/1.4 var(--display);
+  letter-spacing:.13em;color:#436c4d
+}
+body.rail-layout .rail-tools .rail-tool-columns p{
+  font-size:15px;line-height:1.65;margin:10px 0 0;color:#4e6754
+}
+body.rail-layout .about-vignettes{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(12px,2vw,23px);margin:32px 0 30px
+}
+body.rail-layout .about-vignettes article{
+  min-width:0;border-top:3px solid #91b093;
+  padding:19px 9px 15px 0;
+  border-bottom:1px solid #cbd9ca
+}
+body.rail-layout .about-vignettes article:nth-child(2){border-top-color:#93aaa3}
+body.rail-layout .about-vignettes article:nth-child(3){border-top-color:#b0a081}
+body.rail-layout .about-vignettes span{
+  color:#67866d;letter-spacing:.11em;
+  font:700 10px/1.4 var(--display)
+}
+body.rail-layout .about-vignettes h3{
+  font:600 clamp(19px,1.8vw,25px)/1.23 var(--display);
+  color:#243b2b;letter-spacing:-.035em;margin:12px 0 10px
+}
+body.rail-layout .about-vignettes p{
+  color:#58705f;font-size:15px;line-height:1.66;margin:0
+}
+
+/* Project pages: synopsis before narrative, a card only for evidence and learning. */
+body.rail-layout .case-content{min-width:0}
+body.rail-layout .case-content>h2{
+  font:600 clamp(30px,3.2vw,48px)/1.12 var(--display);
+  max-width:730px;letter-spacing:-.06em;margin:12px 0 25px;text-wrap:balance
+}
+body.rail-layout .case-snapshot{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;margin:0 0 36px;background:#eaf1e7;border:1px solid #c4d5c5
+}
+body.rail-layout .case-snapshot>div{
+  min-width:0;padding:21px 17px 22px;
+  display:flex;flex-direction:column;gap:9px
+}
+body.rail-layout .case-snapshot>div+div{border-left:1px solid #c9d9c8}
+body.rail-layout .case-snapshot span{
+  color:#638369;font:700 10px/1.4 var(--display);letter-spacing:.12em
+}
+body.rail-layout .case-snapshot strong{
+  font:700 clamp(15px,1.45vw,19px)/1.35 var(--display);
+  letter-spacing:-.025em;color:#244532;overflow-wrap:anywhere
+}
+body.rail-layout .case-snapshot small{
+  color:#62796a;font:500 12px/1.5 var(--text);margin-top:-5px
+}
+body.rail-layout .case-content>h3{
+  font:700 19px/1.35 var(--display);color:#274631;
+  margin:29px 0 10px;letter-spacing:-.025em
+}
+body.rail-layout .case-content>h3+p{
+  font-size:16px;line-height:1.72;color:#4d6354;
+  max-width:66ch;margin:0 0 23px
+}
+body.rail-layout .case-actions{
+  display:grid;list-style:none;padding:0;margin:17px 0 30px;gap:0
+}
+body.rail-layout .case-actions li{
+  display:grid;grid-template-columns:minmax(105px,.42fr) minmax(0,1fr);
+  align-items:start;gap:11px 20px;min-width:0;
+  border-bottom:1px solid #d1dfd2;padding:17px 0;
+  font-size:15px;line-height:1.68;color:#506758
+}
+body.rail-layout .case-actions li:first-child{border-top:1px solid #d1dfd2}
+body.rail-layout .case-bullet-label{
+  font:700 13px/1.45 var(--display);
+  color:#2e5a3b;letter-spacing:-.015em
+}
+body.rail-layout .case-evidence-panel{
+  margin:36px 0 20px;padding:28px clamp(20px,2.8vw,35px);
+  border-left:4px solid #789d7d;background:#e5efe2;
+  color:#284331
+}
+body.rail-layout .case-lesson-panel{
+  margin:18px 0 20px;padding:25px clamp(20px,2.8vw,34px);
+  background:#f0f1ea;border:1px solid #d1dccc
+}
+body.rail-layout .case-panel-overline{
+  color:#5a7c61;font:700 11px/1.3 var(--display);
+  letter-spacing:.11em
+}
+body.rail-layout .case-evidence-panel h3,
+body.rail-layout .case-lesson-panel h3{
+  font:700 20px/1.3 var(--display);
+  letter-spacing:-.025em;color:#244330;margin:12px 0 13px
+}
+body.rail-layout .case-evidence-panel p,
+body.rail-layout .case-lesson-panel p{
+  font-size:16px;line-height:1.75;color:#425c4a;
+  max-width:65ch;margin:0
+}
+
+/* Biography stories: first sentence leads, second gives optional detail. */
+body.rail-layout .about-opening-copy .about-opening-lede{
+  font:600 clamp(20px,2.3vw,28px)/1.38 var(--display);
+  color:#2f523b;letter-spacing:-.025em;margin:0 0 16px
+}
+body.rail-layout .about-opening-copy p:not(.about-opening-lede){
+  font-size:16px;line-height:1.7;color:#566c5c;margin:0
+}
+body.rail-layout .about-story--with-photo .about-story-copy .about-story-main{
+  font:500 16px/1.72 var(--text);
+  color:#465f4f;margin:0 0 10px;max-width:60ch
+}
+body.rail-layout .about-story--with-photo .about-story-copy .about-story-secondary{
+  font:500 15px/1.65 var(--text);
+  color:#748775;margin:0;max-width:60ch
+}
+
+/* Intro emphasis on résumé & contact, without repeating a wall of prose. */
+body.rail-layout .resume-introduction .resume-summary-lede,
+body.rail-layout .two-col .contact-intro-emphasis{
+  font:600 clamp(20px,2.2vw,28px)/1.4 var(--display);
+  color:#244e33;letter-spacing:-.025em;margin:15px 0 13px
+}
+body.rail-layout .resume-introduction .resume-summary-support{
+  font:500 16px/1.7 var(--text);color:#66796b;
+  margin:0;max-width:66ch
+}
+
+/* Readability improvements across all long-form pages. */
+body.rail-layout .case-note{max-width:70ch}
+body.rail-layout .page-hero p{max-width:700px;line-height:1.65;text-wrap:pretty}
+body.rail-layout :is(.rail-case p,.flagship-main p,.focus-deck,.focus-project-body>span){line-height:1.65}
+@media(min-width:901px) and (max-width:1260px){
+  body.rail-layout .about-vignettes{grid-template-columns:1fr;gap:9px}
+  body.rail-layout .about-vignettes article{padding:13px 0 15px}
+  body.rail-layout .rail-tools .rail-tool-columns{grid-template-columns:1fr;gap:10px}
+  body.rail-layout .rail-tools .rail-tool-columns>div{padding-top:10px}
+  body.rail-layout .case-snapshot{grid-template-columns:1fr}
+  body.rail-layout .case-snapshot>div{padding:14px 17px}
+  body.rail-layout .case-snapshot>div+div{border-left:0;border-top:1px solid #cadbcb}
+  body.rail-layout .case-actions li{grid-template-columns:1fr;gap:5px}
+}
+@media(max-width:760px){
+  body.rail-layout .about-vignettes{grid-template-columns:1fr;gap:8px}
+  body.rail-layout .about-vignettes article{padding:15px 0}
+  body.rail-layout .rail-tools .rail-tool-columns{grid-template-columns:1fr;gap:10px}
+  body.rail-layout .rail-tools .rail-tool-columns>div{padding-top:10px}
+  body.rail-layout .case-snapshot{grid-template-columns:1fr}
+  body.rail-layout .case-snapshot>div{padding:15px 18px}
+  body.rail-layout .case-snapshot>div+div{border-left:0;border-top:1px solid #c9d9c8}
+  body.rail-layout .case-actions li{grid-template-columns:1fr;gap:7px;padding:17px 0}
+  body.rail-layout .case-evidence-panel,body.rail-layout .case-lesson-panel{padding:23px 20px}
+  body.rail-layout .rail-hero-copy .rail-hero-statement{font-size:21px}
+  body.rail-layout .rail-hero-copy .rail-hero-support{font-size:15px}
+}
+@media(max-width:440px){
+  body.rail-layout .case-content>h2{font-size:clamp(27px,7.7vw,36px)}
+  body.rail-layout .case-snapshot strong{font-size:17px}
+  body.rail-layout .case-actions li{font-size:15px}
+  body.rail-layout .about-vignettes h3{font-size:22px}
+}
+@media print{
+  body.rail-layout .case-snapshot{break-inside:avoid;background:#fff}
+  body.rail-layout .case-evidence-panel,body.rail-layout .case-lesson-panel{
+    background:#fff;border-left:2px solid #687e6c;break-inside:avoid
+  }
+  body.rail-layout .about-vignettes{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
