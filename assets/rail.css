@@ -1478,3 +1478,63 @@ body.rail-layout .about-feature-actions a{
 body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
 @media(max-width:1120px){body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}}
 @media(max-width:700px){body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+
+
+
+/* Employment mark column: simple hierarchy, legible on mobile, no logo attributions implied. */
+body.rail-layout .resume-history .entry-head{
+  display:grid;grid-template-columns:64px minmax(0,1fr) auto;
+  align-items:start;gap:11px 17px;
+}
+body.rail-layout .resume-history .resume-company-logo{
+  display:grid;place-items:center;
+  width:64px;height:64px;min-width:0;
+  background:#ffffff;border:1px solid #d2dfd2;
+  border-radius:5px;overflow:hidden;position:relative;
+}
+body.rail-layout .resume-history .resume-company-logo img{
+  display:block;width:100%;height:100%;
+  object-fit:contain;object-position:center;background:#fff;
+}
+body.rail-layout .resume-history .resume-company-logo-fallback{
+  display:none;position:absolute;inset:0;place-items:center;
+  background:#e5efe4;color:#35533e;
+  font:800 18px/1 var(--display);
+}
+body.rail-layout .resume-history .resume-company-logo-image:has(img:not([src])) .resume-company-logo-fallback{display:grid}
+body.rail-layout .resume-history .resume-company-logo:not(.resume-company-logo-image)>span{
+  font:800 22px/1 var(--display);letter-spacing:-.06em
+}
+body.rail-layout .resume-history .resume-company-logo-levi{background:#18392a;color:#d6e6c0;border-color:#426c4e}
+body.rail-layout .resume-history .resume-company-logo-theory{background:#1a2c2b;color:#f1f6ee;border-color:#53746a}
+body.rail-layout .resume-history .resume-company-logo-thrivent{background:#f5ecee;color:#8d3256;border-color:#d8b7c3}
+body.rail-layout .resume-history .resume-company-logo-thrivent>span{text-transform:lowercase;letter-spacing:-.09em;font-weight:700}
+body.rail-layout .resume-history .entry-company{min-width:0}
+body.rail-layout .resume-history .entry-head time{align-self:start}
+body.rail-layout .resume-history .entry h3{margin-top:2px}
+body.rail-layout .resume-history .entry .role,
+body.rail-layout .resume-history .entry .experience-bullets{
+  margin-left:81px
+}
+@media(max-width:760px){
+  body.rail-layout .resume-history .entry-head{
+    grid-template-columns:56px minmax(0,1fr);
+    gap:8px 13px
+  }
+  body.rail-layout .resume-history .resume-company-logo{width:56px;height:56px}
+  body.rail-layout .resume-history .resume-company-logo:not(.resume-company-logo-image)>span{font-size:19px}
+  body.rail-layout .resume-history .entry-head time{grid-column:2;justify-self:start;margin:0 0 9px}
+  body.rail-layout .resume-history .entry .role,
+  body.rail-layout .resume-history .entry .experience-bullets{margin-left:0}
+}
+@media(max-width:420px){
+  body.rail-layout .resume-history .entry-head{grid-template-columns:48px minmax(0,1fr);gap:6px 11px}
+  body.rail-layout .resume-history .resume-company-logo{width:48px;height:48px}
+  body.rail-layout .resume-history .resume-company-logo:not(.resume-company-logo-image)>span{font-size:17px}
+}
+@media print{
+  body.rail-layout .resume-history .entry-head{grid-template-columns:43px minmax(0,1fr) auto}
+  body.rail-layout .resume-history .resume-company-logo{height:43px;width:43px}
+  body.rail-layout .resume-history .entry .role,
+  body.rail-layout .resume-history .entry .experience-bullets{margin-left:59px}
+}
