@@ -472,7 +472,7 @@ body.rail-layout .rail-about-deeper a{
 body.rail-layout .rail-about-deeper a:hover{color:#173b26}
 
 body.rail-layout .rail-hero-photo.rail-portrait-feature{
-  width:100%;max-width:350px;margin:0;
+  display:block;width:100%;max-width:350px;margin:0;
   justify-self:end;align-self:center;position:relative
 }
 body.rail-layout .rail-portrait-art{
