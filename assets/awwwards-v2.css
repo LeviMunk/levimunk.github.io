@@ -259,6 +259,43 @@ body.awwwards-v2 .rail-work-section .focus-library-head h3{color:#f2f5ed}
 body.awwwards-v2 .rail-work-section .focus-library-head p{color:#acc5b4}
 body.awwwards-v2 .rail-work-section .rail-section-tail a{color:#c9ebbb}
 body.awwwards-v2 .rail-work-section .focus-disclosure{box-shadow:0 14px 35px #0002}
+
+/* Readable, distinct headings on the deep-green work background. */
+body.awwwards-v2 .rail-work-section .focus-library-head h3{
+  color:#d5efaf;
+}
+body.awwwards-v2 .rail-work-section .focus-library-head p{
+  color:#c0d5c4;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosures{
+  border-top-color:#4c7159;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure{
+  border-bottom-color:#4c7159;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure .focus-summary-main>strong{
+  color:#f3f8eb;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure .focus-deck{
+  color:#bed5c2;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure summary:hover .focus-summary-main>strong,
+body.awwwards-v2 .rail-work-section .focus-disclosure summary:focus-visible .focus-summary-main>strong,
+body.awwwards-v2 .rail-work-section .focus-disclosure[open] .focus-summary-main>strong{
+  color:#d5efaf;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure .focus-toggle b{
+  background:#d5efaf;
+  color:#143125;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure[open] .focus-toggle b{
+  background:#aad789;
+}
+body.awwwards-v2 .rail-work-section .focus-disclosure summary:focus-visible{
+  outline:2px solid #d5efaf;
+  outline-offset:4px;
+}
+
 body.awwwards-v2 .v2-ask-placement{margin-top:clamp(60px,7vw,94px);border-top:1px solid #476751;padding-top:clamp(50px,5vw,70px)}
 body.awwwards-v2 .v2-ask-placement .portfolio-ask{
  margin:0;background:#eef4e8;color:#1e3829;padding:clamp(25px,3vw,43px);
