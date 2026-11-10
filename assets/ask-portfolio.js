@@ -33,7 +33,7 @@
       title:'Systems that make work easier',
       paragraphs:[
         "My workflow experience includes building an editorial queue with clear stages for planning, review, approval, publishing, and follow-up. I care about the human decision points, not just automating a process for its own sake.",
-        "Outside paid work, I've experimented with apartment automation and built a digital tabletop interface for my Dungeons & Dragons group, combining software and physical interactions. It is a personal engineering project, not a claim of commercial software deployment."
+        "Outside paid work, I've built an interactive tabletop interface for my D&D group and developed a separate React/TypeScript campaign companion website. These are personal technical projects, not commercial deployments or a claim that the two systems are automatically synchronized."
       ],
       links:[['TableOS case study','projects/tableos.html'],['Publishing workflow case study','projects/publishing-systems.html'],['Skills and tools','resume.html#resume-tools']]
     },
@@ -57,15 +57,15 @@
       title:'Creative production and strategy',
       paragraphs:[
         "I've handled the full content cycle: concepts, photography, filming, editing, graphics, captions, scheduling, and approval coordination. The work includes product education, artist stories, and short-form video.",
-        "I try to make specialized subjects approachable while also learning from audience response. Public examples will be added to the case study as individual links and permissions are verified."
+        "I try to make specialized subjects approachable while learning from audience response. My case studies now link to a published fine-art materials reel and three personal D&D editing examples made with Premiere Pro and AI-assisted techniques."
       ],
       links:[['Social and content case study','projects/social-content.html'],['Portfolio by discipline','work.html?category=content']]
     },
     business:{
       title:'Business ownership and customer experience',
       paragraphs:[
-        "I founded and operated THEØRY Jiu-Jitsu Studio, taking responsibility for its website, marketing, trial-class experience, onboarding, member communication, events, and daily operations.",
-        "That work taught me how closely positioning, service delivery, scheduling, and retention depend on one another. It also gave me first-hand experience with the operational trade-offs behind business decisions."
+        "I founded and operated THEØRY Jiu-Jitsu Studio. I built campaigns around motivations like fitness, community, and confidence, used Zen Planner as the main CRM, and created email and text follow-up sequences for interested prospects and early members.",
+        "I noticed early repeat attendance appeared related to whether people stayed, but I did not run a formal cohort analysis or calculate a retention threshold. The case study separates these operating observations from confirmed metrics."
       ],
       links:[['Studio case study','projects/studio-growth.html'],['Employment history','resume.html#resume-experience']]
     },
@@ -80,7 +80,7 @@
     skills:{
       title:'Tools, platforms, and working skills',
       paragraphs:[
-        "My toolkit includes Microsoft Office Suite and Adobe Creative Suite / Creative Cloud, plus Google Analytics 4, Hootsuite, Canva, Google Sheets, HubSpot, Make.com, and related content and workflow tools.",
+        "My toolkit includes Adobe Creative Suite / Creative Cloud, Microsoft Office Suite, Google Analytics 4, Hootsuite, Canva, HubSpot, Zen Planner, Make.com, and WordPress, where I have 10+ years of experience.",
         "I'm comfortable bridging creative software, measurement, spreadsheets, and automation. The résumé lists the tools and relevant disciplines in more detail."
       ],
       links:[['Tools and platforms','resume.html#resume-tools'],['How I work','#approach']]
