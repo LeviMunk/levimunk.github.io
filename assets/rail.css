@@ -235,3 +235,47 @@ body.rail-layout main#main{display:block!important;height:auto!important;max-hei
 .rail-case{break-inside:avoid}
 .rail-case h3,.rail-panel-section h2{color:#000}
 }
+
+/* Guided portfolio interview: recruiter-friendly answers without a backend. */
+.portfolio-ask{margin-top:clamp(56px,5.7vw,94px);scroll-margin-top:25px}
+.portfolio-ask-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:27px}
+.portfolio-ask-kicker{display:block;font:700 11px/1.4 var(--display);letter-spacing:.12em;color:#4a6d50;margin-bottom:12px}
+.portfolio-ask-sparkle{font-size:17px;vertical-align:middle;margin-right:8px}
+.portfolio-ask-heading h2{font:600 clamp(30px,3.1vw,48px)/1.1 var(--display);letter-spacing:-.06em;margin:0}
+.portfolio-ask-period{color:#7fab78}
+.portfolio-ask-heading p{max-width:330px;font-size:15px;line-height:1.65;color:#5d7263;margin:0}
+.portfolio-ask-form{background:#182b24;color:#ebf2e7;border:1px solid #486551;border-radius:17px;padding:clamp(22px,2.6vw,33px);box-shadow:0 12px 30px rgba(31,53,32,.1)}
+.portfolio-ask-label{display:block;font:600 15px/1.4 var(--display);color:#bdd3c1;margin-bottom:13px}
+.portfolio-ask-form textarea{display:block;width:100%;min-height:105px;resize:vertical;background:transparent;border:0;padding:0;color:#f8fff4;font:500 clamp(19px,2vw,25px)/1.5 var(--text);outline:0;box-shadow:none}
+.portfolio-ask-form textarea::placeholder{color:#9fb5a5;opacity:1}
+.portfolio-ask-form:focus-within{border-color:#a9d19d;box-shadow:0 0 0 2px #7ca87945}
+.portfolio-ask-form-bottom{display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid #3e5948;padding-top:16px}
+.portfolio-ask-form-caption{color:#b7cbbb;font:600 12px/1.4 var(--display)}
+.portfolio-ask-form-caption span{color:#b7dbac;font-size:18px;margin-right:5px}
+.portfolio-ask-submit{display:inline-flex;align-items:center;gap:18px;justify-content:space-between;border:1px solid #bad8b3;background:#bdd9a5;color:#152a1c;padding:13px 16px;min-height:47px;border-radius:7px;font:700 14px/1.3 var(--display);transition:background .2s,transform .2s}
+.portfolio-ask-submit:hover{background:#d4edc3;transform:translateY(-2px)}
+.portfolio-ask-submit:focus-visible,.portfolio-ask-prompts button:focus-visible{outline:3px solid #7cb6ff;outline-offset:3px}
+.portfolio-ask-submit span{font-size:20px;font-weight:500;line-height:1}
+.portfolio-ask-prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.portfolio-ask-prompts button{display:grid;grid-template-columns:35px minmax(0,1fr) 20px;align-items:start;gap:13px;min-height:110px;padding:22px 18px;text-align:left;background:#f9faf5;color:#213d2a;border:1px solid #c1d2c3;border-radius:12px;transition:background .18s,border-color .18s,transform .18s}
+.portfolio-ask-prompts button:hover{background:#e4eee0;border-color:#7ea484;transform:translateY(-2px)}
+.portfolio-ask-prompts button[aria-pressed="true"]{border-color:#668c71;background:#e2efdc;box-shadow:inset 0 0 0 1px #9abb9d}
+.portfolio-prompt-icon{display:grid;place-items:center;width:33px;height:33px;border:1px solid #aac5ad;border-radius:8px;font:700 11px var(--display);color:#4a7153}
+.portfolio-ask-prompts strong{display:block;font:700 clamp(14px,1.45vw,18px)/1.35 var(--display);letter-spacing:-.025em}
+.portfolio-ask-prompts small{display:block;margin-top:5px;color:#6b806d;font:500 13px/1.45 var(--text)}
+.portfolio-prompt-arrow{justify-self:end;font:500 21px var(--display);color:#67896a}
+.portfolio-ask-answer{background:#e4eee1;border:1px solid #a7c6ab;border-radius:14px;margin-top:17px;padding:clamp(22px,3vw,35px);scroll-margin-top:24px}
+.portfolio-ask-answer[hidden]{display:none}
+.portfolio-answer-top{display:flex;justify-content:space-between;gap:20px;align-items:center;color:#55745d;font:700 11px/1.3 var(--display);letter-spacing:.11em;border-bottom:1px solid #b9d0ba;padding-bottom:16px}
+.portfolio-answer-top button{color:#365b40;background:transparent;border:0;padding:5px;font:700 12px/1.3 var(--display);letter-spacing:0}
+.portfolio-answer-top button:hover{text-decoration:underline}
+.portfolio-ask-answer h3{font:600 clamp(24px,2.5vw,35px)/1.22 var(--display);letter-spacing:-.055em;margin:24px 0 16px;color:#1b3524}
+.portfolio-answer-copy p{font-size:16px;line-height:1.78;color:#334e3e;margin:0 0 12px}
+.portfolio-answer-links{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px;border-top:1px solid #bad0bb;padding-top:20px}
+.portfolio-answer-links a{display:inline-flex;align-items:center;min-height:41px;border:1px solid #8baf92;background:#f9fff6;color:#254d30;padding:10px 14px;border-radius:6px;font:700 13px/1.4 var(--display)}
+.portfolio-answer-links a:hover{background:#d4ebca;border-color:#5e8e65}
+.portfolio-ask-disclosure{font-size:12px;line-height:1.65;color:#69806e;margin:16px 2px 0}
+@media(max-width:1120px){.portfolio-ask-heading{align-items:start;flex-direction:column;gap:12px}.portfolio-ask-heading p{max-width:660px}.portfolio-ask-prompts button{grid-template-columns:27px minmax(0,1fr) 17px;padding:18px 13px;gap:10px}}
+@media(max-width:650px){.portfolio-ask{margin-top:50px}.portfolio-ask-prompts{grid-template-columns:1fr;gap:10px}.portfolio-ask-prompts button{min-height:85px;grid-template-columns:35px minmax(0,1fr) 20px;padding:17px}.portfolio-ask-form{padding:22px 20px}.portfolio-ask-form textarea{font-size:19px;min-height:112px}.portfolio-ask-form-bottom{align-items:stretch;flex-direction:column}.portfolio-ask-submit{justify-content:space-between}.portfolio-ask-answer{padding:23px 19px}.portfolio-answer-copy p{font-size:16px}}
+@media print{.portfolio-ask{display:none!important}}
+@media(prefers-reduced-motion:reduce){.portfolio-ask-submit,.portfolio-ask-prompts button{transition:none}}
