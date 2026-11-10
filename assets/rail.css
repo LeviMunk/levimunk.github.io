@@ -762,3 +762,8 @@ body.rail-layout :is(.rail-case,.flagship-card,.focus-project,.focus-disclosure 
   body.rail-layout .rail-mobile-shortcuts,body.rail-layout .rail-menu-backdrop{display:none!important}
   body.rail-layout .rail-panel-section{scroll-margin-top:0}
 }
+
+/* Mobile project shortcut lands on the three flagship cards, clear of the sticky header. */
+#flagship-projects{scroll-margin-top:38px}
+@media(max-width:900px){#flagship-projects{scroll-margin-top:136px}}
+@media(max-width:680px){#flagship-projects{scroll-margin-top:120px}}
