@@ -1473,3 +1473,8 @@ body.rail-layout .about-feature-actions a{
  body.rail-layout .about-photo-strip{break-inside:avoid}
  body.rail-layout .about-photo-frame img{filter:none!important}
 }
+
+/* Six-photo homepage About gallery: three across on desktop, two on phones. */
+body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+@media(max-width:1120px){body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}}
+@media(max-width:700px){body.rail-layout .rail-about-section .about-photo-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
