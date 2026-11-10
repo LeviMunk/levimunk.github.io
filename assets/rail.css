@@ -1403,3 +1403,73 @@ body.rail-layout .project-hero .case-share{margin-top:26px}
   body.rail-layout .rail-panel-section{min-height:0}
   body.rail-layout .about-story-photo.photo-reserved{display:none!important}
 }
+
+
+
+/* Photo-forward About: one natural paragraph, genuine work/life photos, no micro captions. */
+body.rail-layout .rail-about-bio,
+body.rail-layout .about-full-bio{
+  font:400 clamp(17px,1.7vw,21px)/1.83 var(--text);
+  color:#4f6857;max-width:73ch;margin:0 0 37px;text-wrap:pretty
+}
+body.rail-layout .rail-about-bio{font-size:clamp(17px,1.55vw,20px)}
+body.rail-layout .about-photo-strip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;gap:10px;margin:0 0 34px
+}
+body.rail-layout .about-photo-frame{
+  position:relative;overflow:hidden;margin:0;aspect-ratio:1;
+  background:#dce7dd;border:1px solid #bfd0c0;
+}
+body.rail-layout .about-photo-frame img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  transition:transform .3s ease;
+}
+body.rail-layout .about-photo-frame:hover img{transform:scale(1.025)}
+body.rail-layout .about-photo-jiujitsu img{object-position:49% 52%}
+body.rail-layout .about-photo-nimbus img{object-position:47% 39%}
+body.rail-layout .about-photo-studio img{object-position:37% 48%}
+body.rail-layout .about-photo-competition img{object-position:43% 41%}
+body.rail-layout .about-photo-baking img{object-position:center 46%}
+body.rail-layout .about-photo-outdoors img{object-position:center}
+body.rail-layout .rail-about-section .rail-about-actions{margin-top:9px}
+body.rail-layout .about-feature-section{padding-top:55px;padding-bottom:86px}
+body.rail-layout .about-full-bio{
+  max-width:74ch;font-size:clamp(18px,1.8vw,22px);
+  margin:0 0 38px
+}
+body.rail-layout .about-photo-strip-full{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+body.rail-layout .about-photo-strip-full .about-photo-frame{aspect-ratio:4/3}
+body.rail-layout .about-feature-actions{
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:33px
+}
+body.rail-layout .about-feature-actions a{
+  min-height:52px;border-radius:3px;font-size:15px;
+}
+@media(max-width:1120px){
+ body.rail-layout .about-photo-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body.rail-layout .about-photo-strip-full{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ body.rail-layout .rail-about-bio,body.rail-layout .about-full-bio{
+  font-size:17px;line-height:1.75;margin-bottom:28px
+ }
+ body.rail-layout .about-photo-strip,body.rail-layout .about-photo-strip-full{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:25px
+ }
+ body.rail-layout .about-photo-strip-full .about-photo-frame{aspect-ratio:1}
+ body.rail-layout .about-feature-section{padding-top:38px;padding-bottom:60px}
+ body.rail-layout .about-feature-actions{display:grid;grid-template-columns:1fr;gap:10px}
+ body.rail-layout .about-feature-actions a{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ body.rail-layout .about-photo-frame img{transition:none!important}
+ body.rail-layout .about-photo-frame:hover img{transform:none!important}
+}
+@media(hover:none),(pointer:coarse){
+ body.rail-layout .about-photo-frame:hover img{transform:none}
+}
+@media print{
+ body.rail-layout .about-photo-strip{break-inside:avoid}
+ body.rail-layout .about-photo-frame img{filter:none!important}
+}
