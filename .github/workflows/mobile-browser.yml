@@ -1,0 +1,41 @@
+name: Mobile browser checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Start static portfolio server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4173/index.html > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/portfolio-preview.log
+          exit 1
+      - name: Check portfolio on Android Chromium and iPhone WebKit
+        run: node scripts/mobile-browser-test.mjs
+      - name: Upload screenshots and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-mobile-screenshots
+          path: mobile-test-results/
+          if-no-files-found: ignore
+          retention-days: 14
