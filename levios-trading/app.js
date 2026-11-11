@@ -268,6 +268,27 @@
     for(const row of curve){peak=Math.max(peak,row.equity);maxDD=Math.min(maxDD,(row.equity/peak-1)*100);}
     return {returnPct:(curve[curve.length-1].equity/INITIAL_CASH-1)*100,holdPct:(closes[closes.length-1]/closes[0]-1)*100,maxDD,trades,curve};
   }
+  function addDemoData() {
+    if (state.prices.DEMO && !window.confirm("Replace the current fictional DEMO price history?")) return;
+    const rows = [];
+    let price = 100, day = new Date(Date.UTC(2026,0,2));
+    while (rows.length < 180) {
+      const weekday = day.getUTCDay();
+      if (weekday !== 0 && weekday !== 6) {
+        const i = rows.length;
+        price = Math.max(10, price + 0.14 + Math.sin(i/8)*0.75 + Math.cos(i/19)*0.32);
+        rows.push({date:day.toISOString().slice(0,10),close:round(price)});
+      }
+      day.setUTCDate(day.getUTCDate()+1);
+    }
+    const candidate = {...state,prices:{...state.prices,DEMO:rows}};
+    if (!persist(candidate)) {feedback("import-feedback","Unable to store sample data in this browser.",true);return;}
+    render();
+    $("market-symbol").value="DEMO";
+    plotHistory();
+    feedback("import-feedback","Loaded 180 fictional DEMO observations. These are generated, NOT market prices.");
+    showToast("Fictional practice data loaded.");
+  }
   function exportData() {
     const payload=JSON.stringify({...state,exportedAt:new Date().toISOString(),source:"LeviOS Trading Lab browser edition"},null,2);
     const url=URL.createObjectURL(new Blob([payload],{type:"application/json"}));
@@ -280,6 +301,7 @@
   document.querySelectorAll("[data-view]").forEach(el=>el.addEventListener("click",()=>showView(el.dataset.view)));
   document.querySelectorAll("[data-go]").forEach(el=>el.addEventListener("click",()=>showView(el.dataset.go)));
   $("market-symbol").addEventListener("change",plotHistory);
+  $("btn-demo").addEventListener("click",addDemoData);
   $("import-form").addEventListener("submit",async e=>{
     e.preventDefault();
     try{
