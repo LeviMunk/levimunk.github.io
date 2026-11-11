@@ -289,6 +289,94 @@
     feedback("import-feedback","Loaded 180 fictional DEMO observations. These are generated, NOT market prices.");
     showToast("Fictional practice data loaded.");
   }
+  // Read-only Alpaca status bridge: the API keys NEVER enter this website.
+  // Only a loopback URL or a private Tailscale Serve HTTPS endpoint is allowed.
+  const BRIDGE_STORAGE_KEY = "levios-trading-bridge-url";
+  function safeBridgeUrl(input) {
+    let url;
+    try { url = new URL(String(input || "").trim()); }
+    catch { throw Error("Enter a valid private bridge address."); }
+    const local = url.protocol === "http:" &&
+      (url.hostname === "127.0.0.1" || url.hostname === "localhost") && url.port === "8767";
+    const tailnet = url.protocol === "https:" &&
+      /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\.ts\.net$/i.test(url.hostname) && url.port === "8443";
+    if ((!local && !tailnet) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
+      throw Error("Use http://127.0.0.1:8767 (on your ThinkCentre) or your private https://*.ts.net:8443 Tailscale Serve address. Never use a public URL.");
+    }
+    return url.origin;
+  }
+  function alpacaMoney(value) {
+    if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) return "—";
+    return money(Number(value));
+  }
+  function clearAlpacaStatus(message = "Not connected") {
+    $("alpaca-connection-badge").textContent = "NOT CONNECTED";
+    $("alpaca-connection-badge").classList.remove("connected");
+    for (const id of ["alpaca-equity","alpaca-cash","alpaca-buying-power","alpaca-position-count"]) $(id).textContent = "—";
+    $("alpaca-position-list").replaceChildren();
+    feedback("alpaca-feedback", message);
+  }
+  function showAlpacaSnapshot(data) {
+    if (!data || data.mode !== "paper") throw Error("The endpoint did not return an Alpaca paper account response.");
+    if (!data.connected) {
+      clearAlpacaStatus(data.message || "The private bridge is reachable, but Alpaca is not connected.");
+      return;
+    }
+    if (!data.account || !Array.isArray(data.positions)) throw Error("Incomplete account response from the private bridge.");
+    $("alpaca-connection-badge").textContent = "PAPER CONNECTED";
+    $("alpaca-connection-badge").classList.add("connected");
+    $("alpaca-equity").textContent = alpacaMoney(data.account.equity);
+    $("alpaca-cash").textContent = alpacaMoney(data.account.cash);
+    $("alpaca-buying-power").textContent = alpacaMoney(data.account.buying_power);
+    $("alpaca-position-count").textContent = String(data.positions.length);
+    const list = $("alpaca-position-list");
+    list.replaceChildren();
+    if (!data.positions.length) {
+      const p = document.createElement("p");
+      p.className = "muted footnote";
+      p.textContent = "No open positions in your Alpaca paper account.";
+      list.appendChild(p);
+    } else {
+      const title = document.createElement("p");
+      title.className = "eyebrow";
+      title.textContent = "OPEN ALPACA PAPER POSITIONS";
+      list.appendChild(title);
+      for (const position of data.positions.slice(0,30)) {
+        const row = document.createElement("div");
+        row.className = "broker-position-row";
+        const label = document.createElement("span");
+        label.textContent = String(position.symbol || "?") + " · " + String(position.qty || "0") + " shares";
+        const value = document.createElement("strong");
+        value.textContent = alpacaMoney(position.market_value);
+        row.append(label,value);
+        list.appendChild(row);
+      }
+      if (data.positions.length > 30) {
+        const p = document.createElement("p");
+        p.className = "muted footnote";
+        p.textContent = "Showing first 30 positions.";
+        list.appendChild(p);
+      }
+    }
+    feedback("alpaca-feedback", "Connected to Alpaca PAPER account through your private bridge. Read-only.");
+  }
+  async function connectAlpaca() {
+    let base;
+    try { base = safeBridgeUrl($("alpaca-endpoint").value); }
+    catch (err) { clearAlpacaStatus(err.message); return; }
+    feedback("alpaca-feedback", "Contacting your private Alpaca bridge…");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch(base + "/api/alpaca/status", {method:"GET",cache:"no-store",signal:controller.signal,credentials:"omit",redirect:"error"});
+      if (!response.ok) throw Error("Private bridge returned HTTP " + response.status + ".");
+      const data = await response.json();
+      showAlpacaSnapshot(data);
+      localStorage.setItem(BRIDGE_STORAGE_KEY, base);
+    } catch (err) {
+      clearAlpacaStatus("Could not reach the private bridge. Check Docker, Tailscale access and browser local-network permission. " + (err.name === "AbortError" ? "(Connection timed out.)" : ""));
+    } finally { clearTimeout(timer); }
+  }
   function exportData() {
     const payload=JSON.stringify({...state,exportedAt:new Date().toISOString(),source:"LeviOS Trading Lab browser edition"},null,2);
     const url=URL.createObjectURL(new Blob([payload],{type:"application/json"}));
@@ -335,6 +423,12 @@
       feedback("backtest-feedback","Backtest complete on "+r.curve.length+" observations.");
     }catch(err){feedback("backtest-feedback",err.message,true);}
   });
+  $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
+  $("alpaca-disconnect").addEventListener("click", () => {
+    try {localStorage.removeItem(BRIDGE_STORAGE_KEY);} catch {}
+    clearAlpacaStatus("Private Alpaca bridge disconnected in this browser.");
+    $("alpaca-endpoint").value = "http://127.0.0.1:8767";
+  });
   for(const id of ["btn-export","btn-export-top"]) $(id).addEventListener("click",exportData);
   $("backup-file").addEventListener("change",async e=>{
     try{
@@ -354,4 +448,13 @@
     render();showToast("Practice portfolio reset.");
   });
   load();render();showView("overview");
+  try {
+    const savedBridgeUrl = localStorage.getItem(BRIDGE_STORAGE_KEY);
+    if (savedBridgeUrl) {
+      $("alpaca-endpoint").value = safeBridgeUrl(savedBridgeUrl);
+      connectAlpaca();
+    }
+  } catch {
+    // If storage is blocked, manual Connect still works.
+  }
 })();
