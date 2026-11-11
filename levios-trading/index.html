@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1319">
+  <meta name="description" content="LeviOS Trading Lab: browser-based paper trading, historical CSV prices and strategy research. No real trading.">
+  <meta name="robots" content="noindex,nofollow">
+  <title>LeviOS Trading Lab | Levi Munk</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Trading lab navigation">
+      <a class="brand" href="../"><span class="brand-mark">LM</span><span><strong>LEVI<span class="brand-accent">OS</span></strong><small>TRADING LAB</small></span></a>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav id="nav" class="nav">
+        <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Overview</button>
+        <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
+        <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
+        <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Paper Trades</button>
+        <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Data & Settings</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="mode-pill"><span class="live-dot"></span> BROWSER-ONLY DEMO</div>
+        <p>Paper simulations only. No live quotes, brokerage orders, or real-money trading.</p>
+        <a class="back-link" href="../">← Back to LeviMunk.com</a>
+      </div>
+    </aside>
+    <main id="main-content" class="main">
+      <header class="topbar">
+        <div class="topline"><span class="eyebrow">LEVIOS / RESEARCH WORKSPACE</span><span id="save-state" class="saved-state" aria-live="polite">Saved in this browser</span></div>
+        <div class="hero-row">
+          <div><h1 id="view-heading">Trading overview</h1><p id="view-description" class="lede">Explore a simulated portfolio and test ideas against your own historical data.</p></div>
+          <div class="hero-actions"><button id="btn-export-top" class="button secondary" type="button">Export data ↗</button></div>
+        </div>
+      </header>
+      <div class="notice" role="note"><strong>Research mode:</strong> This GitHub Pages version runs entirely in your browser. Orders are simulated at the last imported historical close, not today's market price. <span>No Alpaca keys or real trades are used.</span></div>
+      <section id="view-overview" class="view active" aria-label="Trading overview">
+        <div class="stat-grid">
+          <article class="stat"><span>SIMULATED EQUITY</span><strong id="metric-equity">$10,000.00</strong><small id="metric-pl">+$0.00 total P/L</small></article>
+          <article class="stat"><span>AVAILABLE PAPER CASH</span><strong id="metric-cash">$10,000.00</strong><small>Initial balance: $10,000</small></article>
+          <article class="stat"><span>OPEN POSITIONS</span><strong id="metric-positions">0</strong><small id="metric-symbols">0 symbols imported</small></article>
+          <article class="stat"><span>PAPER TRADES</span><strong id="metric-trades">0</strong><small>Recorded in this browser</small></article>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">PORTFOLIO</p><h2>Current holdings</h2></div><button type="button" class="text-button" data-go="trades">Open journal →</button></div>
+            <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th>Last CSV close</th><th>Market value*</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr></tbody></table></div>
+            <p class="muted footnote">*Valued using the latest price you imported, which may be old.</p>
+          </article>
+          <article class="panel connection-card"><div class="panel-head"><div><p class="eyebrow">BROKER CONNECTION</p><h2>Alpaca paper account</h2></div><span class="connection-status">NOT CONNECTED</span></div>
+            <p>This public dashboard deliberately does not ask for or store API credentials. Your existing private Python app has read-only Alpaca integration, but we haven't deployed its secure connection.</p>
+            <div class="connection-detail"><span class="muted">Account balances & positions</span><strong>Unavailable here</strong></div>
+            <div class="connection-detail"><span class="muted">Paper brokerage orders</span><strong>Not enabled</strong></div>
+            <a class="text-link" href="https://github.com/LeviMunk/levios-trading" target="_blank" rel="noopener noreferrer">View private trading project ↗</a>
+          </article>
+        </div>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORICAL DATA</p><h2>Imported market snapshots</h2></div><button type="button" class="text-button" data-go="market">Import data →</button></div><div id="overview-symbols" class="symbol-cards"><p class="empty">No prices imported. Add a CSV under Market Data to get started.</p></div></article>
+      </section>
+      <section id="view-market" class="view" aria-label="Market data" hidden>
+        <div class="grid-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">DATA IMPORT</p><h2>Import daily price history</h2></div></div>
+            <p class="muted">Upload a CSV with <code>date,close</code> headers. Example rows: <code>2026-10-01,100.25</code>. Data stays in this browser.</p>
+            <form id="import-form" class="form-stack"><label for="csv-symbol">Ticker symbol</label><input id="csv-symbol" maxlength="12" placeholder="SPY" value="SPY" required>
+              <label for="csv-file">CSV price file</label><input id="csv-file" type="file" accept=".csv,text/csv" required>
+              <button class="button primary" type="submit">Import historical prices</button>
+              <p id="import-feedback" class="form-feedback" role="status"></p>
+            </form>
+          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">PRICE SERIES</p><h2>Historical close chart</h2></div></div>
+            <label for="market-symbol">Imported symbol</label><select id="market-symbol" class="select"></select>
+            <div id="market-summary" class="chart-summary">Select an imported symbol.</div>
+            <svg id="market-chart" class="chart" role="img" aria-label="Historical closing price chart" viewBox="0 0 800 230" preserveAspectRatio="none"></svg>
+            <p class="muted footnote">For research only. Prices are uploaded manually and are not adjusted for corporate actions.</p>
+          </article>
+        </div>
+      </section>
+      <section id="view-strategy" class="view" aria-label="Strategy lab" hidden>
+        <div class="grid-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">EXPERIMENTS</p><h2>Moving-average strategy</h2></div></div>
+            <p class="muted">A simple long-only moving-average crossover test. Signals form at close; hypothetical execution uses the next closing price with a 0.1% fee per trade.</p>
+            <form id="backtest-form" class="form-stack">
+              <label for="strategy-symbol">Ticker</label><select id="strategy-symbol"></select>
+              <div class="form-columns"><div><label for="fast">Fast days</label><input id="fast" type="number" min="2" max="249" step="1" value="20" required></div><div><label for="slow">Slow days</label><input id="slow" type="number" min="3" max="250" step="1" value="50" required></div></div>
+              <button class="button primary" type="submit">Run historical backtest</button>
+              <p id="backtest-feedback" class="form-feedback" role="status"></p>
+            </form>
+          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TEST RESULTS</p><h2>Hypothetical performance</h2></div></div>
+            <div class="result-grid"><div><span>STRATEGY RETURN</span><strong id="result-return">—</strong></div><div><span>BUY & HOLD</span><strong id="result-hold">—</strong></div><div><span>MAX DRAWDOWN</span><strong id="result-dd">—</strong></div><div><span>EXECUTIONS</span><strong id="result-trades">—</strong></div></div>
+            <svg id="equity-chart" class="chart" role="img" aria-label="Hypothetical strategy equity chart" viewBox="0 0 800 230" preserveAspectRatio="none"></svg>
+            <p class="muted footnote">Simplified test: no bid/ask spread, slippage, taxes, dividends or survivorship-bias controls. Past performance does not predict results.</p>
+          </article>
+        </div>
+      </section>
+      <section id="view-trades" class="view" aria-label="Paper trade journal" hidden>
+        <div class="grid-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">PAPER SIMULATION</p><h2>Enter hypothetical trade</h2></div><span class="connection-status">NO BROKER ORDER</span></div>
+            <p class="muted">Simulated fills use the last imported CSV price. No order is sent to Alpaca or a stock exchange.</p>
+            <form id="trade-form" class="form-stack"><label for="trade-symbol">Ticker</label><select id="trade-symbol"></select>
+              <label for="trade-side">Action</label><select id="trade-side"><option value="BUY">Buy</option><option value="SELL">Sell</option></select>
+              <label for="trade-qty">Number of shares</label><input id="trade-qty" type="number" min="0.000001" step="any" value="1" required>
+              <button class="button primary" type="submit">Record simulated trade</button><p id="trade-feedback" class="form-feedback" role="status"></p>
+            </form>
+          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORY</p><h2>Trade journal</h2></div></div>
+            <div class="scroll-table"><table><thead><tr><th>Recorded</th><th>Symbol</th><th>Side</th><th>Shares</th><th>Price</th></tr></thead><tbody id="trade-rows"><tr><td class="empty" colspan="5">No simulated orders yet.</td></tr></tbody></table></div>
+          </article>
+        </div>
+      </section>
+      <section id="view-settings" class="view" aria-label="Data and settings" hidden>
+        <div class="grid-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">DATA CONTROL</p><h2>Browser-only storage</h2></div></div>
+            <p>Everything in this version is stored in this browser's local storage. It will not automatically sync to another computer, phone, your GitHub account, or the ThinkCentre backend.</p>
+            <div class="button-row"><button class="button primary" id="btn-export" type="button">Export JSON backup</button><label class="button secondary import-backup" for="backup-file">Restore backup</label><input id="backup-file" class="visually-hidden" type="file" accept=".json,application/json"></div>
+            <p id="backup-feedback" class="form-feedback" role="status"></p>
+          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">SAFETY</p><h2>Reset practice data</h2></div></div>
+            <p class="muted">Clears imported price histories and simulated trades on this browser only. This cannot affect Alpaca or real-world holdings.</p>
+            <button class="button danger" id="btn-reset" type="button">Reset local practice portfolio</button>
+          </article>
+        </div>
+      </section>
+      <footer class="footer"><span>LEVIOS TRADING LAB / v0.2 · GITHUB PAGES</span><span>Research & education only. Not financial advice.</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
