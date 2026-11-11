@@ -18,3 +18,15 @@
 @media(max-width:1150px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:1fr}.main{padding:34px 30px 20px}}
 @media(max-width:720px){.app-shell{display:block}.sidebar{height:auto;position:relative;min-height:0;padding:13px 16px 8px;border-right:0;border-bottom:1px solid #29424b}.brand{margin:0 0 12px}.brand-mark{width:35px;height:35px}.brand strong{font-size:16px}.sidebar-label,.sidebar-bottom{display:none}.nav{flex-direction:row;overflow:auto;gap:5px;padding-bottom:4px}.nav-item{min-width:max-content;padding:10px;font-size:11px}.nav-symbol{font-size:15px;width:15px}.main{padding:25px 15px 20px}.topline{margin-bottom:15px}.hero-row{align-items:start}.hero-actions{display:none}.notice{padding:13px 15px;font-size:12px}.stat-grid{gap:10px}.stat{min-height:126px;padding:15px}.stat strong{font-size:22px}.panel{padding:19px 16px}.footer{flex-direction:column;align-items:start;gap:6px}.panel-head{align-items:start}.panel h2{font-size:17px}}
 @media(max-width:390px){.stat-grid{grid-template-columns:1fr 1fr}.stat strong{font-size:19px}.result-grid strong{font-size:19px}.stat span{font-size:9px}}
+
+/* Private Alpaca paper status */
+.connection-status.connected{border-color:#397b64;background:#173a2e;color:#a8f8d7}
+.connection-card strong{font-weight:700}
+.connection-card .button-row{margin:0;gap:8px}
+.connection-card .button-row .button{flex:1;min-width:130px}
+.connection-card .form-stack{margin-bottom:20px}
+.connection-card #alpaca-endpoint{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
+.broker-positions{margin-top:20px}
+.broker-position-row{display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid #263942;padding:11px 0;font-size:12px}
+.broker-position-row span{color:#b7d5cc}
+.broker-position-row strong{font-variant-numeric:tabular-nums}
