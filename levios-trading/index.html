@@ -64,7 +64,7 @@
               <label for="alpaca-endpoint">Your private Cloudflare Worker address</label>
               <input id="alpaca-endpoint" type="url" value="" placeholder="https://levios-alpaca.your-subdomain.workers.dev" spellcheck="false" autocomplete="off" required>
               <a class="button secondary" id="alpaca-auth" href="#" target="_blank" rel="noopener noreferrer" hidden>Open secure Alpaca dashboard ↗</a>
-              <div class="button-row"><button class="button primary" type="submit">Connect / Refresh</button><button id="alpaca-disconnect" class="button secondary" type="button">Disconnect</button></div>
+              <div class="button-row"><button id="alpaca-connect" class="button primary" type="submit">Connect / Refresh</button><button id="alpaca-disconnect" class="button secondary" type="button">Disconnect</button></div>
               <p id="alpaca-feedback" class="form-feedback" role="status">Cloudflare Worker setup is required first. Open the secure dashboard and sign in there.</p>
             </form>
             <div class="connection-detail"><span class="muted">Paper equity</span><strong id="alpaca-equity">—</strong></div>
