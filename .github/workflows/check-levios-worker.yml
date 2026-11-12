@@ -1,0 +1,30 @@
+name: Validate LeviOS authenticated Worker
+on:
+  push:
+    paths:
+      - 'levios-trading/**'
+      - '.github/workflows/check-levios-worker.yml'
+  pull_request:
+    paths:
+      - 'levios-trading/**'
+      - '.github/workflows/check-levios-worker.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate UI from GitHub Pages assets
+        working-directory: levios-trading/worker
+        run: node build.mjs
+      - name: Check public frontend JavaScript
+        run: node --check levios-trading/app.js
+      - name: Check Worker JavaScript
+        run: node --check levios-trading/worker/src/index.mjs
+      - name: Test authentication and read-only APIs
+        working-directory: levios-trading/worker
+        run: node --test test/safety.test.mjs
