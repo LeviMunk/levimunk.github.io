@@ -39,16 +39,23 @@
       </header>
       <div class="notice" role="note"><strong>Research mode:</strong> Browser simulations remain separate from your Alpaca paper account. Simulated orders use imported historical closes, not current prices. <span>Alpaca balances appear only through your private bridge; never enter API keys here.</span></div>
       <section id="view-overview" class="view active" aria-label="Trading overview">
+        <div class="account-view-toolbar" role="group" aria-label="Choose portfolio to display">
+          <div class="account-view-label"><span class="eyebrow">ACCOUNT VIEW</span><small id="account-view-note">Showing browser-only practice funds until Alpaca connects.</small></div>
+          <div class="account-view-buttons">
+            <button id="mode-alpaca" class="mode-choice" type="button" aria-pressed="false" disabled>Alpaca Paper</button>
+            <button id="mode-simulator" class="mode-choice active" type="button" aria-pressed="true">Browser Simulator</button>
+          </div>
+        </div>
         <div class="stat-grid">
-          <article class="stat"><span>SIMULATED EQUITY</span><strong id="metric-equity">$10,000.00</strong><small id="metric-pl">+$0.00 total P/L</small></article>
-          <article class="stat"><span>AVAILABLE PAPER CASH</span><strong id="metric-cash">$10,000.00</strong><small>Initial balance: $10,000</small></article>
-          <article class="stat"><span>OPEN POSITIONS</span><strong id="metric-positions">0</strong><small id="metric-symbols">0 symbols imported</small></article>
-          <article class="stat"><span>PAPER TRADES</span><strong id="metric-trades">0</strong><small>Recorded in this browser</small></article>
+          <article class="stat"><span id="metric-equity-label">SIMULATED EQUITY</span><strong id="metric-equity">$10,000.00</strong><small id="metric-pl">+$0.00 total P/L</small></article>
+          <article class="stat"><span id="metric-cash-label">SIMULATED CASH</span><strong id="metric-cash">$10,000.00</strong><small id="metric-cash-note">Initial balance: $10,000</small></article>
+          <article class="stat"><span id="metric-positions-label">SIMULATED POSITIONS</span><strong id="metric-positions">0</strong><small id="metric-symbols">0 symbols imported</small></article>
+          <article class="stat"><span id="metric-trades-label">SIMULATED TRADES</span><strong id="metric-trades">0</strong><small id="metric-trades-note">Recorded in this browser</small></article>
         </div>
         <div class="grid-2">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">PORTFOLIO</p><h2>Current holdings</h2></div><button type="button" class="text-button" data-go="trades">Open journal →</button></div>
-            <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th>Last CSV close</th><th>Market value*</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr></tbody></table></div>
-            <p class="muted footnote">*Valued using the latest price you imported, which may be old.</p>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">BROWSER SIMULATION</p><h2 id="holdings-heading">Current holdings</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades">Open journal →</button></div>
+            <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Last CSV close</th><th id="holdings-fourth-heading">Market value*</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr></tbody></table></div>
+            <p id="holdings-note" class="muted footnote">*Valued using the latest price you imported, which may be old.</p>
           </article>
           <article class="panel connection-card">
             <div class="panel-head"><div><p class="eyebrow">PRIVATE BROKER CONNECTION</p><h2>Alpaca paper account</h2></div><span id="alpaca-connection-badge" class="connection-status">NOT CONNECTED</span></div>
@@ -64,7 +71,7 @@
             <div class="connection-detail"><span class="muted">Buying power</span><strong id="alpaca-buying-power">—</strong></div>
             <div class="connection-detail"><span class="muted">Paper positions</span><strong id="alpaca-position-count">—</strong></div>
             <div id="alpaca-position-list" class="broker-positions"></div>
-            <p class="muted footnote">This data is read from Alpaca through your private ThinkCentre. The $10,000 browser simulation above is separate. No real or broker paper orders can be placed here.</p>
+            <p class="muted footnote">The main dashboard switches to Alpaca paper values when connected. You can return to the separate $10,000 browser simulation using the Account View switch. No brokerage orders can be placed here.</p>
             <a class="text-link" href="https://github.com/LeviMunk/levios-trading/blob/main/deploy/alpaca-bridge.md" target="_blank" rel="noopener noreferrer">Private connection setup instructions ↗</a>
           </article>
         </div>
