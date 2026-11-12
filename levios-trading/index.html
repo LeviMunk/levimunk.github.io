@@ -40,31 +40,32 @@
       <div class="notice" role="note"><strong>Research mode:</strong> Browser simulations remain separate from your Alpaca paper account. Simulated orders use imported historical closes, not current prices. <span>Alpaca balances appear only through your private bridge; never enter API keys here.</span></div>
       <section id="view-overview" class="view active" aria-label="Trading overview">
         <div class="account-view-toolbar" role="group" aria-label="Choose portfolio to display">
-          <div class="account-view-label"><span class="eyebrow">ACCOUNT VIEW</span><small id="account-view-note">Showing browser-only practice funds until Alpaca connects.</small></div>
+          <div class="account-view-label"><span class="eyebrow">ACCOUNT VIEW</span><small id="account-view-note">Alpaca paper account disconnected · sign in to view balances</small></div>
           <div class="account-view-buttons">
-            <button id="mode-alpaca" class="mode-choice" type="button" aria-pressed="false" disabled>Alpaca Paper</button>
-            <button id="mode-simulator" class="mode-choice active" type="button" aria-pressed="true">Browser Simulator</button>
+            <button id="mode-alpaca" class="mode-choice active" type="button" aria-pressed="true">Alpaca Paper</button>
+            <button id="mode-simulator" class="mode-choice" type="button" aria-pressed="false">Browser Simulator</button>
           </div>
         </div>
         <div class="stat-grid">
-          <article class="stat"><span id="metric-equity-label">SIMULATED EQUITY</span><strong id="metric-equity">$10,000.00</strong><small id="metric-pl">+$0.00 total P/L</small></article>
-          <article class="stat"><span id="metric-cash-label">SIMULATED CASH</span><strong id="metric-cash">$10,000.00</strong><small id="metric-cash-note">Initial balance: $10,000</small></article>
-          <article class="stat"><span id="metric-positions-label">SIMULATED POSITIONS</span><strong id="metric-positions">0</strong><small id="metric-symbols">0 symbols imported</small></article>
-          <article class="stat"><span id="metric-trades-label">SIMULATED TRADES</span><strong id="metric-trades">0</strong><small id="metric-trades-note">Recorded in this browser</small></article>
+          <article class="stat"><span id="metric-equity-label">ALPACA PAPER EQUITY</span><strong id="metric-equity">—</strong><small id="metric-pl">Not connected — no live account data</small></article>
+          <article class="stat"><span id="metric-cash-label">ALPACA PAPER CASH</span><strong id="metric-cash">—</strong><small id="metric-cash-note">Connect to your private Alpaca bridge</small></article>
+          <article class="stat"><span id="metric-positions-label">ALPACA POSITIONS</span><strong id="metric-positions">—</strong><small id="metric-symbols">Unavailable until authenticated</small></article>
+          <article class="stat"><span id="metric-trades-label">ALPACA BUYING POWER</span><strong id="metric-trades">—</strong><small id="metric-trades-note">Broker orders unavailable here</small></article>
         </div>
         <div class="grid-2">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">BROWSER SIMULATION</p><h2 id="holdings-heading">Current holdings</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades">Open journal →</button></div>
-            <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Last CSV close</th><th id="holdings-fourth-heading">Market value*</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr></tbody></table></div>
-            <p id="holdings-note" class="muted footnote">*Valued using the latest price you imported, which may be old.</p>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">ALPACA PAPER ACCOUNT</p><h2 id="holdings-heading">Brokerage paper positions</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades" hidden>Open journal →</button></div>
+            <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Unrealized P/L</th><th id="holdings-fourth-heading">Market value</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">Alpaca disconnected. Sign in to the private bridge and refresh.</td></tr></tbody></table></div>
+            <p id="holdings-note" class="muted footnote">No Alpaca account data is available until the private connection is authenticated.</p>
           </article>
           <article class="panel connection-card">
             <div class="panel-head"><div><p class="eyebrow">PRIVATE BROKER CONNECTION</p><h2>Alpaca paper account</h2></div><span id="alpaca-connection-badge" class="connection-status">NOT CONNECTED</span></div>
             <p>Connect to the read-only Alpaca bridge on your ThinkCentre. <strong>Never enter Alpaca API keys here.</strong> This website stores only the bridge address in your browser.</p>
             <form id="alpaca-connect-form" class="form-stack">
               <label for="alpaca-endpoint">Private bridge address</label>
-              <input id="alpaca-endpoint" type="url" value="http://127.0.0.1:8767" placeholder="https://your-computer.your-tailnet.ts.net:8443" spellcheck="false" autocomplete="off" required>
+              <input id="alpaca-endpoint" type="url" value="https://trading-api.levimunk.com" placeholder="https://trading-api.levimunk.com" spellcheck="false" autocomplete="off" required>
+              <a class="button secondary" id="alpaca-auth" href="https://trading-api.levimunk.com/api/health" target="_blank" rel="noopener noreferrer">Sign in to Cloudflare Access ↗</a>
               <div class="button-row"><button class="button primary" type="submit">Connect / Refresh</button><button id="alpaca-disconnect" class="button secondary" type="button">Disconnect</button></div>
-              <p id="alpaca-feedback" class="form-feedback" role="status">Local access works only on the ThinkCentre. For other devices, use a private Tailscale Serve URL.</p>
+              <p id="alpaca-feedback" class="form-feedback" role="status">Protected Cloudflare Access login must be configured first. Sign in once, then connect.</p>
             </form>
             <div class="connection-detail"><span class="muted">Paper equity</span><strong id="alpaca-equity">—</strong></div>
             <div class="connection-detail"><span class="muted">Paper cash</span><strong id="alpaca-cash">—</strong></div>
