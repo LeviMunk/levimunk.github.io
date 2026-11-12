@@ -1,0 +1,5 @@
+generated-assets.mjs
+.dev.vars
+.dev.vars.*
+node_modules/
+.wrangler/
