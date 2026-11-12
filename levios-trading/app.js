@@ -14,6 +14,8 @@
   const emptyState = () => ({version:1, prices:{}, trades:[]});
   let state = emptyState();
   let toastTimer;
+  let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
+  let accountView = "sim";
 
   function validSymbol(value) {
     const valueText = String(value || "").trim().toUpperCase();
@@ -123,17 +125,76 @@
     for (const symbol of symbols) select.add(new Option(symbol,symbol));
     if (symbols.includes(prev)) select.value = prev;
   }
+  function renderAccountSummary() {
+    const sim = portfolio();
+    const symbols = Object.keys(state.prices);
+    const connected = Boolean(alpacaSnapshot && alpacaSnapshot.connected && alpacaSnapshot.account && Array.isArray(alpacaSnapshot.positions));
+    if (!connected && accountView === "alpaca") accountView = "sim";
+    const paper = connected && accountView === "alpaca";
+    $("mode-alpaca").disabled = !connected;
+    for (const [id,active] of [["mode-alpaca",paper],["mode-simulator",!paper]]) {
+      const button = $(id);
+      button.classList.toggle("active",active);
+      button.setAttribute("aria-pressed", String(active));
+    }
+    if (paper) {
+      const data = alpacaSnapshot;
+      $("account-view-note").textContent = "Connected Alpaca PAPER account · read-only";
+      $("metric-equity-label").textContent = "ALPACA PAPER EQUITY";
+      $("metric-cash-label").textContent = "ALPACA PAPER CASH";
+      $("metric-positions-label").textContent = "ALPACA POSITIONS";
+      $("metric-trades-label").textContent = "ALPACA BUYING POWER";
+      $("metric-equity").textContent = alpacaMoney(data.account.equity);
+      $("metric-cash").textContent = alpacaMoney(data.account.cash);
+      $("metric-positions").textContent = String(data.positions.length);
+      $("metric-trades").textContent = alpacaMoney(data.account.buying_power);
+      $("metric-pl").textContent = "Paper brokerage account · not live money";
+      $("metric-pl").className = "";
+      $("metric-cash-note").textContent = "Reported by Alpaca";
+      $("metric-symbols").textContent = "From your Alpaca paper account";
+      $("metric-trades-note").textContent = "Broker orders unavailable here";
+      $("holdings-source").textContent = "ALPACA PAPER ACCOUNT";
+      $("holdings-heading").textContent = "Brokerage paper positions";
+      $("holdings-third-heading").textContent = "Unrealized P/L";
+      $("holdings-fourth-heading").textContent = "Market value";
+      $("portfolio-action").hidden = true;
+      $("holdings-note").textContent = "Alpaca paper positions, not browser-simulated holdings. Quotes and values are provided by Alpaca.";
+      $("holdings-rows").innerHTML = data.positions.length
+        ? data.positions.map(h => `<tr><td><strong>${escapeHTML(h.symbol ?? "?")}</strong></td><td>${escapeHTML(h.qty ?? "—")}</td><td>${alpacaMoney(h.unrealized_pl)}</td><td>${alpacaMoney(h.market_value)}</td></tr>`).join("")
+        : '<tr><td colspan="4" class="empty">No open positions in this Alpaca paper account.</td></tr>';
+      $("view-description").textContent = "Your Alpaca paper-account balance and positions. Browser simulations are tracked separately.";
+    } else {
+      $("account-view-note").textContent = connected
+        ? "Browser-only $10,000 practice portfolio · Alpaca account also connected"
+        : "Showing browser-only practice funds until Alpaca connects.";
+      $("metric-equity-label").textContent = "SIMULATED EQUITY";
+      $("metric-cash-label").textContent = "SIMULATED CASH";
+      $("metric-positions-label").textContent = "SIMULATED POSITIONS";
+      $("metric-trades-label").textContent = "SIMULATED TRADES";
+      $("metric-equity").textContent = money(sim.equity);
+      $("metric-cash").textContent = money(sim.cash);
+      $("metric-positions").textContent = String(sim.holdings.length);
+      $("metric-trades").textContent = String(state.trades.length);
+      $("metric-pl").textContent = (sim.pnl>=0?"+":"") + money(sim.pnl) + " total P/L";
+      $("metric-pl").className = sim.pnl>=0 ? "gain" : "loss";
+      $("metric-cash-note").textContent = "Initial balance: $10,000";
+      $("metric-symbols").textContent = symbols.length + " symbols imported";
+      $("metric-trades-note").textContent = "Recorded in this browser";
+      $("holdings-source").textContent = "BROWSER SIMULATION";
+      $("holdings-heading").textContent = "Current holdings";
+      $("holdings-third-heading").textContent = "Last CSV close";
+      $("holdings-fourth-heading").textContent = "Market value*";
+      $("portfolio-action").hidden = false;
+      $("holdings-note").textContent = "*Valued using the latest price you imported, which may be old.";
+      $("holdings-rows").innerHTML = sim.holdings.length
+        ? sim.holdings.map(h => `<tr><td><strong>${escapeHTML(h.symbol)}</strong></td><td>${h.qty.toFixed(6).replace(/0+$/,"").replace(/\\.$/,"")}</td><td>${h.close===null?"—":money(h.close)}</td><td>${h.value===null?"Unpriced":money(h.value)}</td></tr>`).join("")
+        : '<tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr>';
+      $("view-description").textContent = "Explore your separate browser-simulated $10,000 portfolio with historical prices.";
+    }
+  }
   function render() {
-    const p = portfolio();
     const symbols = Object.keys(state.prices).sort();
-    $("metric-equity").textContent = money(p.equity);
-    $("metric-cash").textContent = money(p.cash);
-    $("metric-positions").textContent = String(p.holdings.length);
-    $("metric-symbols").textContent = symbols.length + " symbols imported";
-    $("metric-trades").textContent = String(state.trades.length);
-    $("metric-pl").textContent = (p.pnl>=0?"+":"") + money(p.pnl) + " total P/L";
-    $("metric-pl").className = p.pnl>=0 ? "gain" : "loss";
-    $("holdings-rows").innerHTML = p.holdings.length ? p.holdings.map(h => `<tr><td><strong>${escapeHTML(h.symbol)}</strong></td><td>${h.qty.toFixed(6).replace(/0+$/,"").replace(/\.$/,"")}</td><td>${h.close===null?"—":money(h.close)}</td><td>${h.value===null?"Unpriced":money(h.value)}</td></tr>`).join("") : '<tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr>';
+    renderAccountSummary();
     $("overview-symbols").innerHTML = symbols.length ? symbols.map(symbol => {
       const l = latest(symbol);
       return `<div class="symbol-card"><strong>${escapeHTML(symbol)}</strong><span>${money(l.close)}</span><small>CSV as of ${escapeHTML(l.date)}</small></div>`;
@@ -159,6 +220,7 @@
     $("view-heading").textContent = headings[name][0];
     $("view-description").textContent = headings[name][1];
     document.title = headings[name][0] + " | LeviOS Trading";
+    if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
     window.scrollTo({top:0,behavior:"smooth"});
   }
@@ -314,6 +376,9 @@
     $("alpaca-connection-badge").classList.remove("connected");
     for (const id of ["alpaca-equity","alpaca-cash","alpaca-buying-power","alpaca-position-count"]) $(id).textContent = "—";
     $("alpaca-position-list").replaceChildren();
+    alpacaSnapshot = null;
+    accountView = "sim";
+    renderAccountSummary();
     feedback("alpaca-feedback", message);
   }
   function showAlpacaSnapshot(data) {
@@ -323,6 +388,9 @@
       return;
     }
     if (!data.account || !Array.isArray(data.positions)) throw Error("Incomplete account response from the private bridge.");
+    if (!alpacaSnapshot) accountView = "alpaca";
+    alpacaSnapshot = data;
+    renderAccountSummary();
     $("alpaca-connection-badge").textContent = "PAPER CONNECTED";
     $("alpaca-connection-badge").classList.add("connected");
     $("alpaca-equity").textContent = alpacaMoney(data.account.equity);
@@ -422,6 +490,15 @@
       chart("equity-chart",r.curve,"equity");
       feedback("backtest-feedback","Backtest complete on "+r.curve.length+" observations.");
     }catch(err){feedback("backtest-feedback",err.message,true);}
+  });
+  $("mode-alpaca").addEventListener("click", () => {
+    if (!alpacaSnapshot || !alpacaSnapshot.connected) return;
+    accountView = "alpaca";
+    renderAccountSummary();
+  });
+  $("mode-simulator").addEventListener("click", () => {
+    accountView = "sim";
+    renderAccountSummary();
   });
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
   $("alpaca-disconnect").addEventListener("click", () => {
