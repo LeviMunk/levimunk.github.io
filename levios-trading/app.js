@@ -452,6 +452,14 @@
     let base;
     try { base = safeBridgeUrl($("alpaca-endpoint").value); }
     catch (err) { clearAlpacaStatus(err.message); return; }
+    if (base.endsWith(".workers.dev") && base !== window.location.origin) {
+      try {localStorage.setItem(BRIDGE_STORAGE_KEY, base);} catch {}
+      // A protected Worker hosts its own same-origin dashboard. The public
+      // GitHub Pages site should NOT fetch it using third-party cookies.
+      window.open(base + "/", "_blank", "noopener,noreferrer");
+      feedback("alpaca-feedback", "Open the protected dashboard tab and sign in. The public page does not load private account data.");
+      return;
+    }
     feedback("alpaca-feedback", "Checking your private Alpaca paper account…");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 11000);
@@ -534,6 +542,9 @@
     const isPrivateWorker = window.location.hostname.endsWith(".workers.dev");
     button.hidden = !base || (base === window.location.origin && isPrivateWorker);
     if (!button.hidden) button.href = base + "/";
+    const connectButton = $("alpaca-connect");
+    connectButton.textContent = (base.endsWith(".workers.dev") && base !== window.location.origin)
+      ? "Open secure dashboard" : "Connect / Refresh";
   }
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
@@ -562,23 +573,21 @@
     render();showToast("Practice portfolio reset.");
   });
   load();render();showView("overview");
-  if (window.location.hostname.endsWith(".workers.dev")) {
+  const privateWorker = window.location.hostname.endsWith(".workers.dev");
+  if (privateWorker) {
     $("alpaca-endpoint").value = window.location.origin;
+  } else {
+    try {
+      const savedBridgeUrl = localStorage.getItem(BRIDGE_STORAGE_KEY);
+      if (savedBridgeUrl) $("alpaca-endpoint").value = safeBridgeUrl(savedBridgeUrl);
+    } catch {
+      // The public page does not need localStorage to function.
+    }
   }
   updateCloudflareLogin();
-  try {
-    const savedBridgeUrl = localStorage.getItem(BRIDGE_STORAGE_KEY);
-    if (savedBridgeUrl) {
-      $("alpaca-endpoint").value = window.location.hostname.endsWith(".workers.dev") ? window.location.origin : safeBridgeUrl(savedBridgeUrl);
-      updateCloudflareLogin();
-      connectAlpaca();
-    }
-  } catch {
-    // If storage is blocked, manual Connect still works.
-  }
-  if (window.location.hostname.endsWith(".workers.dev") && !$("alpaca-connection-badge").classList.contains("connected")) {
-    $("alpaca-endpoint").value = window.location.origin;
-    updateCloudflareLogin();
+  if (privateWorker) {
     connectAlpaca();
+  } else if ($("alpaca-endpoint").value && !$("alpaca-endpoint").value.endsWith(".workers.dev")) {
+    connectAlpaca(); // Optional legacy localhost or Tailscale bridge only.
   }
 })();
