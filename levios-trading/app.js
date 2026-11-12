@@ -379,11 +379,12 @@
     catch { throw Error("Enter a valid private bridge address."); }
     const local = url.protocol === "http:" &&
       (url.hostname === "127.0.0.1" || url.hostname === "localhost") && url.port === "8767";
+    const worker = url.protocol === "https:" && /^levios-alpaca\\.[a-z0-9-]+\\.workers\\.dev$/i.test(url.hostname) && !url.port;
     const cloudflare = url.protocol === "https:" && url.hostname === "trading-api.levimunk.com" && !url.port;
     const tailnet = url.protocol === "https:" &&
       /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\.ts\.net$/i.test(url.hostname) && url.port === "8443";
-    if ((!local && !tailnet && !cloudflare) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
-      throw Error("Use the protected https://trading-api.levimunk.com address, local ThinkCentre loopback, or private Tailscale Serve URL.");
+    if ((!local && !tailnet && !cloudflare && !worker) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
+      throw Error("Enter your protected levios-alpaca.<account>.workers.dev address (or a previously configured private bridge).");
     }
     return url.origin;
   }
@@ -451,20 +452,21 @@
     let base;
     try { base = safeBridgeUrl($("alpaca-endpoint").value); }
     catch (err) { clearAlpacaStatus(err.message); return; }
-    feedback("alpaca-feedback", "Contacting your private Alpaca bridge…");
+    feedback("alpaca-feedback", "Checking your private Alpaca paper account…");
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 11000);
     try {
-      const useCloudflareAccess = base === "https://trading-api.levimunk.com";
-      const response = await fetch(base + "/api/alpaca/status", {method:"GET",cache:"no-store",signal:controller.signal,credentials:useCloudflareAccess?"include":"omit",redirect:"error"});
+      const useCloudflareAccess = base === "https://trading-api.levimunk.com" || base.endsWith(".workers.dev");
+      const sameOrigin = base === window.location.origin;
+      const response = await fetch(base + "/api/alpaca/status", {method:"GET",cache:"no-store",signal:controller.signal,credentials:sameOrigin?"same-origin":useCloudflareAccess?"include":"omit",redirect:"error"});
       if (!response.ok) throw Error("Private bridge returned HTTP " + response.status + ".");
       const data = await response.json();
       showAlpacaSnapshot(data);
-      localStorage.setItem(BRIDGE_STORAGE_KEY, base);
+      try {localStorage.setItem(BRIDGE_STORAGE_KEY, base);} catch {}
     } catch (err) {
-      clearAlpacaStatus(base === "https://trading-api.levimunk.com"
-        ? "Cloudflare connection unavailable or sign-in expired. Use Sign in to Cloudflare Access, complete login, then Connect / Refresh."
-        : "Could not reach the private bridge. Check Docker, Tailscale access and browser local-network permission. " + (err.name === "AbortError" ? "(Connection timed out.)" : ""));
+      clearAlpacaStatus(useCloudflareEndpoint(base)
+        ? "Secure Alpaca dashboard unavailable from this page. Open the private dashboard using the link, sign in with Cloudflare Access, and try there."
+        : "Could not reach the private bridge. Check Docker or Tailscale access. " + (err.name === "AbortError" ? "(Connection timed out.)" : ""));
     } finally { clearTimeout(timer); }
   }
   function exportData() {
@@ -522,19 +524,23 @@
     accountView = "sim";
     renderAccountSummary();
   });
+  function useCloudflareEndpoint(base) {
+    return base === "https://trading-api.levimunk.com" || base.endsWith(".workers.dev");
+  }
   function updateCloudflareLogin() {
     const button = $("alpaca-auth");
-    let enabled = false;
-    try { enabled = safeBridgeUrl($("alpaca-endpoint").value) === "https://trading-api.levimunk.com"; } catch {}
-    button.hidden = !enabled;
-    if (enabled) button.href = "https://trading-api.levimunk.com/api/health";
+    let base = "";
+    try { base = safeBridgeUrl($("alpaca-endpoint").value); } catch {}
+    const isPrivateWorker = window.location.hostname.endsWith(".workers.dev");
+    button.hidden = !base || (base === window.location.origin && isPrivateWorker);
+    if (!button.hidden) button.href = base + "/";
   }
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
   $("alpaca-disconnect").addEventListener("click", () => {
     try {localStorage.removeItem(BRIDGE_STORAGE_KEY);} catch {}
     clearAlpacaStatus("Private Alpaca bridge disconnected in this browser.");
-    $("alpaca-endpoint").value = "https://trading-api.levimunk.com";
+    $("alpaca-endpoint").value = window.location.hostname.endsWith(".workers.dev") ? window.location.origin : "";
     updateCloudflareLogin();
   });
   for(const id of ["btn-export","btn-export-top"]) $(id).addEventListener("click",exportData);
@@ -556,15 +562,23 @@
     render();showToast("Practice portfolio reset.");
   });
   load();render();showView("overview");
+  if (window.location.hostname.endsWith(".workers.dev")) {
+    $("alpaca-endpoint").value = window.location.origin;
+  }
   updateCloudflareLogin();
   try {
     const savedBridgeUrl = localStorage.getItem(BRIDGE_STORAGE_KEY);
     if (savedBridgeUrl) {
-      $("alpaca-endpoint").value = safeBridgeUrl(savedBridgeUrl);
+      $("alpaca-endpoint").value = window.location.hostname.endsWith(".workers.dev") ? window.location.origin : safeBridgeUrl(savedBridgeUrl);
       updateCloudflareLogin();
       connectAlpaca();
     }
   } catch {
     // If storage is blocked, manual Connect still works.
+  }
+  if (window.location.hostname.endsWith(".workers.dev") && !$("alpaca-connection-badge").classList.contains("connected")) {
+    $("alpaca-endpoint").value = window.location.origin;
+    updateCloudflareLogin();
+    connectAlpaca();
   }
 })();
