@@ -15,7 +15,7 @@
   let state = emptyState();
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
-  let accountView = "sim";
+  let accountView = "alpaca";
 
   function validSymbol(value) {
     const valueText = String(value || "").trim().toUpperCase();
@@ -129,15 +129,14 @@
     const sim = portfolio();
     const symbols = Object.keys(state.prices);
     const connected = Boolean(alpacaSnapshot && alpacaSnapshot.connected && alpacaSnapshot.account && Array.isArray(alpacaSnapshot.positions));
-    if (!connected && accountView === "alpaca") accountView = "sim";
-    const paper = connected && accountView === "alpaca";
-    $("mode-alpaca").disabled = !connected;
+    const paper = accountView === "alpaca";
+    $("mode-alpaca").disabled = false;
     for (const [id,active] of [["mode-alpaca",paper],["mode-simulator",!paper]]) {
       const button = $(id);
       button.classList.toggle("active",active);
       button.setAttribute("aria-pressed", String(active));
     }
-    if (paper) {
+    if (paper && connected) {
       const data = alpacaSnapshot;
       $("account-view-note").textContent = "Connected Alpaca PAPER account · read-only";
       $("metric-equity-label").textContent = "ALPACA PAPER EQUITY";
@@ -163,6 +162,26 @@
         ? data.positions.map(h => `<tr><td><strong>${escapeHTML(h.symbol ?? "?")}</strong></td><td>${escapeHTML(h.qty ?? "—")}</td><td>${alpacaMoney(h.unrealized_pl)}</td><td>${alpacaMoney(h.market_value)}</td></tr>`).join("")
         : '<tr><td colspan="4" class="empty">No open positions in this Alpaca paper account.</td></tr>';
       $("view-description").textContent = "Your Alpaca paper-account balance and positions. Browser simulations are tracked separately.";
+    } else if (paper) {
+      $("account-view-note").textContent = "Alpaca paper account disconnected · sign in to view balances";
+      $("metric-equity-label").textContent = "ALPACA PAPER EQUITY";
+      $("metric-cash-label").textContent = "ALPACA PAPER CASH";
+      $("metric-positions-label").textContent = "ALPACA POSITIONS";
+      $("metric-trades-label").textContent = "ALPACA BUYING POWER";
+      for (const id of ["metric-equity","metric-cash","metric-positions","metric-trades"]) $(id).textContent = "—";
+      $("metric-pl").textContent = "Not connected — no live account data";
+      $("metric-pl").className = "";
+      $("metric-cash-note").textContent = "Connect to your private Alpaca bridge";
+      $("metric-symbols").textContent = "Unavailable until authenticated";
+      $("metric-trades-note").textContent = "Broker orders unavailable here";
+      $("holdings-source").textContent = "ALPACA PAPER ACCOUNT";
+      $("holdings-heading").textContent = "Brokerage paper positions";
+      $("holdings-third-heading").textContent = "Unrealized P/L";
+      $("holdings-fourth-heading").textContent = "Market value";
+      $("portfolio-action").hidden = true;
+      $("holdings-note").textContent = "No Alpaca account data is available until the private connection is authenticated.";
+      $("holdings-rows").innerHTML = '<tr><td colspan="4" class="empty">Alpaca disconnected. Sign in to the private bridge and refresh.</td></tr>';
+      $("view-description").textContent = "Your Alpaca paper-account summary will appear here after you connect securely.";
     } else {
       $("account-view-note").textContent = connected
         ? "Browser-only $10,000 practice portfolio · Alpaca account also connected"
@@ -360,10 +379,11 @@
     catch { throw Error("Enter a valid private bridge address."); }
     const local = url.protocol === "http:" &&
       (url.hostname === "127.0.0.1" || url.hostname === "localhost") && url.port === "8767";
+    const cloudflare = url.protocol === "https:" && url.hostname === "trading-api.levimunk.com" && !url.port;
     const tailnet = url.protocol === "https:" &&
       /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\.ts\.net$/i.test(url.hostname) && url.port === "8443";
-    if ((!local && !tailnet) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
-      throw Error("Use http://127.0.0.1:8767 (on your ThinkCentre) or your private https://*.ts.net:8443 Tailscale Serve address. Never use a public URL.");
+    if ((!local && !tailnet && !cloudflare) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
+      throw Error("Use the protected https://trading-api.levimunk.com address, local ThinkCentre loopback, or private Tailscale Serve URL.");
     }
     return url.origin;
   }
@@ -377,7 +397,6 @@
     for (const id of ["alpaca-equity","alpaca-cash","alpaca-buying-power","alpaca-position-count"]) $(id).textContent = "—";
     $("alpaca-position-list").replaceChildren();
     alpacaSnapshot = null;
-    accountView = "sim";
     renderAccountSummary();
     feedback("alpaca-feedback", message);
   }
@@ -436,13 +455,16 @@
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 11000);
     try {
-      const response = await fetch(base + "/api/alpaca/status", {method:"GET",cache:"no-store",signal:controller.signal,credentials:"omit",redirect:"error"});
+      const useCloudflareAccess = base === "https://trading-api.levimunk.com";
+      const response = await fetch(base + "/api/alpaca/status", {method:"GET",cache:"no-store",signal:controller.signal,credentials:useCloudflareAccess?"include":"omit",redirect:"error"});
       if (!response.ok) throw Error("Private bridge returned HTTP " + response.status + ".");
       const data = await response.json();
       showAlpacaSnapshot(data);
       localStorage.setItem(BRIDGE_STORAGE_KEY, base);
     } catch (err) {
-      clearAlpacaStatus("Could not reach the private bridge. Check Docker, Tailscale access and browser local-network permission. " + (err.name === "AbortError" ? "(Connection timed out.)" : ""));
+      clearAlpacaStatus(base === "https://trading-api.levimunk.com"
+        ? "Cloudflare connection unavailable or sign-in expired. Use Sign in to Cloudflare Access, complete login, then Connect / Refresh."
+        : "Could not reach the private bridge. Check Docker, Tailscale access and browser local-network permission. " + (err.name === "AbortError" ? "(Connection timed out.)" : ""));
     } finally { clearTimeout(timer); }
   }
   function exportData() {
@@ -500,11 +522,20 @@
     accountView = "sim";
     renderAccountSummary();
   });
+  function updateCloudflareLogin() {
+    const button = $("alpaca-auth");
+    let enabled = false;
+    try { enabled = safeBridgeUrl($("alpaca-endpoint").value) === "https://trading-api.levimunk.com"; } catch {}
+    button.hidden = !enabled;
+    if (enabled) button.href = "https://trading-api.levimunk.com/api/health";
+  }
+  $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
   $("alpaca-disconnect").addEventListener("click", () => {
     try {localStorage.removeItem(BRIDGE_STORAGE_KEY);} catch {}
     clearAlpacaStatus("Private Alpaca bridge disconnected in this browser.");
-    $("alpaca-endpoint").value = "http://127.0.0.1:8767";
+    $("alpaca-endpoint").value = "https://trading-api.levimunk.com";
+    updateCloudflareLogin();
   });
   for(const id of ["btn-export","btn-export-top"]) $(id).addEventListener("click",exportData);
   $("backup-file").addEventListener("change",async e=>{
@@ -525,10 +556,12 @@
     render();showToast("Practice portfolio reset.");
   });
   load();render();showView("overview");
+  updateCloudflareLogin();
   try {
     const savedBridgeUrl = localStorage.getItem(BRIDGE_STORAGE_KEY);
     if (savedBridgeUrl) {
       $("alpaca-endpoint").value = safeBridgeUrl(savedBridgeUrl);
+      updateCloudflareLogin();
       connectAlpaca();
     }
   } catch {
