@@ -43,3 +43,36 @@ test("unknown paths fail with 404", async () => {
   const res = await handler.fetch(new Request(url + "/api/orders"), authorizedEnv, authenticated);
   assert.equal(res.status, 404);
 });
+
+test("authenticated account snapshot only reads Alpaca PAPER endpoints and strips secrets", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (destination, options) => {
+    calls.push({destination:String(destination), method:options.method, headers:options.headers});
+    if (String(destination).endsWith("/v2/account")) {
+      return Response.json({ equity:"100000.00", cash:"98000.00", buying_power:"196000.00", status:"ACTIVE", currency:"USD", account_number:"PRIVATE" });
+    }
+    if (String(destination).endsWith("/v2/positions")) {
+      return Response.json([{ symbol:"SPY", qty:"2", market_value:"1200.00", unrealized_pl:"33.00", asset_id:"PRIVATE" }]);
+    }
+    throw Error("Unexpected broker URL");
+  };
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/status"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID:"TEST_PAPER_KEY",ALPACA_PAPER_SECRET_KEY:"TEST_PAPER_SECRET"},
+      authenticated
+    );
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.connected, true);
+    assert.equal(result.account.equity, "100000.00");
+    assert.equal(result.positions[0].symbol, "SPY");
+    assert.ok(!JSON.stringify(result).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(result).includes("TEST_PAPER"));
+    assert.deepEqual(calls.map(c=>c.method), ["GET","GET"]);
+    assert.ok(calls.every(c=>c.destination.startsWith("https://paper-api.alpaca.markets/v2/")));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
