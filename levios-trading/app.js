@@ -187,7 +187,7 @@
       $("portfolio-action").hidden = false;
       $("holdings-note").textContent = "*Valued using the latest price you imported, which may be old.";
       $("holdings-rows").innerHTML = sim.holdings.length
-        ? sim.holdings.map(h => `<tr><td><strong>${escapeHTML(h.symbol)}</strong></td><td>${h.qty.toFixed(6).replace(/0+$/,"").replace(/\\.$/,"")}</td><td>${h.close===null?"—":money(h.close)}</td><td>${h.value===null?"Unpriced":money(h.value)}</td></tr>`).join("")
+        ? sim.holdings.map(h => `<tr><td><strong>${escapeHTML(h.symbol)}</strong></td><td>${h.qty.toFixed(6).replace(/0+$/,"").replace(/\.$/,"")}</td><td>${h.close===null?"—":money(h.close)}</td><td>${h.value===null?"Unpriced":money(h.value)}</td></tr>`).join("")
         : '<tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr>';
       $("view-description").textContent = "Explore your separate browser-simulated $10,000 portfolio with historical prices.";
     }
