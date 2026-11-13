@@ -1871,12 +1871,75 @@
         ". Existing inputs have not been submitted as a recommendation.";
     }finally{secLookupRunning=false;$("sec-fetch").disabled=false;}
   }
+  function suggestResearchPeers(){
+    const list=$("valuation-peer-options");list.replaceChildren();
+    const engine=globalThis.LeviPeerThesis;
+    const ticker=$("valuation-first").value.trim().toUpperCase();
+    if(!engine||!/^[A-Z][A-Z0-9.-]{0,9}$/.test(ticker)){
+      list.textContent="Enter a valid first ticker to inspect candidate peers.";return;
+    }
+    const options=engine.candidates(ticker);
+    if(!options.length){
+      list.textContent="No reviewed peer suggestions for "+ticker+
+        ". Select a second ticker manually; peer equivalence is not verified.";return;
+    }
+    const intro=document.createElement("div");
+    const title=document.createElement("span");title.textContent="EDITORIAL PEER CANDIDATES · NOT VERIFIED MATCHES";
+    const desc=document.createElement("small");
+    desc.textContent="Choose a research candidate; then fetch the actual SEC and IEX financial comparison.";
+    intro.append(title,desc);list.append(intro);
+    for(const item of options){
+      const card=document.createElement("div");
+      const label=document.createElement("strong");label.textContent=item.ticker;
+      const detail=document.createElement("small");
+      detail.textContent="Overlap: "+item.overlap+". Important difference: "+item.difference+".";
+      const action=document.createElement("button");
+      action.type="button";action.className="button secondary";
+      action.textContent="Compare with "+item.ticker;
+      action.addEventListener("click",()=>{
+        $("valuation-second").value=item.ticker;
+        $("valuation-status").textContent="Peer "+item.ticker+
+          " selected for research. Run Compare financials & valuation to check actual evidence.";
+      });
+      card.append(label,detail,action);list.append(card);
+    }
+  }
+  function renderComparisonThesis(first,second,comparison){
+    const panel=$("valuation-thesis");panel.replaceChildren();
+    const engine=globalThis.LeviPeerThesis;
+    if(!engine)return;
+    const model=engine.thesis(first,second,comparison);
+    const sections=[
+      ["BULL CASE · HISTORICAL SUPPORTING EVIDENCE",model.bull],
+      ["BEAR CASE · OPPOSING EVIDENCE",model.bear],
+      ["UNKNOWNS / DATA GAPS",model.unknown],
+      ["WHAT TO RESEARCH NEXT",model.researchActions]
+    ];
+    const heading=document.createElement("div");
+    const label=document.createElement("span");
+    label.textContent="CONDITIONAL RESEARCH THESIS · "+first.ticker+" VS "+second.ticker;
+    const title=document.createElement("strong");
+    title.textContent="Build the bull case and challenge it with the bear case";
+    heading.append(label,title);panel.append(heading);
+    for(const [headingText,items] of sections){
+      const container=document.createElement("div");
+      const title=document.createElement("span");title.textContent=headingText;
+      container.append(title);
+      for(const item of items){
+        const line=document.createElement("small");
+        line.textContent="• "+item;container.append(line);
+      }
+      panel.append(container);
+    }
+    const ending=document.createElement("small");ending.textContent=model.conclusion;
+    panel.append(ending);
+  }
   let valuationBusy=false;
   async function runValuationComparison(event){
     event.preventDefault();
     if(valuationBusy)return;
     const status=$("valuation-status"),results=$("valuation-results");
-    results.replaceChildren();
+    results.replaceChildren();$("valuation-thesis").replaceChildren();
     if(!window.location.hostname.endsWith(".workers.dev")){
       status.textContent="Open the authenticated Cloudflare Worker for SEC/IEX valuation research.";
       return;
@@ -1956,6 +2019,7 @@
         const caveat=document.createElement("small");caveat.textContent=metric.evidence;
         block.append(label,value,caveat);results.append(block);
       }
+      renderComparisonThesis(rows[0],rows[1],evaluation);
       const footer=document.createElement("div");
       const warning=document.createElement("small");
       warning.textContent=evaluation.judgment+" "+rows[0].limitations;
@@ -2906,6 +2970,7 @@
   $("journal-export").addEventListener("click",exportHypothesisJournal);
   $("sec-fetch").addEventListener("click",()=>void loadSecAnnualFacts());
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
+  $("valuation-peer-suggest").addEventListener("click",suggestResearchPeers);
   $("valuation-form").addEventListener("submit",runValuationComparison);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
