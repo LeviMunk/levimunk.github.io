@@ -14,7 +14,11 @@
       (/^https:\/\/www\.bls\.gov\//.test(e.url)||
        /^https:\/\/www\.bea\.gov\//.test(e.url)||
        /^https:\/\/www\.federalreserve\.gov\//.test(e.url)||
-       /^https:\/\/investor\.nvidia\.com\//.test(e.url)) ;
+       /^https:\/\/investor\.nvidia\.com\//.test(e.url)||
+       /^https:\/\/investor\.apple\.com\//.test(e.url)||
+       /^https:\/\/www\.microsoft\.com\/en-us\/investor(?:\/|$)/.test(e.url)||
+       (e.sourceLevel==="provider_estimate"&&
+        /^https:\/\/www\.alphavantage\.co\/documentation\/$/.test(e.url))) ;
   }
   function context(radar,macroeconomic=[],earnings=[],today){
     if(!radar || radar.ready!==true ||
