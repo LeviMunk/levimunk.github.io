@@ -3,6 +3,19 @@
  * All user data remains in browser storage. No broker credentials or order APIs.
  */
 (() => {
+  // Keep levimunk.com/levios-trading/ as the familiar entry address.
+  // GitHub Pages cannot safely host private Alpaca credentials or proxy
+  // authenticated API traffic, so send visitors to the Access-protected
+  // same-origin Worker. ?practice=1 intentionally stays on GitHub Pages.
+  const privateDashboard = "https://levimunk-alpaca.levivanstap.workers.dev/";
+  const publicHostname = ["levimunk.com", "www.levimunk.com"].includes(window.location.hostname);
+  const publicTradingPath = /^\/levios-trading\/?$/.test(window.location.pathname);
+  const practiceRequested = new URLSearchParams(window.location.search).get("practice") === "1";
+  if (publicHostname && publicTradingPath && !practiceRequested) {
+    window.location.replace(privateDashboard);
+    return;
+  }
+
   const STORAGE_KEY = "levios-trading-browser-v1";
   const INITIAL_CASH = 10000;
   const MAX_ROWS = 10000;
