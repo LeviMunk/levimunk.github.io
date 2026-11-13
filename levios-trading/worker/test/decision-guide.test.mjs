@@ -18,7 +18,7 @@ test("holding under both averages prompts risk review without automatic sale",()
 });
 test("concentration takes precedence over trend and is about paper holdings",()=>{
  const x=g.examine({symbol:"MSFT",bars:rising,
- holding:{qty:"5",market_value:"6000"},equity:10000,asOfLimit:"2026-11-12"});
+ holding:{qty:"5",market_value:"6000"},equity:10000,asOfLimit:"2026-11-12",holdingsVerified:true});
  assert.equal(x.kind,"risk-review");assert.ok(x.weightPct>25);
 });
 test("insufficient and unfinished IEX history cannot produce guidance",()=>{
