@@ -28,7 +28,7 @@ test("BLS ICS parses local and Zulu timestamps without interpreting UTC as ET",(
 });
 test("BEA machine-readable JSON converts UTC to ET and deduplicates dates",()=>{
  const rows=parseBEA(json,today);
- assert.equal(rows.length,3);
+ assert.equal(rows.length,4);
  assert.ok(rows.every(x=>x.time==="08:30"));
  assert.ok(rows.every(x=>x.agency==="BEA"));
 });
@@ -42,7 +42,7 @@ test("feed reader hardcodes exactly two sources and never exposes upstream error
  }
  });
  assert.deepEqual(data.sources.map(x=>x.status),["fresh","fresh"]);
- assert.equal(data.sources.reduce((n,s)=>n+s.events.length,0),6);
+ assert.equal(data.sources.reduce((n,s)=>n+s.events.length,0),7);
  assert.ok(called.every(x=>x.method==="GET"&&x.redirect==="error"));
  assert.deepEqual(called.map(x=>x.url),[
   "https://www.bls.gov/schedule/news_release/bls.ics",
