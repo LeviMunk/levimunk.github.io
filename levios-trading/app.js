@@ -1498,6 +1498,31 @@
     showToast("Approved research champion v" + candidate.version + " (browser only)");
   }
 
+  function renderRobustness(result) {
+    const tbody = $("robustness-rows");
+    try {
+      const windows = globalThis.LeviStrategyEngine.evaluationWindows(result);
+      tbody.innerHTML = windows.map(w =>
+        "<tr><td>Window " + w.window + "</td><td>" +
+        escapeHTML(w.startDate + " to " + w.endDate) + "</td><td>" +
+        w.observations + "</td><td>" +
+        strategyLabelPercent(w.returnPct) + "</td><td>" +
+        strategyLabelPercent(w.holdPct) + "</td><td>" +
+        strategyLabelPercent(w.excessPctPoints) + "</td><td>" +
+        strategyLabelPercent(w.maxDrawdownPct) + "</td><td>" +
+        w.executions + "</td></tr>"
+      ).join("");
+      const winners = windows.filter(w => w.excessPctPoints > 0).length;
+      $("robustness-summary").textContent = winners +
+        " of 3 windows outperformed buy-and-hold. " +
+        "These are contiguous slices of the SAME test, not three independent backtests. " +
+        "No refitting, forward evaluation, or trading signals were performed.";
+    } catch (error) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">Insufficient evaluation history for the three-window breakdown.</td></tr>';
+      $("robustness-summary").textContent = String(error?.message || "Window breakdown unavailable.") +
+        " No values have been estimated or fabricated.";
+    }
+  }
   function runStrategyWorkbench() {
     if (!globalThis.LeviStrategyEngine) throw Error("Strategy engine is unavailable. Refresh the page.");
     const {source, symbol, rows} = strategySourceInfo();
@@ -1530,6 +1555,7 @@
     $("result-dd").textContent = strategyLabelPercent(result.full.maxDrawdownPct);
     $("result-trades").textContent = String(result.executions.length);
     chart("equity-chart", result.curve, "equity");
+    renderRobustness(result);
     $("strategy-data-proof").textContent = result.version + " · " +
       symbol + " · " + source + " · " + result.curve.length +
       " observations · training ends " + result.train.endDate +
