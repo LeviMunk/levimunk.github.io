@@ -85,6 +85,40 @@
           <p id="pnl-status" class="muted pnl-status" aria-live="polite">Historical data loads after your Alpaca paper account connects.</p>
           <p class="muted footnote">This chart uses Alpaca's portfolio-history baseline for the selected period; P/L is not necessarily realized profit, and deposits or withdrawals can affect interpretation. Paper money only.</p>
         </article>
+        <article class="panel scorecard-panel" aria-labelledby="scorecard-heading">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">PERFORMANCE ANALYTICS / ALPACA PAPER</p>
+              <h2 id="scorecard-heading">Performance scorecard</h2>
+              <p class="muted scorecard-description">Risk statistics for the same period selected on the P/L chart above.</p>
+            </div>
+            <span id="scorecard-range" class="scorecard-period">1M PERIOD</span>
+          </div>
+          <div class="scorecard-grid">
+            <div class="scorecard-metric">
+              <span>MAX OBSERVED DRAWDOWN</span>
+              <strong id="scorecard-drawdown">—</strong>
+              <small id="scorecard-drawdown-usd">Requires at least two daily equity observations</small>
+            </div>
+            <div class="scorecard-metric">
+              <span>OBSERVED EQUITY PEAK</span>
+              <strong id="scorecard-peak">—</strong>
+              <small>Highest daily account equity in selected history</small>
+            </div>
+            <div class="scorecard-metric">
+              <span>OBSERVED EQUITY LOW</span>
+              <strong id="scorecard-low">—</strong>
+              <small>Lowest daily account equity in selected history</small>
+            </div>
+            <div class="scorecard-metric">
+              <span>DAILY OBSERVATIONS</span>
+              <strong id="scorecard-count">—</strong>
+              <small id="scorecard-coverage">Waiting for Alpaca history</small>
+            </div>
+          </div>
+          <p id="scorecard-status" class="muted scorecard-status" aria-live="polite">Sign in to load account performance statistics.</p>
+          <p class="muted footnote">Raw equity drawdown measures the largest observed decline from a previous equity peak. It is not cash-flow-adjusted; deposits and withdrawals can distort it. Win rate and profit factor are intentionally withheld until closed trades can be matched reliably.</p>
+        </article>
         <div class="grid-2 holdings-section">
           <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">ALPACA PAPER ACCOUNT</p><h2 id="holdings-heading">Brokerage paper positions</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades" hidden>Open journal →</button></div>
             <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Unrealized P/L</th><th id="holdings-fourth-heading">Market value</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">Alpaca disconnected. Sign in to the private bridge and refresh.</td></tr></tbody></table></div>
