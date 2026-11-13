@@ -16,6 +16,12 @@
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
+  let fillRows = [];
+  let fillCursor = null;
+  let fillsLoaded = false;
+  let fillsLoading = false;
+  let fillsError = "";
+  let fillsRequestToken = 0;
   // Broker history is only held in memory, never mixed with the practice ledger.
   let pnlRange = "1M";
   let pnlHistory = null;
@@ -228,6 +234,7 @@
     const rows = [...state.trades].reverse().slice(0,200);
     $("trade-rows").innerHTML = rows.length ? rows.map(t=>`<tr><td>${escapeHTML(t.at.slice(0,10))}</td><td>${escapeHTML(t.symbol)}</td><td>${escapeHTML(t.side)}</td><td>${t.qty}</td><td>${money(t.price)}</td></tr>`).join("") : '<tr><td class="empty" colspan="5">No simulated orders yet.</td></tr>';
     plotHistory();
+    renderFills();
   }
   function renderProfitLoss() {
     const chart = $("pnl-chart");
@@ -400,8 +407,119 @@
     }
   }
 
+  function renderFills() {
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    const connected = privateWorker && Boolean(alpacaSnapshot?.connected);
+    $("fills-private-link").hidden = privateWorker;
+    $("fills-refresh").disabled = !connected || fillsLoading;
+    $("fills-more").hidden = !connected || fillsLoading || !fillCursor;
+    $("fills-more").disabled = !connected || fillsLoading;
+    $("fills-summary").textContent = connected
+      ? "Verified Alpaca PAPER execution fills · read-only brokerage history"
+      : privateWorker
+        ? "Connect your Alpaca PAPER account to view verified executions."
+        : "Account history is private. Open the protected Alpaca dashboard to see it.";
+
+    const tbody = $("fills-rows");
+    if (!connected || !fillRows.length) {
+      const message = !connected
+        ? "No private brokerage history is displayed on this page."
+        : fillsLoading
+          ? "Loading Alpaca executions…"
+          : fillsError || (fillsLoaded
+            ? "No fills found in this Alpaca PAPER account."
+            : "Trade history has not loaded yet.");
+      tbody.innerHTML = '<tr><td class="empty" colspan="7">' +
+        escapeHTML(message) + '</td></tr>';
+    } else {
+      tbody.innerHTML = fillRows.map(fill => {
+        const when = new Date(fill.time);
+        const date = Number.isFinite(when.valueOf())
+          ? new Intl.DateTimeFormat("en-US", {
+            month: "short", day: "numeric", year: "numeric",
+            hour: "numeric", minute: "2-digit", timeZone: "America/New_York"
+          }).format(when) : "—";
+        const side = fill.side === "sell" ? "sell" : "buy";
+        const qty = Number(fill.qty);
+        const price = Number(fill.price);
+        const amount = Number(fill.notional);
+        const quantityText = Number.isFinite(qty)
+          ? qty.toLocaleString("en-US", {maximumFractionDigits:8}) : "—";
+        return '<tr><td>' + escapeHTML(date) + '</td><td class="fills-symbol">' +
+          escapeHTML(fill.symbol) + '</td><td><span class="fills-side ' + side +
+          '">' + side.toUpperCase() + '</span></td><td>' +
+          escapeHTML(quantityText) + '</td><td>' +
+          (Number.isFinite(price) ? money(price) : "—") + '</td><td>' +
+          (Number.isFinite(amount) ? money(amount) : "—") + '</td><td class="fills-type">' +
+          (fill.type === "partial_fill" ? "Partial" : "Fill") + '</td></tr>';
+      }).join("");
+    }
+    $("fills-status").textContent = fillsLoading
+      ? "Loading Alpaca PAPER executions…"
+      : fillsError || (!connected
+        ? "Only authenticated Alpaca PAPER account data is shown here."
+        : fillsLoaded
+          ? (fillRows.length ? "Showing " + fillRows.length +
+              " execution" + (fillRows.length === 1 ? "" : "s") +
+              (fillCursor ? " · older fills available." : " · end of available history.")
+            : "No executed orders reported yet. New paper fills will appear here.")
+          : "Open this tab to load verified Alpaca fills.");
+  }
+
+  async function loadFills(older = false) {
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    if (!privateWorker || !alpacaSnapshot?.connected || fillsLoading) return;
+    const cursor = older ? fillCursor : null;
+    if (older && !cursor) return;
+    fillsLoading = true;
+    fillsError = "";
+    const requestId = ++fillsRequestToken;
+    if (!older) {
+      fillRows = [];
+      fillCursor = null;
+      fillsLoaded = false;
+    }
+    renderFills();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch("/api/alpaca/fills" +
+        (cursor ? "?page_token=" + encodeURIComponent(cursor) : ""), {
+          method: "GET", credentials: "same-origin", cache: "no-store",
+          redirect: "error", signal: controller.signal
+        });
+      if (!response.ok) throw Error("Trade history endpoint returned HTTP " + response.status);
+      const data = await response.json();
+      if (requestId !== fillsRequestToken) return;
+      if (!data || data.connected !== true || data.mode !== "paper" ||
+          !Array.isArray(data.fills)) {
+        throw Error(data?.message || "Trade history unavailable.");
+      }
+      fillRows = older ? fillRows.concat(data.fills) : data.fills.slice();
+      // Bound the in-memory history: avoid unlimited loads on mobile.
+      fillCursor = fillRows.length < 500 &&
+        typeof data.next_page_token === "string" &&
+        data.next_page_token.length <= 256 &&
+        /^[a-zA-Z0-9:._-]+$/.test(data.next_page_token) &&
+        data.next_page_token !== cursor ? data.next_page_token : null;
+      fillsLoaded = true;
+    } catch (error) {
+      if (requestId !== fillsRequestToken) return;
+      fillsError = error?.name === "AbortError"
+        ? "The Alpaca request timed out. Refresh to retry."
+        : "Unable to load trade history. " + String(error?.message || "");
+      if (!older) fillsLoaded = false;
+    } finally {
+      clearTimeout(timeout);
+      if (requestId === fillsRequestToken) {
+        fillsLoading = false;
+        renderFills();
+      }
+    }
+  }
+
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -418,6 +536,13 @@
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
+    if (name==="fills") {
+      renderFills();
+      if (window.location.hostname.endsWith(".workers.dev") &&
+          alpacaSnapshot?.connected && !fillsLoaded && !fillsLoading) {
+        void loadFills(false);
+      }
+    }
     window.scrollTo({top:0,behavior:"smooth"});
   }
   function chart(id, rows, key) {
@@ -575,6 +700,13 @@
     for (const id of ["alpaca-equity","alpaca-cash","alpaca-buying-power","alpaca-position-count"]) $(id).textContent = "—";
     $("alpaca-position-list").replaceChildren();
     alpacaSnapshot = null;
+    fillsRequestToken++;
+    fillRows = [];
+    fillCursor = null;
+    fillsLoaded = false;
+    fillsLoading = false;
+    fillsError = "";
+    renderFills();
     pnlRequestToken++;
     pnlHistory = null;
     pnlMessage = "Alpaca PAPER account disconnected.";
@@ -627,6 +759,9 @@
       }
     }
     feedback("alpaca-feedback", "Connected to Alpaca PAPER account through your private bridge. Read-only.");
+    if ($("view-fills").classList.contains("active") && !fillsLoading) {
+      void loadFills(false);
+    }
     // Broker history is requested only from the protected same-origin Worker.
     if (window.location.hostname.endsWith(".workers.dev")) void loadProfitLoss();
   }
@@ -742,6 +877,8 @@
   window.addEventListener("resize", () => {
     if (pnlHistory?.points?.length > 1 && accountView === "alpaca") renderProfitLoss();
   });
+  $("fills-refresh").addEventListener("click", () => void loadFills(false));
+  $("fills-more").addEventListener("click", () => void loadFills(true));
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
   $("alpaca-disconnect").addEventListener("click", () => {
