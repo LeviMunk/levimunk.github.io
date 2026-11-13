@@ -280,11 +280,11 @@
               <div><p class="eyebrow">WATCHLIST INTELLIGENCE / ON-DEMAND</p><h3 id="radar-heading">Market Radar</h3></div>
               <span class="scorecard-period">IEX · HISTORICAL</span>
             </div>
-            <p class="muted">Scan up to 12 watchlist tickers for unusual completed-session price moves, IEX-only volume spikes, and closes outside the prior 20-session range. Every observation includes its evidence and a question to research.</p>
+            <p class="muted">Find unusual prices or volume in your watchlist.</p>
             <div class="button-row"><button id="radar-scan" type="button" class="button secondary">Scan watchlist</button></div>
             <p id="radar-status" class="muted footnote" role="status" aria-live="polite">No scan yet. Scans run when you request them, not continuously in the background.</p>
             <div id="radar-results" class="strategy-evaluation"><div><span>NOT SCANNED</span><small>Read-only educational monitoring. No trades or alerts.</small></div></div>
-            <p class="muted footnote">Catalyst Context pairs dated macro and company earnings schedules with radar observations, including source labels and uncertainty. It does not automatically monitor headlines, SEC filings, or report actual event outcomes. Events after a price observation cannot explain the earlier move. IEX coverage remains single-exchange; no predictions or trades.</p>
+            <p class="muted footnote">View relevant events alongside market moves. Timing does not prove cause.</p>
           </div>
           <div class="watch-price-panel">
             <div class="panel-head watch-chart-header">
@@ -319,7 +319,7 @@
           <div class="panel-head"><div>
             <p class="eyebrow">MACROECONOMICS / LEARN THE CATALYSTS</p>
             <h2 id="events-heading">Market Events Intelligence</h2>
-            <p class="muted">Automatically checks official BLS and BEA release feeds when this view opens, with a six-hour browser refresh interval. Federal Reserve dates remain a sourced snapshot. Explore what each announcement measures and investigate market reactions critically.</p>
+            <p class="muted">See upcoming economic announcements and why they matter.</p>
           </div><span class="scorecard-period">OFFICIAL SCHEDULE SNAPSHOT</span></div>
           <p id="events-freshness" class="muted footnote" role="status">Checking agency calendar status…</p>
           <p id="events-source-status" class="muted footnote" role="status">Official feeds load in the protected dashboard; source-by-source status will appear here.</p>
@@ -345,12 +345,12 @@
           <div class="button-row"><button type="button" id="earnings-refresh" class="button secondary">Check watchlist earnings</button></div>
           <p id="earnings-status" class="muted footnote" role="status" aria-live="polite">Official issuer announcements are available without a new API key. Optional third-party estimates require a privately configured Alpha Vantage key.</p>
           <div id="earnings-list" class="strategy-evaluation"><div><span>COMPANY EARNINGS</span><small>Open Market Events to review dates and research questions.</small></div></div>
-          <p class="muted footnote">Alpha Vantage calendar entries are estimates, not issuer-confirmed events; estimates can change. No dates are invented when unavailable. SPY and QQQ are funds, not companies reporting quarterly earnings. This dashboard cannot place brokerage orders.</p>
+          <p class="muted footnote">Third-party earnings dates are estimates; confirm them with the company.</p>
         </article>
         <article class="panel"><div class="panel-head"><div><p class="eyebrow">VERIFY BEFORE YOU TRADE</p><h2>Official sources &amp; earnings research</h2></div></div>
-          <p class="muted">Economic releases, policy meetings, and individual-company earnings are different types of catalysts. For now, this dashboard lists verified government schedule snapshots. Company earnings dates are <strong>not populated</strong> until a reliable source and update process are implemented.</p>
+          <p class="muted">Economic releases and earnings are different events. Check the source before assuming they explain a price move.</p>
           <div id="events-sources" class="button-row"></div>
-          <p class="muted footnote">For company-specific earnings, check the issuer's investor-relations calendar or SEC filings; a date from a third-party calendar should be cross-checked. These links are references, not automatic imports.</p>
+          <p class="muted footnote">Verify earnings dates with company investor relations.</p>
         </article>
       </section>
       <section id="view-market" class="view" aria-label="Market data" hidden>
@@ -376,10 +376,10 @@
         <div class="grid-2">
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">FUNDAMENTALS / EVIDENCE FIRST</p><h2>Analyze company quality and price</h2></div><span class="scorecard-period">NO ORDERS</span></div>
-            <p class="muted">Use figures from an issuer filing and an independently checked valuation source. The five-input rubric is a *learning aid*, not a validated stock rating. The source link is your evidence reference; LeviOS does not automatically verify its contents.</p>
+            <p class="muted">Check company financials, valuation, and risks before deciding.</p>
             <div class="watch-price-panel" aria-labelledby="sec-lookup-heading">
               <h3 id="sec-lookup-heading">Import real annual financials from SEC EDGAR</h3>
-              <p class="muted">Enter a stock ticker below and fetch public 10-K XBRL facts through your private Worker. LeviOS will show provenance and prefill only calculations whose reporting periods align. You still supply a dated P/E value.</p>
+              <p class="muted">Import annual company financials from SEC filings. Add a recent P/E separately.</p>
               <div class="button-row"><button type="button" id="sec-fetch" class="button secondary">Fetch SEC annual facts for ticker</button></div>
               <p id="sec-status" class="muted footnote" role="status" aria-live="polite">SEC access requires a privately configured Worker SEC_USER_AGENT identifying your application and contact email.</p>
               <div id="sec-facts" class="strategy-evaluation"></div>
@@ -408,7 +408,7 @@
         </div>
         <article class="panel" aria-labelledby="valuation-heading">
           <div class="panel-head"><div><p class="eyebrow">UPGRADE 20 / RELATIVE VALUATION</p><h2 id="valuation-heading">Compare two companies</h2>
-            <p class="muted">Fetch SEC annual financial statements and completed Alpaca IEX prices for two chosen companies. This is a transparent relative valuation exercise, not a buy/sell ranking.</p>
+            <p class="muted">Compare two companies using public financial statements and market prices.</p>
           </div><span class="scorecard-period">IEX + SEC · READ-ONLY</span></div>
           <form id="valuation-form" class="form-stack">
             <label for="valuation-first">First company ticker</label><input id="valuation-first" maxlength="10" value="MSFT" required>
@@ -428,7 +428,7 @@
         <div class="grid-2">
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">REPRODUCIBLE RESEARCH / v1</p><h2>Moving-average workbench</h2></div><span class="scorecard-period">NO BROKER ORDERS</span></div>
-            <p class="muted">Test a fixed long-only moving-average rule. Signals use completed daily closes; hypothetical orders fill at the <strong>following day's close</strong>, including configurable costs. This is a research approximation, not executable market fills.</p>
+            <p class="muted">Test a simple moving-average strategy on historical data.</p>
             <form id="backtest-form" class="form-stack">
               <label for="strategy-source">Price data source</label>
               <select id="strategy-source">
@@ -495,11 +495,11 @@
             <thead><tr><th>Fold</th><th>Training through</th><th>Evaluation dates</th><th>Selected MA</th><th>Training excess</th><th>Eval return</th><th>Buy &amp; hold</th><th>Eval excess</th><th>Drawdown</th><th>Executions</th></tr></thead>
             <tbody id="walkforward-rows"><tr><td class="empty" colspan="10">Run a walk-forward test to inspect the chronological folds.</td></tr></tbody>
           </table></div>
-          <p class="muted footnote">The training winner is selected without seeing its next evaluation window, but the same historical dataset can still be overfit through repeated experimentation. Each fold is an independent simulation with carried-in position state, not a stitched live-trading portfolio. No orders or future predictions are generated.</p>
+          <p class="muted footnote">Tests use historical data. Repeated tuning can overfit results.</p>
         </article>
         <article class="panel strategy-versions" aria-labelledby="robustness-heading">
           <div class="panel-head"><div><p class="eyebrow">EVALUATION CONSISTENCY / FIXED PARAMETERS</p><h2 id="robustness-heading">Three-window robustness</h2></div><span class="scorecard-period">DIAGNOSTIC ONLY</span></div>
-          <p class="muted">Divides the existing evaluation period into three consecutive, non-overlapping windows. Each window compares strategy performance with buy-and-hold over those same dates. No retraining or independent blind test occurs.</p>
+          <p class="muted">Compare strategy performance across three historical periods.</p>
           <div class="scroll-table"><table class="strategy-version-table">
             <thead><tr><th>Window</th><th>Dates</th><th>Bars</th><th>Strategy</th><th>Buy &amp; hold</th><th>Excess</th><th>Max drawdown</th><th>Executions</th></tr></thead>
             <tbody id="robustness-rows"><tr><td class="empty" colspan="8">Run a backtest with at least 30 evaluation bars to see the consistency breakdown.</td></tr></tbody>
@@ -511,7 +511,7 @@
             <button id="strategy-save" type="button" class="button primary" disabled>Save this run as version</button>
             <button id="strategy-export" type="button" class="button secondary">Export research log</button>
           </div></div>
-          <p class="muted footnote">Save parameters and outcomes for comparison, without saving account credentials. Versions are kept in <strong>this browser only</strong> (maximum 25). Re-running a strategy does not make its evaluation period blind again.</p>
+          <p class="muted footnote">Save and compare your strategy tests locally.</p>
           <div class="scroll-table">
             <table class="strategy-version-table"><thead><tr><th>Version</th><th>Saved</th><th>Symbol / source</th><th>Configuration</th><th>Train</th><th>Evaluation</th><th>Benchmark</th><th>Data fingerprint</th></tr></thead>
               <tbody id="strategy-versions"><tr><td colspan="8" class="empty">No saved strategy versions yet.</td></tr></tbody>
@@ -632,7 +632,7 @@
           <div class="button-row"><button type="button" class="button secondary" id="journal-export">Export journal JSON</button></div>
           <p id="journal-summary" class="muted footnote" role="status">No hypotheses saved yet.</p>
           <div id="journal-entries" class="strategy-evaluation"></div>
-          <p class="muted footnote">Journal records are stored only in this browser, not automatically synced or tamper-proof. Export regular backups; clearing browser storage deletes them. This is distinct from Alpaca PAPER executions.</p>
+          <p class="muted footnote">Stored only in this browser. Export backups to keep your notes.</p>
         </article>
       </section>
       <section id="view-trades" class="view" aria-label="Paper trade journal" hidden>
