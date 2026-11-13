@@ -63,8 +63,17 @@ Cloudflare Access enforces login **before** the Worker is invoked. The Worker al
   - `access_identity_unavailable`: Cloudflare Access could not supply the identity. Check your policy and login; don't bypass Access.
   If the response still has no `reason`, Cloudflare hasn't deployed the updated code yet. Check **Deployments** for a new successful GitHub build. Never disable authentication to troubleshoot.
 - **Main balance shows `—` / "Alpaca disconnected"**: Your Access session may have expired; try logging in to the protected Worker URL, and verify the two Alpaca paper secrets are set. No credentials should be entered in the public site.
-- **"Alpaca rejected the paper credentials"**: Regenerate/correct the Alpaca **paper** key pair in Cloudflare Worker Secrets. Do not use live credentials.
-- **Build fails to find `generated-assets.mjs`**: Set **Root directory** to `levios-trading/worker` and **Build command** to `node build.mjs`, then retry deployment.
+- **Alpaca API says `connected: false`**: After the latest GitHub deployment, open `https://levimunk-alpaca.levivanstap.workers.dev/api/alpaca/status` while signed into Cloudflare Access. Copy only the harmless `reason`, `endpoint`, and optional `http_status` fields when asking for help. The Worker does not return any credentials, account number, or raw Alpaca response.
+  - `alpaca_credentials_rejected` (401/403): Confirm both secrets form a matching **PAPER** key pair in Cloudflare; live keys cannot be used with the paper endpoint.
+  - `alpaca_rate_limited` (429): Wait before refreshing repeatedly.
+  - `alpaca_service_error` (5xx): Alpaca rejected the request due to a server-side error; retry after checking its service status.
+  - `alpaca_http_error`: Check the accompanying safe `http_status` number.
+  - `alpaca_timeout` / `alpaca_network_error`: An outbound connection from the Worker to Alpaca failed; this does not prove credentials are wrong.
+  - `alpaca_invalid_response`: Alpaca returned unexpected JSON or missing expected account fields.
+  - `alpaca_paper_secrets_missing`: Configure both `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY` as private Worker secrets.
+  - No `reason` field: Cloudflare has not yet deployed the updated Worker code; check the Worker Deployments tab.
+  Never put API key values in GitHub, chat, browser JS, or screenshots.
+- **Build fails to find `generated-assets.mjs`**: Keep **Root directory** blank with **Build command** `node build.mjs` and **Deploy command** `npx wrangler deploy`, then redeploy. The root-level build script creates the generated file in the nested Worker folder.
 - **Build cannot deploy**: Verify Worker name is exactly `levimunk-alpaca`, and Git integration is connected to the correct repo and main branch.
 - **Public `levimunk.com` page still defaults to disconnected**: Expected; the public page is not the authenticated account page. Use the secure Worker URL.
 - **Existing browser-simulated trades missing on Worker**: Browser localStorage does not sync between origins. The original practice data remains on `levimunk.com`; it can be exported/imported manually.
