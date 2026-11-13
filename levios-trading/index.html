@@ -323,6 +323,15 @@
             <p class="muted footnote">Close-only model, no next-day opening quotes, bid/ask execution, taxes, dividends, split adjustments or intraday fills. This is <strong>not</strong> Alpaca paper-account performance.</p>
           </article>
         </div>
+        <article class="panel strategy-versions" aria-labelledby="robustness-heading">
+          <div class="panel-head"><div><p class="eyebrow">EVALUATION CONSISTENCY / FIXED PARAMETERS</p><h2 id="robustness-heading">Three-window robustness</h2></div><span class="scorecard-period">DIAGNOSTIC ONLY</span></div>
+          <p class="muted">Divides the existing evaluation period into three consecutive, non-overlapping windows. Each window compares strategy performance with buy-and-hold over those same dates. No retraining or independent blind test occurs.</p>
+          <div class="scroll-table"><table class="strategy-version-table">
+            <thead><tr><th>Window</th><th>Dates</th><th>Bars</th><th>Strategy</th><th>Buy &amp; hold</th><th>Excess</th><th>Max drawdown</th><th>Executions</th></tr></thead>
+            <tbody id="robustness-rows"><tr><td class="empty" colspan="8">Run a backtest with at least 30 evaluation bars to see the consistency breakdown.</td></tr></tbody>
+          </table></div>
+          <p id="robustness-summary" class="muted footnote" aria-live="polite">A favorable full-period result can hide losses in individual windows. These windows share the same parameters and data history; do not treat them as forward verification.</p>
+        </article>
         <article class="panel strategy-versions">
           <div class="panel-head"><div><p class="eyebrow">RESEARCH LOG</p><h2>Saved experiment versions</h2></div><div class="button-row">
             <button id="strategy-save" type="button" class="button primary" disabled>Save this run as version</button>
