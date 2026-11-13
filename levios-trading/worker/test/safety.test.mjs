@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import handler from "../src/index.mjs";
 
-const url = "https://levios-alpaca.example.workers.dev";
+const url = "https://levimunk-alpaca.levivanstap.workers.dev";
 const authenticated = { access: { getIdentity: async () => ({ email: "owner@example.test" }) } };
 const authorizedEnv = { ALLOWED_EMAIL: "owner@example.test" };
 
