@@ -2,7 +2,7 @@
   // Root-level compatibility configuration for Cloudflare Workers Builds.
   // Existing portfolio GitHub Pages, domain and DNS remain unchanged.
   // No account credentials are stored in this file or repository.
-  "name": "levimunk-github-io",
+  "name": "levimunk-alpaca",
   "main": "levios-trading/worker/src/index.mjs",
   "compatibility_date": "2026-11-12",
   "workers_dev": true
