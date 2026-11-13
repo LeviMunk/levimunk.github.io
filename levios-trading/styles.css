@@ -116,3 +116,37 @@
  .fills-kpi{align-items:flex-start}
  .fills-footer button{width:100%}
 }
+
+
+/* Read-only Alpaca IEX market watchlist; deliberately not consolidated SIP. */
+.watch-panel{margin-bottom:20px}
+.watch-heading{gap:18px;align-items:flex-start}
+.watch-description{font-size:12px;max-width:670px;margin:8px 0 0;line-height:1.6}
+.watch-feed-badge{border:1px solid #4e7591;background:#173242;color:#b5dfff;border-radius:30px;padding:8px 12px;font-size:10px;font-weight:850;letter-spacing:.7px;white-space:nowrap}
+.watch-toolbar{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:24px 0 12px}
+.watch-add-form{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap}
+.watch-add-form label{font-size:12px;color:#b1c8c5;width:100%;font-weight:750}
+.watch-add-form input{background:#0b1920;color:#fff;border:1px solid #33515b;border-radius:9px;padding:10px 12px;min-height:43px;max-width:190px}
+.watch-feedback{font-size:12px;color:#a5c1b8;min-height:18px;margin:7px 0}
+.watch-feedback.error{color:#ffb8b8}
+.watch-meta{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;color:#9db3b5;font-size:11px;margin:17px 0 11px}
+.watch-table{min-width:840px}
+.watch-table th:last-child,.watch-table td:last-child{text-align:right}
+.watch-symbol{color:#daffef;font-weight:800;letter-spacing:.4px}
+.watch-table td{font-variant-numeric:tabular-nums}
+.watch-quote-time{font-size:11px;color:#b3ceca}
+.watch-stale{font-size:10px;color:#e6bf83;display:block;margin-top:2px}
+.watch-delta.positive{color:#7fe2b8;font-weight:700}
+.watch-delta.negative{color:#ffadad;font-weight:700}
+.watch-remove{background:transparent;border:1px solid #34505a;color:#b9d0ce;border-radius:8px;padding:6px 8px;font-size:11px;min-width:52px}
+.watch-remove:hover{border-color:#a75f67;color:#ffd7d8}
+.watch-panel .footnote{line-height:1.65;margin-top:18px}
+.watch-panel .text-link{display:inline-block;margin-top:14px;color:#91eacb}
+@media(max-width:720px){
+ .watch-heading{flex-direction:column;align-items:start}
+ .watch-toolbar{align-items:stretch}
+ .watch-add-form{width:100%}
+ .watch-add-form input{flex:1;min-width:100px;max-width:none}
+ #watch-refresh{width:100%}
+ .watch-meta{align-items:flex-start}
+}
