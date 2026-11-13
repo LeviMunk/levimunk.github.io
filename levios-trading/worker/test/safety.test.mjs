@@ -29,7 +29,11 @@ test("requires explicit configured owner email", async () => {
 test("protected dashboard and assets are served after login", async () => {
   const response = await handler.fetch(new Request(url), authorizedEnv, authenticated);
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /LeviOS Trading Lab/);
+  const html = await response.text();
+  assert.match(html, /LeviOS Trading Lab/);
+  assert.match(html, /id="pnl-chart"/);
+  assert.match(html, /data-pnl-range="1W"/);
+  assert.match(html, /data-pnl-range="1Y"/);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 });
 
