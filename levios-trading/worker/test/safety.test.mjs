@@ -38,6 +38,9 @@ test("protected dashboard and assets are served after login", async () => {
   assert.match(html, /id="view-fills"/);
   assert.match(html, /id="fills-rows"/);
   assert.match(html, /id="fills-more"/);
+  assert.match(html, /data-view="watchlist"/);
+  assert.match(html, /id="watch-rows"/);
+  assert.match(html, /id="watch-refresh"/);
   assert.match(html, /id="broker-connection-internals" hidden aria-hidden="true"/);
   assert.match(html, /class="grid-2 holdings-section"/);
   assert.match(html, /id="private-trading-link"/);
@@ -447,4 +450,117 @@ test("trade history handles empty fills and missing keys without fake trades", a
     assert.deepEqual(body.fills,[]);
     assert.equal(body.next_page_token,null);
   } finally {globalThis.fetch=originalFetch;}
+});
+
+test("IEX watchlist returns sanitized multi-symbol snapshots without secrets", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (destination, options) => {
+    calls.push({url:String(destination),method:options.method,redirect:options.redirect,headers:options.headers});
+    return Response.json({snapshots:{
+      SPY: {
+        latestTrade:{p:601.23,t:"2026-11-12T18:30:00.123456789Z",secret:"PRIVATE"},
+        latestQuote:{bp:601.22,ap:601.25,t:"2026-11-12T18:29:59Z"},
+        prevDailyBar:{c:600},dailyBar:{c:601.24},
+        order_id:"PRIVATE_ORDER"
+      },
+      MSFT:{
+        latestTrade:{p:450,t:"2026-11-12T18:29:58Z"},
+        latestQuote:{bp:449.99,ap:450.01,t:"2026-11-12T18:29:58Z"},
+        prevDailyBar:{c:455},dailyBar:{c:450}
+      }
+    }, account_number:"PRIVATE_ACCOUNT"});
+  };
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TESTKEY",ALPACA_PAPER_SECRET_KEY:"TESTSECRET"};
+  try{
+    const response=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=SPY,MSFT"),env,authenticated);
+    assert.equal(response.status,200);
+    const result=await response.json();
+    assert.equal(result.connected,true);
+    assert.equal(result.feed,"iex");
+    assert.equal(result.feed_scope,"single_exchange");
+    assert.equal(result.symbols.length,2);
+    assert.equal(result.symbols[0].symbol,"SPY");
+    assert.equal(result.symbols[0].last_trade,601.23);
+    assert.equal(result.symbols[0].bid,601.22);
+    assert.equal(result.symbols[0].ask,601.25);
+    assert.equal(result.symbols[0].previous_close,600);
+    assert.equal(result.symbols[0].change,1.23);
+    assert.equal(result.symbols[0].change_percent,0.205);
+    assert.equal(result.symbols[1].change,-5);
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,"https://data.alpaca.markets/v2/stocks/snapshots?symbols=SPY%2CMSFT&feed=iex");
+    assert.equal(calls[0].method,"GET");
+    assert.equal(calls[0].redirect,"manual");
+    assert.equal(calls[0].headers["APCA-API-KEY-ID"],"TESTKEY");
+    assert.equal(calls[0].headers["APCA-API-SECRET-KEY"],"TESTSECRET");
+    assert.ok(!JSON.stringify(result).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(result).includes("TESTSECRET"));
+  }finally{globalThis.fetch=originalFetch;}
+});
+
+test("IEX watchlist preserves unavailable symbols without inventing quotes", async () => {
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>Response.json({snapshots:{
+    SPY:{latestTrade:null,latestQuote:null,dailyBar:null,prevDailyBar:{c:599}}
+  }});
+  try{
+    const result=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=SPY,XYZ"),
+      {...authorizedEnv,ALPACA_PAPER_KEY_ID:"KEY",ALPACA_PAPER_SECRET_KEY:"SECRET"},authenticated);
+    const body=await result.json();
+    assert.equal(body.connected,true);
+    assert.equal(body.symbols.length,2);
+    assert.equal(body.symbols[0].available,false);
+    assert.equal(body.symbols[0].last_trade,null);
+    assert.equal(body.symbols[0].change,null);
+    assert.deepEqual(body.symbols[1],{symbol:"XYZ",available:false});
+  }finally{globalThis.fetch=originalFetch;}
+});
+
+test("IEX symbol list rejects duplicates, injection, excessive tickers and other query keys", async () => {
+  const originalFetch=globalThis.fetch;
+  let requests=0;
+  globalThis.fetch=async()=>{requests++;return Response.json({snapshots:{}})};
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"KEY",ALPACA_PAPER_SECRET_KEY:"SECRET"};
+  try{
+    const invalid=[
+      "", "symbols=","symbols=SPY,SPY","symbols=SPY,spy",
+      "symbols=SPY%26feed%3Dsip","symbols=SPY&feed=sip",
+      "symbols=SPY&symbols=QQQ","symbols=SPY,QQQ,",
+      "symbols="+Array.from({length:13},(_,i)=>"S"+i).join(","),
+      "symbols=SPY%2FUS","symbols=SPY%20OR%201%3D1"
+    ];
+    for(const params of invalid){
+      const response=await handler.fetch(new Request(url+"/api/market/watchlist"+(params?"?"+params:"")),env,authenticated);
+      assert.equal(response.status,400,params);
+    }
+    assert.equal(requests,0);
+    const noAuth=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=SPY"),env,{});
+    assert.equal(noAuth.status,403);
+    assert.equal(requests,0);
+    const post=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=SPY",{method:"POST"}),env,authenticated);
+    assert.equal(post.status,405);
+    assert.equal(requests,0);
+  }finally{globalThis.fetch=originalFetch;}
+});
+
+test("IEX errors, missing credentials and rate limits are safe and explicit", async () => {
+  const originalFetch=globalThis.fetch;
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"KEY",ALPACA_PAPER_SECRET_KEY:"SECRET"};
+  try{
+    const noKeys=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=AAPL"),authorizedEnv,authenticated);
+    assert.equal((await noKeys.json()).reason,"alpaca_paper_secrets_missing");
+    for(const [status,reason] of [[401,"alpaca_credentials_rejected"],[429,"alpaca_rate_limited"],[502,"alpaca_service_error"]]){
+      globalThis.fetch=async()=>new Response('PRIVATE RESPONSE',{status});
+      const response=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=AAPL"),env,authenticated);
+      const body=await response.json();
+      assert.equal(body.connected,false);
+      assert.equal(body.reason,reason);
+      assert.equal(body.http_status,status);
+      assert.ok(!JSON.stringify(body).includes("PRIVATE"));
+    }
+    globalThis.fetch=async()=>Response.json({wrong:"shape"});
+    const bad=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=AAPL"),env,authenticated);
+    assert.equal((await bad.json()).reason,"alpaca_invalid_response");
+  }finally{globalThis.fetch=originalFetch;}
 });
