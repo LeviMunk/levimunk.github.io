@@ -10,6 +10,7 @@ const pages = [
   ['marketing-analytics','projects/marketing-analytics.html'],
   ['studio-growth','projects/studio-growth.html'],
   ['tableos','projects/tableos.html'],
+  ['levios-trading','levios-trading/index.html'],
 ];
 const targets = [
   ['android-chromium',chromium,devices['Pixel 7']],
@@ -32,6 +33,26 @@ for (const [browserName, browserType, device] of targets) {
         if (!response || !response.ok()) throw new Error(`Page HTTP ${response?.status() ?? 'unavailable'}`);
         await page.locator('h1').first().waitFor({state:'visible',timeout:10000});
         await page.waitForTimeout(400);
+        if(label==='levios-trading'){
+          await page.locator('#decision-brief-form').waitFor({state:'visible',timeout:10000});
+          if(!(await page.locator('#decision-brief-output').isVisible()))
+            result.problems.push('Decision brief output is not visible');
+          if(await page.locator('.overview-advanced').first().isVisible())
+            result.problems.push('Advanced analytics should be collapsed initially');
+          await page.locator('#overview-more').click();
+          if(!(await page.locator('.overview-advanced').first().isVisible()))
+            result.problems.push('Advanced analytics could not be expanded');
+          await page.locator('#overview-more').click();
+          if(await page.locator('.overview-advanced').first().isVisible())
+            result.problems.push('Advanced analytics could not be collapsed');
+          await page.locator('[data-view="research"]').first().click();
+          if(!(await page.locator('#valuation-form').isVisible()))
+            result.problems.push('Research tools are unavailable from simplified navigation');
+          await page.locator('[data-view="overview"]').first().click();
+          if(!(await page.locator('#decision-brief-form').isVisible()))
+            result.problems.push('Could not return to trading overview');
+        }
+
         const state = await page.evaluate(()=>({
           width:document.documentElement.clientWidth,
           scrollWidth:document.documentElement.scrollWidth,

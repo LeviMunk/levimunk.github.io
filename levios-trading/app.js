@@ -1667,47 +1667,199 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
+  let decisionBriefRunning=false;
+  async function requestDecisionBrief(event){
+    event.preventDefault();
+    if(decisionBriefRunning)return;
+    const output=$("decision-brief-output"),status=$("decision-brief-status");
+    output.replaceChildren();
+    const symbol=$("decision-brief-symbol").value.trim().toUpperCase();
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)){
+      status.textContent="Enter a valid stock ticker.";return;
+    }
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Open the protected LeviOS dashboard to run this brief.";
+      return;
+    }
+    if(!globalThis.LeviDecisionGuide||!globalThis.LeviDecisionBrief){
+      status.textContent="Decision research module unavailable. Refresh the dashboard.";return;
+    }
+    decisionBriefRunning=true;
+    $("decision-brief-form").querySelector("button").disabled=true;
+    const today=currentNYTradingDate();
+    status.textContent="Checking "+symbol+" against PAPER holdings, IEX history and SEC filings…";
+    async function getJSON(url,timeoutMs=18000){
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),timeoutMs);
+      try{
+        const response=await fetch(url,{method:"GET",cache:"no-store",
+          credentials:"same-origin",redirect:"error",signal:controller.signal});
+        if(!response.ok)throw Error("Data source returned "+response.status);
+        return await response.json();
+      }finally{clearTimeout(timer);}
+    }
+    try{
+      const positions=alpacaSnapshot?.connected&&Array.isArray(alpacaSnapshot.positions)?
+        alpacaSnapshot.positions:[];
+      const equity=Number(alpacaSnapshot?.account?.equity);
+      const observed=await Promise.allSettled([
+        getJSON("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=3M"),
+        getJSON("/api/research/sec-financials?symbol="+encodeURIComponent(symbol),24500)
+      ]);
+      let decision=null;
+      if(observed[0].status==="fulfilled"){
+        const response=observed[0].value;
+        if(response?.connected===true&&response.feed==="iex"&&
+           response.symbol===symbol&&response.truncated!==true&&
+           Array.isArray(response.bars)){
+          const completed=response.bars.filter(b=>typeof b?.time==="string"&&b.time<today);
+          decision=globalThis.LeviDecisionGuide.examine({
+            symbol,bars:completed,
+            holding:positions.find(p=>p.symbol===symbol)||null,
+            equity:Number.isFinite(equity)&&equity>0?equity:null,
+            holdingsVerified:Boolean(alpacaSnapshot?.connected&&
+              Array.isArray(alpacaSnapshot.positions)&&alpacaSnapshot.account),
+            asOfLimit:today
+          });
+        }
+      }
+      if(!decision)decision={symbol,ready:false};
+      let sec=null;
+      if(observed[1].status==="fulfilled"){
+        const result=observed[1].value;
+        if(result?.status==="available"&&result.ticker===symbol&&
+          Array.isArray(result.measures)&&result.measures.length<=15&&
+          typeof result.sourceUrl==="string"&&
+          /^https:\/\/www\.sec\.gov\/Archives\//.test(result.sourceUrl))
+          sec=result;
+      }
+      const latestThesis=hypothesisData.plans.find(p=>p.symbol===symbol)||null;
+      const result=globalThis.LeviDecisionBrief.generate({
+        symbol,decision,sec,today,thesis:latestThesis
+      });
+      const flag=document.createElement("span");
+      flag.className="decision-action "+(result.tone||"wait");
+      flag.textContent=result.action;
+      const headline=document.createElement("h3");
+      headline.className="decision-headline";headline.textContent=result.headline;
+      const next=document.createElement("p");next.className="brief-next";
+      next.textContent=result.next;
+      const proof=document.createElement("p");proof.className="brief-proof";
+      proof.textContent=(result.sourceDate?"IEX close "+result.sourceDate:"Price not verified")+
+        (result.secDate?" · SEC annual filing "+result.secDate:" · Recent annual SEC facts unavailable")+
+        " · "+(result.held?"Position shown in PAPER account":
+          decision.holdingsVerified?"No open PAPER position":"PAPER holdings not verified");
+      output.append(flag,headline,next,proof);
+      const groups=[
+        ["Evidence for",result.bull],
+        ["Reasons for caution",result.bear],
+        ["Still unknown",result.unknown]
+      ];
+      const columns=document.createElement("div");columns.className="decision-columns";
+      for(const [name,items] of groups){
+        const card=document.createElement("div");card.className="decision-column";
+        const head=document.createElement("h3");head.textContent=name;card.append(head);
+        const selected=items.length?items:["No verified evidence yet."];
+        for(const item of selected.slice(0,5)){
+          const p=document.createElement("p");p.textContent=item;card.append(p);
+        }
+        columns.append(card);
+      }
+      output.append(columns);
+      if(result.thesis){
+        const original=document.createElement("p");original.className="brief-proof";
+        original.textContent="Your saved thesis: "+result.thesis;output.append(original);
+      }
+      const actions=document.createElement("div");actions.className="button-row";
+      const research=document.createElement("button");
+      research.type="button";research.className="button secondary";research.textContent="Research financials";
+      research.addEventListener("click",()=>{
+        $("fund-symbol").value=symbol;showView("research");
+      });
+      const journal=document.createElement("button");
+      journal.type="button";journal.className="button secondary";journal.textContent="Write a trade plan";
+      journal.addEventListener("click",()=>{
+        $("journal-symbol").value=symbol;showView("journal");
+      });
+      actions.append(research,journal);output.append(actions);
+      if(result.sourceUrl){
+        const link=document.createElement("a");link.className="brief-source";
+        link.href=result.sourceUrl;link.target="_blank";link.rel="noopener noreferrer";
+        link.textContent="Verify SEC financial source ↗";output.append(link);
+      }
+      status.textContent=result.confidence==="partial"?
+        "Brief ready · conditional assessment. Verify quotes and the investment case before acting.":
+        "Brief limited · one or more essential data sources were unavailable.";
+    }catch(error){
+      status.textContent="Decision brief unavailable: "+String(error?.message||error);
+      output.replaceChildren();
+    }finally{
+      decisionBriefRunning=false;
+      $("decision-brief-form").querySelector("button").disabled=false;
+    }
+  }
+  function toggleOverviewDetails(){
+    const view=$("view-overview"),button=$("overview-more");
+    const next=!view.classList.contains("show-advanced");
+    view.classList.toggle("show-advanced",next);
+    button.setAttribute("aria-pressed",String(next));
+    button.textContent=next?"Hide advanced analytics":"Show advanced analytics";
+    if(next){renderAccountSummary();}
+  }
   let briefingRunning=false,briefingRecords=null,briefingSymbols="";
   function renderDailyBrief(){
     const cards=$("daily-brief-cards");cards.replaceChildren();
     if(!briefingRecords){
-      const block=document.createElement("div");
-      const label=document.createElement("span");label.textContent="FIRST STEP";
-      const headline=document.createElement("strong");headline.textContent="Review your risk before seeking a trade.";
-      const note=document.createElement("small");note.textContent="Run the analysis for completed IEX daily data. No recommendation has been generated yet.";
-      block.append(label,headline,note);cards.append(block);return;
+      const card=document.createElement("div");
+      const title=document.createElement("strong");title.textContent="Start with your current risk.";
+      const note=document.createElement("small");note.textContent="Run Review my portfolio for a short action list.";
+      card.append(title,note);cards.append(card);return;
     }
     if(briefingSymbols!==watchSymbols.join(",")){
-      const warning=document.createElement("div");
-      warning.textContent="Watchlist changed since analysis. Run it again for current tickers.";
-      cards.append(warning);return;
+      const message=document.createElement("p");message.className="muted";
+      message.textContent="Watchlist changed. Run your portfolio review again.";
+      cards.append(message);return;
     }
-    const summaries=globalThis.LeviDecisionGuide.summarize(briefingRecords);
-    for(const item of summaries.ready){
-      const card=document.createElement("div");
+    const ranked=globalThis.LeviDecisionGuide.summarize(briefingRecords).ready;
+    const missing=briefingRecords.filter(r=>!r.ready);
+    function makeCard(item){
+      const card=document.createElement("div");card.className="brief-priority";
       const label=document.createElement("span");
-      label.textContent=item.symbol+" · "+item.asOf+" · COMPLETED IEX DAILY";
-      const headline=document.createElement("strong");headline.textContent=item.title;
-      const evidence=document.createElement("small");
-      evidence.textContent="Why: "+item.why+" IEX close "+formatIexPrice(item.lastClose)+
-        ", MA20 "+formatIexPrice(item.ma20)+", MA50 "+formatIexPrice(item.ma50)+". "+
-        (item.held?("PAPER position "+item.qty+
-          (item.weightPct!==null?" · "+item.weightPct.toFixed(1)+"% of reported paper equity.":"."))
-        :"Not shown as an open PAPER holding.");
-      const next=document.createElement("small");next.textContent="Next: "+item.next;
-      const changes=document.createElement("small");changes.textContent="What changes this: "+item.changes;
-      card.append(label,headline,evidence,next,changes);
-      cards.append(card);
+      label.textContent=item.symbol+" · "+item.asOf;
+      const title=document.createElement("strong");title.textContent=item.title;
+      const next=document.createElement("small");next.textContent=item.next;
+      const more=document.createElement("details");more.className="research-disclosure";
+      const summary=document.createElement("summary");summary.textContent="Why this matters";
+      const reason=document.createElement("p");reason.textContent=item.why;
+      const metrics=document.createElement("p");
+      metrics.textContent="IEX close "+formatIexPrice(item.lastClose)+
+        " · 20-day average "+formatIexPrice(item.ma20)+
+        " · 50-day average "+formatIexPrice(item.ma50)+
+        (item.weightPct!==null?" · PAPER exposure "+item.weightPct.toFixed(1)+"%":"");
+      const change=document.createElement("p");change.textContent="Reassess when: "+item.changes;
+      more.append(summary,reason,metrics,change);
+      card.append(label,title,next,more);return card;
     }
-    const misses=briefingRecords.filter(r=>!r.ready);
-    for(const item of misses){
-      const card=document.createElement("div");
-      const title=document.createElement("span");title.textContent=item.symbol+" · DATA UNAVAILABLE";
-      const message=document.createElement("small");message.textContent=item.reason+
-        " No buy, hold or sell guidance is offered for this ticker.";
-      card.append(title,message);cards.append(card);
+    for(const item of ranked.slice(0,3))cards.append(makeCard(item));
+    const rest=ranked.slice(3);
+    if(rest.length||missing.length){
+      const disclosure=document.createElement("details");
+      disclosure.className="brief-more-details";
+      const summary=document.createElement("summary");
+      summary.textContent="Show "+(rest.length+missing.length)+" more ticker"+
+        (rest.length+missing.length===1?"":"s");
+      disclosure.append(summary);
+      for(const item of rest)disclosure.append(makeCard(item));
+      for(const item of missing){
+        const card=document.createElement("div");
+        const label=document.createElement("strong");
+        label.textContent=item.symbol+" · Data unavailable";
+        const note=document.createElement("small");note.textContent=item.reason;
+        card.append(label,note);disclosure.append(card);
+      }
+      cards.append(disclosure);
     }
-    if(!briefingRecords.length)cards.textContent="No tracked instruments available.";
+    if(!ranked.length&&!missing.length)cards.textContent="No stocks selected.";
   }
   async function runDailyBrief(){
     if(briefingRunning)return;
@@ -2076,7 +2228,7 @@
     }
   }
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Your trading dashboard","Your priorities, portfolio and next research steps."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -2972,6 +3124,8 @@
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
   $("valuation-peer-suggest").addEventListener("click",suggestResearchPeers);
   $("valuation-form").addEventListener("submit",runValuationComparison);
+  $("decision-brief-form").addEventListener("submit",e=>void requestDecisionBrief(e));
+  $("overview-more").addEventListener("click",toggleOverviewDetails);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));

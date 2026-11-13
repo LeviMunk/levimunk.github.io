@@ -57,7 +57,7 @@ function examine({symbol,bars,holding=null,equity=null,asOfLimit=null,holdingsVe
    changes="Reassess if trend, fundamentals or your time horizon changes.";
  }
  return {ready:true,symbol,asOf:last.date,lastClose:last.close,ma20,ma50,
-  held,qty:quantity,weightPct:weight,kind,title,why,next,changes,
+  held,holdingsVerified,qty:quantity,weightPct:weight,kind,title,why,next,changes,
   coverage:"IEX single-exchange historical daily closes. Not a valuation, full-market quote, price target or trade recommendation."};
 }
 function summarize(results){
