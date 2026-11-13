@@ -145,6 +145,88 @@
     for (const symbol of symbols) select.add(new Option(symbol,symbol));
     if (symbols.includes(prev)) select.value = prev;
   }
+  function renderRiskDashboard() {
+    const values = ["risk-gross", "risk-largest", "risk-top3", "risk-unrealized"];
+    for (const id of values) {
+      $(id).textContent = "—";
+      $(id).classList.remove("positive", "negative");
+    }
+    for (const id of ["risk-gross-pct", "risk-largest-share"]) {
+      $(id).textContent = id === "risk-gross-pct"
+        ? "Compared with account equity" : "Share of gross exposure";
+    }
+    $("risk-long").textContent = "—";
+    $("risk-short").textContent = "—";
+    $("risk-long-bar").style.width = "0";
+    $("risk-short-bar").style.width = "0";
+    $("risk-exposure-label").setAttribute("aria-label", "Long versus short share of gross exposure is unavailable");
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    if (accountView !== "alpaca") {
+      $("risk-status").textContent = "Select Alpaca Paper to see actual brokerage position exposure. The browser simulator is separate.";
+      return;
+    }
+    if (!privateWorker) {
+      $("risk-status").textContent = "Open the protected Alpaca dashboard to see private position risk.";
+      return;
+    }
+    if (!alpacaSnapshot?.connected) {
+      $("risk-status").textContent = "Connect to Alpaca PAPER to load your current positions.";
+      return;
+    }
+    const risk = alpacaSnapshot.risk;
+    if (!risk || !Number.isInteger(risk.reported_positions)) {
+      $("risk-status").textContent = "Risk figures are unavailable until the updated private Worker is deployed.";
+      return;
+    }
+    const hasNumber = value => typeof value === "number" && Number.isFinite(value);
+    if (hasNumber(risk.open_unrealized_pnl)) {
+      const value = risk.open_unrealized_pnl;
+      $("risk-unrealized").textContent =
+        (value > 0 ? "+" : value < 0 ? "−" : "") + money(Math.abs(value));
+      $("risk-unrealized").classList.add(value >= 0 ? "positive" : "negative");
+    }
+    if (!risk.complete || !hasNumber(risk.gross_exposure) ||
+        !hasNumber(risk.long_exposure) || !hasNumber(risk.short_exposure)) {
+      $("risk-status").textContent = "Some positions lack a market value; exposure and concentration were intentionally withheld rather than underestimated.";
+      return;
+    }
+    const gross = risk.gross_exposure;
+    $("risk-gross").textContent = money(gross);
+    $("risk-gross-pct").textContent = hasNumber(risk.gross_exposure_pct_equity)
+      ? risk.gross_exposure_pct_equity.toFixed(2) + "% of account equity"
+      : "Cannot calculate percentage without positive account equity";
+    $("risk-long").textContent = money(risk.long_exposure);
+    $("risk-short").textContent = money(risk.short_exposure);
+    if (gross > 0) {
+      const longShare = Math.min(100, Math.max(0, risk.long_exposure / gross * 100));
+      const shortShare = Math.min(100, Math.max(0, 100 - longShare));
+      $("risk-long-bar").style.width = longShare.toFixed(2) + "%";
+      $("risk-short-bar").style.width = shortShare.toFixed(2) + "%";
+      $("risk-exposure-label").setAttribute("aria-label",
+        "Long exposure " + longShare.toFixed(1) +
+        " percent; short exposure " + shortShare.toFixed(1) + " percent");
+      $("risk-largest").textContent =
+        risk.largest_position_symbol ? String(risk.largest_position_symbol) : "—";
+      $("risk-largest-share").textContent =
+        hasNumber(risk.largest_position_pct_gross) &&
+        hasNumber(risk.largest_position_market_value)
+          ? risk.largest_position_pct_gross.toFixed(2) +
+            "% of gross · " + money(risk.largest_position_market_value)
+          : "Largest position data unavailable";
+      $("risk-top3").textContent = hasNumber(risk.top_three_pct_gross)
+        ? risk.top_three_pct_gross.toFixed(2) + "%" : "—";
+    } else {
+      $("risk-largest").textContent = "None";
+      $("risk-largest-share").textContent = "No open exposure";
+      $("risk-top3").textContent = "N/A";
+    }
+    $("risk-status").textContent = risk.reported_positions
+      ? "Snapshot of " + risk.reported_positions + " Alpaca PAPER open position" +
+        (risk.reported_positions === 1 ? "" : "s") +
+        ". Market values can change between refreshes; this is not a real-time risk engine."
+      : "No open Alpaca PAPER positions. Current position exposure is zero; other market and account risks are not measured here.";
+  }
+
   function renderAccountSummary() {
     const sim = portfolio();
     const symbols = Object.keys(state.prices);
@@ -231,6 +313,7 @@
       $("view-description").textContent = "Explore your separate browser-simulated $10,000 portfolio with historical prices.";
     }
     renderProfitLoss();
+    renderRiskDashboard();
   }
   function render() {
     const symbols = Object.keys(state.prices).sort();
