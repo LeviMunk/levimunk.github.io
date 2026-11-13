@@ -1667,6 +1667,75 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
+  const LEARNING_KEY="levios-learning-progress-v1";
+  let learningTrack="long",learningCurrent="long-1",learningDone=[];
+  function loadLearningProgress(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(LEARNING_KEY)||"[]");
+      learningDone=globalThis.LeviLearning.sanitizeProgress(raw);
+    }catch{learningDone=[];}
+  }
+  function renderLearning(){
+    const engine=globalThis.LeviLearning;
+    if(!engine)return;
+    const list=$("learning-lessons");list.replaceChildren();
+    const course=engine.courses[learningTrack];
+    if(!course.some(x=>x.id===learningCurrent))learningCurrent=course[0].id;
+    for(const track of ["long","short"]){
+      const btn=$("learning-"+track),selected=track===learningTrack;
+      btn.className="button "+(selected?"primary":"secondary");
+      btn.setAttribute("aria-pressed",String(selected));
+    }
+    for(const lesson of course){
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="learning-lesson-button"+(lesson.id===learningCurrent?" active":"");
+      button.setAttribute("aria-current",lesson.id===learningCurrent?"true":"false");
+      const title=document.createElement("span");title.textContent=lesson.name;
+      const status=document.createElement("small");
+      status.textContent=learningDone.includes(lesson.id)?"✓ Complete":lesson.level;
+      button.append(title,status);
+      button.addEventListener("click",()=>{learningCurrent=lesson.id;renderLearning();});
+      list.append(button);
+    }
+    const lesson=engine.get(learningTrack,learningCurrent);
+    $("learning-level").textContent=lesson.level.toUpperCase()+" · "+(learningTrack==="long"?"LONG-TERM":"SHORT-TERM");
+    $("learning-title").textContent=lesson.name;
+    $("learning-explanation").textContent=lesson.lesson;
+    $("learning-example").textContent=lesson.example;
+    $("learning-question").textContent=lesson.question;
+    $("learning-result").textContent=learningDone.includes(lesson.id)?
+      "Completed. You can practice this question again.":"";
+    const answers=$("learning-answers");answers.replaceChildren();
+    for(let i=0;i<lesson.answers.length;i++){
+      const label=document.createElement("label");label.className="learning-choice";
+      const input=document.createElement("input");input.type="radio";
+      input.name="learning-answer";input.value=String(i);input.required=true;
+      const text=document.createElement("span");text.textContent=lesson.answers[i];
+      label.append(input,text);answers.append(label);
+    }
+    $("learning-progress").textContent=learningDone.length+" / "+
+      (engine.courses.long.length+engine.courses.short.length)+" lessons completed · "+
+      "progress stays on this browser.";
+  }
+  function submitLearningQuiz(event){
+    event.preventDefault();
+    const selected=document.querySelector('input[name="learning-answer"]:checked');
+    if(!selected)return;
+    const engine=globalThis.LeviLearning;
+    const outcome=engine.score(learningCurrent,Number(selected.value));
+    if(outcome.correct){
+      if(!learningDone.includes(learningCurrent)){
+        const updated=engine.sanitizeProgress([...learningDone,learningCurrent]);
+        try{localStorage.setItem(LEARNING_KEY,JSON.stringify(updated));learningDone=updated;}
+        catch{$("learning-result").textContent="Correct, but progress could not be saved. Check browser storage.";return;}
+      }
+      renderLearning();
+      $("learning-result").textContent="Correct! "+outcome.takeaway;
+    }else{
+      $("learning-result").textContent="Not quite. Review the example and try again.";
+    }
+  }
   const PAPER_PLANS_KEY="levios-paper-predictions-v1";
   const PAPER_OUTCOMES_KEY="levios-paper-outcomes-v1";
   let paperPredictions=[],paperOutcomes={},checkingPredictions=false;
@@ -2372,7 +2441,7 @@
     }
   }
   function showView(name) {
-    const headings = {overview:["Your trading dashboard","Your priorities, portfolio and next research steps."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Your trading dashboard","Your priorities, portfolio and next research steps."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],learning:["Level Up","Learn long-term investing and short-term trading with practical examples."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -2387,6 +2456,7 @@
     $("view-heading").textContent = headings[name][0];
     $("view-description").textContent = headings[name][1];
     document.title = headings[name][0] + " | LeviOS Trading";
+    if (name==="learning") renderLearning();
     if (name==="journal") renderHypothesisJournal();
     if (name==="overview"){renderAccountSummary();renderDailyBrief();}
     if (name==="market") plotHistory();
@@ -3268,6 +3338,9 @@
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
   $("valuation-peer-suggest").addEventListener("click",suggestResearchPeers);
   $("valuation-form").addEventListener("submit",runValuationComparison);
+  $("learning-long").addEventListener("click",()=>{learningTrack="long";renderLearning();});
+  $("learning-short").addEventListener("click",()=>{learningTrack="short";renderLearning();});
+  $("learning-quiz-form").addEventListener("submit",submitLearningQuiz);
   $("decision-brief-form").addEventListener("submit",e=>void requestDecisionBrief(e));
   $("paper-prediction-form").addEventListener("submit",savePaperPrediction);
   $("paper-prediction-check").addEventListener("click",()=>void checkPaperPredictions());
@@ -3332,6 +3405,7 @@
   loadStrategyVersions();
   loadValidationDecisions();
   loadHypotheses();
+  loadLearningProgress();
   loadPaperPredictions();
   renderPaperPredictions();
   updateStrategySource();
