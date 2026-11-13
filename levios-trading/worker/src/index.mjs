@@ -12,6 +12,8 @@
 import { assets } from "../generated-assets.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
+const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
+const MAX_WATCHLIST_SYMBOLS = 12;
 const SOURCE_ORIGIN = "https://levimunk.com";
 const MAX_POSITIONS = 100;
 const HISTORY_RANGE_PERIODS = Object.freeze({ "1W": "1W", "1M": "1M", "3M": "3M", "1Y": "1A" });
@@ -290,6 +292,91 @@ async function recentTradeFills(env, pageToken = null) {
   }
 }
 
+// Free Alpaca market data is IEX-only; never label this as consolidated SIP.
+const watchlistSymbolPattern = /^[A-Z][A-Z0-9.-]{0,9}$/;
+
+async function iexSnapshots(env, symbols) {
+  if (!env.ALPACA_PAPER_KEY_ID || !env.ALPACA_PAPER_SECRET_KEY) {
+    return { connected: false, feed: "iex", reason: "alpaca_paper_secrets_missing",
+      message: "Alpaca PAPER credentials are not configured." };
+  }
+  const params = new URLSearchParams({ symbols: symbols.join(","), feed: "iex" });
+  let response;
+  try {
+    response = await fetch(ALPACA_MARKET_DATA_BASE + "/v2/stocks/snapshots?" + params.toString(), {
+      method: "GET",
+      headers: {
+        "APCA-API-KEY-ID": env.ALPACA_PAPER_KEY_ID,
+        "APCA-API-SECRET-KEY": env.ALPACA_PAPER_SECRET_KEY,
+        "Accept": "application/json"
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000)
+    });
+  } catch (error) {
+    const reason = error?.name === "TimeoutError" || error?.name === "AbortError"
+      ? "alpaca_timeout" : "alpaca_network_error";
+    return { connected: false, feed: "iex", reason,
+      message: "Could not reach Alpaca IEX market data." };
+  }
+  if (!response.ok) {
+    const status = response.status;
+    const reason = status === 401 || status === 403 ? "alpaca_credentials_rejected"
+      : status === 429 ? "alpaca_rate_limited"
+      : status >= 500 ? "alpaca_service_error" : "alpaca_http_error";
+    return { connected: false, feed: "iex", reason, http_status: status,
+      message: "Alpaca IEX market data is unavailable." };
+  }
+  let payload;
+  try { payload = await response.json(); } catch {
+    return { connected: false, feed: "iex", reason: "alpaca_invalid_response",
+      message: "Alpaca returned an unexpected market-data response." };
+  }
+  if (!payload || typeof payload !== "object" || !payload.snapshots ||
+      typeof payload.snapshots !== "object" || Array.isArray(payload.snapshots)) {
+    return { connected: false, feed: "iex", reason: "alpaca_invalid_response",
+      message: "Alpaca returned an unexpected market-data response." };
+  }
+  const number = value => value === null || value === undefined || value === "" ||
+    !Number.isFinite(Number(value)) || Number(value) <= 0 ? null : Number(value);
+  // Validate timestamp and return only it, never raw market-data records.
+  const instant = value => typeof value === "string" &&
+    value.length <= 40 && Number.isFinite(Date.parse(value)) ? value : null;
+  const result = symbols.map(symbol => {
+    const snap = payload.snapshots[symbol];
+    if (!snap || typeof snap !== "object") {
+      return { symbol, available: false };
+    }
+    const trade = number(snap.latestTrade?.p);
+    const bid = number(snap.latestQuote?.bp);
+    const ask = number(snap.latestQuote?.ap);
+    const prevClose = number(snap.prevDailyBar?.c);
+    const dailyClose = number(snap.dailyBar?.c);
+    // Price changes are based on the IEX last trade relative to Alpaca's
+    // prior daily close. Do not fabricate prices from a missing quote.
+    const change = trade !== null && prevClose !== null
+      ? Math.round((trade - prevClose) * 10000) / 10000 : null;
+    const changePercent = change !== null && prevClose !== null
+      ? Math.round(change / prevClose * 1000000) / 10000 : null;
+    return {
+      symbol,
+      available: [trade, bid, ask, dailyClose].some(value => value !== null),
+      last_trade: trade,
+      trade_time: instant(snap.latestTrade?.t),
+      bid, ask,
+      quote_time: instant(snap.latestQuote?.t),
+      previous_close: prevClose,
+      daily_close: dailyClose,
+      change, change_percent: changePercent
+    };
+  });
+  return {
+    connected: true, feed: "iex", feed_scope: "single_exchange",
+    refreshed_at: new Date().toISOString(),
+    symbols: result
+  };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -322,6 +409,23 @@ export default {
         return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       }
       return json(await recentTradeFills(env, cursor));
+    }
+    if (url.pathname === "/api/market/watchlist") {
+      const symbolValues = url.searchParams.getAll("symbols");
+      const keys = [...url.searchParams.keys()];
+      const symbols = symbolValues.length === 1
+        ? symbolValues[0].split(",").map(value => value.toUpperCase()) : [];
+      if (symbolValues.length !== 1 ||
+          keys.some(key => key !== "symbols") ||
+          symbols.length < 1 || symbols.length > MAX_WATCHLIST_SYMBOLS ||
+          symbols.some(symbol => !watchlistSymbolPattern.test(symbol)) ||
+          new Set(symbols).size !== symbols.length) {
+        return json({ error: "Provide 1–12 unique supported ticker symbols." }, 400);
+      }
+      if (request.method === "HEAD") {
+        return new Response(null, { status: 200, headers: commonHeaders("application/json") });
+      }
+      return json(await iexSnapshots(env, symbols));
     }
     if (url.pathname === "/api/alpaca/history") {
       const range = url.searchParams.get("range") || "1M";
