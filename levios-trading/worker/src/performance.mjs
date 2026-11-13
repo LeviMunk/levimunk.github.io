@@ -38,8 +38,16 @@ export function equityScorecard(input) {
     observedLow = Math.min(observedLow, point.equity);
     peak = Math.max(peak, point.equity);
     const decline = peak - point.equity;
-    worstDollars = Math.max(worstDollars, decline);
-    if (peak > 0) worstPercentage = Math.max(worstPercentage, decline / peak * 100);
+    if (peak > 0) {
+      const percent = decline / peak * 100;
+      // Pair dollars with the same peak/trough event as maximum percentage
+      // drawdown, rather than independently selecting the largest dollar drop.
+      if (percent > worstPercentage ||
+          (percent === worstPercentage && decline > worstDollars)) {
+        worstPercentage = percent;
+        worstDollars = decline;
+      }
+    }
   }
   return {
     observations: points.length,
