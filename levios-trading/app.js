@@ -1323,6 +1323,152 @@
       $("events-sources").append(a);
     }
   }
+  // Read-only company earnings education: issuer confirmations are separate
+  // from Alpha Vantage forecast dates and are never overwritten by a forecast.
+  let earningsResult=null,earningsLoading=false,earningsError="",earningsRequestedSymbols="";
+  let earningsRequestToken=0;
+  const EARNINGS_CACHE_MS=6*60*60*1000;
+  function validEarningsResponse(data){
+    if(!data||data.provider!=="Alpha Vantage"||
+      !["not_configured","unavailable","fetched"].includes(data.status)||
+      !Array.isArray(data.events)||data.events.length>100)return null;
+    for(const e of data.events){
+      if(typeof e.symbol!=="string"||!/^[A-Z][A-Z0-9.-]{0,9}$/.test(e.symbol)||
+        typeof e.date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(e.date)||
+        e.status!=="provider_estimate"||e.provider!=="Alpha Vantage"||
+        (e.timing&&!["before_market","after_market","unknown"].includes(e.timing)))return null;
+    }
+    return data;
+  }
+  async function refreshWatchlistEarnings(force=false){
+    const symbols=watchSymbols.slice();
+    const query=symbols.join(",");
+    if(!symbols.length){earningsResult=null;renderEarnings();return;}
+    if(!window.location.hostname.endsWith(".workers.dev")){renderEarnings();return;}
+    if(earningsLoading)return;
+    const cacheKey="levios-earnings-v1:"+query;
+    if(!force){
+      try{
+        const cached=JSON.parse(sessionStorage.getItem(cacheKey)||"null");
+        if(cached&&Number.isFinite(cached.savedAt)&&
+           cached.savedAt<=Date.now()&&Date.now()-cached.savedAt<EARNINGS_CACHE_MS){
+          const checked=validEarningsResponse(cached.data);
+          if(checked){earningsResult=checked;earningsRequestedSymbols=query;renderEarnings();return;}
+        }
+      }catch{}
+    }
+    earningsLoading=true;earningsError="";
+    earningsRequestedSymbols=query;
+    const token=++earningsRequestToken;
+    renderEarnings();
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),12500);
+    try{
+      const response=await fetch("/api/market/earnings?symbols="+encodeURIComponent(query),{
+        method:"GET",credentials:"same-origin",cache:"no-store",
+        redirect:"error",signal:controller.signal
+      });
+      if(!response.ok)throw Error("Earnings data returned HTTP "+response.status);
+      const checked=validEarningsResponse(await response.json());
+      if(!checked)throw Error("Earnings response failed validation");
+      if(token!==earningsRequestToken)return;
+      earningsResult=checked;
+      try{sessionStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),data:checked}));}catch{}
+    }catch(error){
+      if(token!==earningsRequestToken)return;
+      earningsResult=null;
+      earningsError=error?.name==="AbortError"?"Earnings request timed out.":
+        String(error?.message||"Earnings provider unavailable.");
+    }finally{
+      clearTimeout(timeout);
+      if(token===earningsRequestToken){earningsLoading=false;renderEarnings();}
+    }
+  }
+  function renderEarnings(){
+    const engine=globalThis.LeviEarningsEducation;
+    const list=$("earnings-list"),status=$("earnings-status");
+    list.replaceChildren();
+    if(!engine){status.textContent="Earnings educational module unavailable.";return;}
+    const today=marketDateET();
+    const symbols=watchSymbols.filter(s=>s!=="SPY"&&s!=="QQQ");
+    const confirmed=engine.forSymbols(symbols,today);
+    const forecasts=earningsRequestedSymbols===watchSymbols.join(",")&&
+      earningsResult?.status==="fetched"?earningsResult.events.filter(
+        e=>symbols.includes(e.symbol)&&e.date>=today):[];
+    const confirmedSymbols=new Set(confirmed.map(e=>e.symbol));
+    // An issuer announcement takes precedence for the same ticker;
+    // do not show a conflicting third-party estimate as confirmed.
+    const projected=forecasts.filter(e=>!confirmedSymbols.has(e.symbol));
+    const all=confirmed.map(e=>({...e,kind:"confirmed"})).concat(
+      projected.map(e=>({...e,kind:"estimate"})))
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.symbol.localeCompare(b.symbol));
+    if(earningsLoading)status.textContent="Checking optional earnings provider for "+
+      symbols.length+" watchlist companies…";
+    else if(earningsError)status.textContent=earningsError+
+      " Showing company-confirmed announcements and investor research links only.";
+    else if(earningsResult?.status==="not_configured")status.textContent=
+      "No private ALPHAVANTAGE_API_KEY configured. Showing only individually verified company announcements and investor relations links.";
+    else if(earningsResult?.status==="unavailable")status.textContent=
+      "Alpha Vantage calendar unavailable or rate-limited. No projected dates will be invented.";
+    else if(earningsResult?.status==="fetched")status.textContent=
+      "Alpha Vantage calendar checked at "+(earningsResult.fetched_at||"unspecified time")+
+      ". Entries are third-party estimates, not company-confirmed dates.";
+    else status.textContent="Company announcements verified "+engine.verifiedOn+
+      "; optional Alpha Vantage lookup is available only in the private dashboard.";
+    for(const event of all){
+      const card=document.createElement("div");
+      const label=document.createElement("span");
+      label.textContent=event.symbol+" · "+event.date+" · "+
+        (event.kind==="confirmed"?"COMPANY CONFIRMED":"THIRD-PARTY ESTIMATE");
+      const title=document.createElement("strong");
+      title.textContent=event.kind==="confirmed"?event.name:
+        (event.name||event.symbol)+" · projected earnings date";
+      const detail=document.createElement("small");
+      detail.textContent=event.kind==="confirmed"?
+        "Issuer announcement dated "+event.published+
+          ". Conference call "+(event.callTimeET||"time unspecified")+
+          " ET; report release time may differ.":
+        "Forecast date may change. Fiscal period "+
+          (event.fiscalPeriod||"unknown")+
+          "; "+(event.timing==="before_market"?"before market":
+            event.timing==="after_market"?"after market":"release time unknown")+
+          ". Verify on the issuer's investor-relations site.";
+      card.append(label,title,detail);
+      if(event.kind==="confirmed"){
+        const link=document.createElement("a");link.href=event.url;
+        link.target="_blank";link.rel="noopener noreferrer";
+        link.textContent="View original issuer announcement ↗";
+        card.append(link);
+      }
+      list.append(card);
+    }
+    if(!all.length){
+      const box=document.createElement("div"),title=document.createElement("strong");
+      title.textContent="No verified upcoming company events available";
+      const note=document.createElement("small");
+      note.textContent="No date is not proof that earnings are far away. Check investor relations before acting.";
+      box.append(title,note);list.append(box);
+    }
+    for(const symbol of symbols){
+      if(confirmedSymbols.has(symbol))continue;
+      const url=engine.investorRelations[symbol];
+      if(!url)continue;
+      const card=document.createElement("div");
+      const label=document.createElement("span");label.textContent=symbol+" · ISSUER RESEARCH";
+      const title=document.createElement("strong");title.textContent="Verify next earnings announcement";
+      const link=document.createElement("a");link.href=url;link.target="_blank";
+      link.rel="noopener noreferrer";link.textContent="Open official investor relations ↗";
+      card.append(label,title,link);list.append(card);
+    }
+    const guide=document.createElement("div");
+    const head=document.createElement("span");head.textContent="WHAT TO INVESTIGATE";
+    guide.append(head);
+    for(const q of engine.questions){
+      const prompt=document.createElement("small");
+      prompt.textContent="• "+q;guide.append(prompt);
+    }
+    list.append(guide);
+  }
   function showView(name) {
     const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
@@ -1341,7 +1487,7 @@
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
-    if (name==="events"){renderMarketEvents();void refreshMarketEvents(false);}
+    if (name==="events"){renderMarketEvents();renderEarnings();void refreshMarketEvents(false);void refreshWatchlistEarnings(false);}
     if (name === "watchlist") {
       renderWatchlist();
       renderCandleChart();
@@ -2214,6 +2360,7 @@
   });
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
+  $("earnings-refresh").addEventListener("click",()=>void refreshWatchlistEarnings(true));
   $("radar-scan").addEventListener("click", () => void scanMarketRadar());
   $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
   $("watch-chart-symbol").addEventListener("change", () => {

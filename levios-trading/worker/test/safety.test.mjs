@@ -41,6 +41,8 @@ test("protected dashboard and assets are served after login", async () => {
   assert.match(html, /id="radar-scan"/);
   assert.ok(html.includes('src="./events-engine.js"'));
   assert.ok(html.includes('id="events-category"'));
+  assert.ok(html.includes('id="earnings-refresh"'));
+  assert.ok(html.includes('src="./earnings-engine.js"'));
   assert.ok(html.includes('src="./radar-engine.js"'));
   assert.match(html, /id="validation-review"/);
   assert.match(html, /id="validation-approve"/);
@@ -86,6 +88,16 @@ test("market calendar requires authentication, rejects POST and query params", a
   assert.equal(head.status,200);
 });
 
+test("earnings API requires Access, valid tickers and never places orders",async()=>{
+  const api=url+"/api/market/earnings?symbols=AAPL,MSFT";
+  assert.equal((await handler.fetch(new Request(api),authorizedEnv,{})).status,403);
+  assert.equal((await handler.fetch(new Request(api,{method:"POST"}),authorizedEnv,authenticated)).status,405);
+  assert.equal((await handler.fetch(new Request(url+"/api/market/earnings?symbols=AAPL,AAPL"),authorizedEnv,authenticated)).status,400);
+  assert.equal((await handler.fetch(new Request(api,{method:"HEAD"}),authorizedEnv,authenticated)).status,200);
+  const result=await (await handler.fetch(new Request(api),authorizedEnv,authenticated)).json();
+  assert.equal(result.status,"not_configured");
+  assert.deepEqual(result.events,[]);
+});
 test("unknown paths fail with 404", async () => {
   const res = await handler.fetch(new Request(url + "/api/orders"), authorizedEnv, authenticated);
   assert.equal(res.status, 404);
