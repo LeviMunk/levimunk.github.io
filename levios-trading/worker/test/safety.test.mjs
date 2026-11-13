@@ -36,6 +36,11 @@ test("protected dashboard and assets are served after login", async () => {
   const html = await response.text();
   assert.match(html, /LeviOS Trading Lab/);
   assert.match(html, /id="pnl-chart"/);
+  assert.match(html, /src="\.\/strategy-engine\.js"/);
+  assert.match(html, /id="strategy-train-return"/);
+  assert.match(html, /id="strategy-test-return"/);
+  assert.match(html, /id="strategy-versions"/);
+  assert.match(html, /id="strategy-load-iex"/);
   assert.match(html, /data-pnl-range="1W"/);
   assert.match(html, /data-pnl-range="1Y"/);
   assert.match(html, /data-view="fills"/);
@@ -860,4 +865,16 @@ test("actual TradingView chart adapter accepts ISO daily candles and P/L timesta
     {time:"2025-11-10",value:0},
     {time:"2025-11-11",value:65.79}
   ]);
+});
+
+test("strategy-engine script is served only behind Cloudflare Access", async () => {
+  const request = new Request(url+"/strategy-engine.js");
+  const allowed = await handler.fetch(request,authorizedEnv,authenticated);
+  assert.equal(allowed.status,200);
+  const script=await allowed.text();
+  assert.match(script,/LeviStrategyEngine/);
+  assert.match(script,/levios-ma-v1/);
+  assert.equal(allowed.headers.get("access-control-allow-origin"),null);
+  const denied=await handler.fetch(request,authorizedEnv,{});
+  assert.equal(denied.status,403);
 });
