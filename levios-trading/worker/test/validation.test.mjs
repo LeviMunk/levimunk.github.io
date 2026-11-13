@@ -82,7 +82,12 @@ test("approved research champion must match data source, dates, fingerprint, spl
     {splitDate:"2026-08-02"},{engine:"levios-ma-v2"},
     {settings:{splitPct:75}},{settings:{feeBps:20}},{settings:{slippageBps:10}}
   ]){
-    const rejected=gate.evaluate(make({version:2,...changes}),old);
+    const candidate=make({version:2,...changes});
+    // Preserve a valid high-cost stress test when the base execution costs
+    // change, so this test isolates the same-data comparability gate.
+    candidate.stressFeeBps=Math.max(5,candidate.settings.feeBps*2);
+    candidate.stressSlippageBps=Math.max(5,candidate.settings.slippageBps*2);
+    const rejected=gate.evaluate(candidate,old);
     assert.equal(rejected.eligible,false,JSON.stringify(changes));
     assert.ok(rejected.checks.some(x=>x.code==="comparable"&&!x.pass));
   }
