@@ -18,6 +18,7 @@
       <div class="sidebar-label">WORKSPACE</div>
       <nav id="nav" class="nav">
         <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Overview</button>
+        <button class="nav-item" type="button" data-view="watchlist"><span class="nav-symbol">◉</span> IEX Watchlist</button>
         <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
         <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
         <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
@@ -26,7 +27,7 @@
       </nav>
       <div class="sidebar-bottom">
         <div class="mode-pill"><span class="live-dot"></span> PRIVATE ALPACA + BROWSER SIM</div>
-        <p>Paper simulations only. No live quotes, brokerage orders, or real-money trading.</p>
+        <p>Paper account and IEX watchlist are read-only. No brokerage orders or real-money trading.</p>
         <a class="back-link" href="../">← Back to LeviMunk.com</a>
       </div>
     </aside>
@@ -109,6 +110,44 @@
           </article>
         </div>
         <article class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORICAL DATA</p><h2>Imported market snapshots</h2></div><button type="button" class="text-button" data-go="market">Import data →</button></div><div id="overview-symbols" class="symbol-cards"><p class="empty">No prices imported. Add a CSV under Market Data to get started.</p></div></article>
+      </section>
+      <section id="view-watchlist" class="view" aria-label="IEX stock watchlist" hidden>
+        <article class="panel watch-panel">
+          <div class="panel-head watch-heading">
+            <div>
+              <p class="eyebrow">MARKET DATA / ALPACA IEX</p>
+              <h2>Market watchlist</h2>
+              <p class="muted watch-description">Actual latest IEX trades and quotes, refreshed while this tab is open. IEX is one exchange, not the consolidated U.S. market.</p>
+            </div>
+            <span id="watch-feed-badge" class="watch-feed-badge">IEX · NOT SIP</span>
+          </div>
+          <div class="watch-toolbar">
+            <form id="watch-add-form" class="watch-add-form">
+              <label for="watch-symbol-input">Add stock or ETF</label>
+              <input id="watch-symbol-input" type="text" maxlength="10" placeholder="e.g. AMD" autocapitalize="characters" autocomplete="off" spellcheck="false" required>
+              <button type="submit" class="button primary">Add ticker</button>
+            </form>
+            <button type="button" class="button secondary" id="watch-refresh">Refresh quotes</button>
+          </div>
+          <p id="watch-feedback" class="watch-feedback" role="status" aria-live="polite">Showing a starter watchlist. You can add or remove symbols.</p>
+          <div class="watch-meta">
+            <span id="watch-refresh-state">Prices have not loaded yet</span>
+            <span id="watch-poll-state">Refreshes every 60 seconds while this tab is visible</span>
+          </div>
+          <div class="scroll-table">
+            <table class="watch-table">
+              <thead><tr>
+                <th>Ticker</th><th>Last IEX trade</th><th>Change*</th>
+                <th>IEX bid</th><th>IEX ask</th><th>Last trade time (ET)</th><th></th>
+              </tr></thead>
+              <tbody id="watch-rows">
+                <tr><td colspan="7" class="empty">Open this watchlist in your protected LeviOS dashboard to load IEX quotes.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted footnote">* Change compares the latest IEX trade with Alpaca's prior daily closing bar, when available. Quote timestamps are shown because prices can be stale outside market hours or for less-active stocks. This view uses REST snapshots, not a continuous streaming feed. It does not submit trades.</p>
+          <a id="watch-private-link" class="text-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open protected live-data watchlist ↗</a>
+        </article>
       </section>
       <section id="view-market" class="view" aria-label="Market data" hidden>
         <div class="grid-2">
