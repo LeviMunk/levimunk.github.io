@@ -1776,6 +1776,101 @@
         " IEX-only historical observations, not real-time buy/sell orders.";
     }finally{briefingRunning=false;$("daily-brief-run").disabled=false;}
   }
+  let secLookupRunning=false;
+  async function loadSecAnnualFacts(){
+    const status=$("sec-status"),panel=$("sec-facts");
+    panel.replaceChildren();
+    if(secLookupRunning)return;
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Open your authenticated LeviOS Worker to fetch SEC filings.";
+      return;
+    }
+    const symbol=$("fund-symbol").value.trim().toUpperCase();
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)){
+      status.textContent="Enter a valid ticker first.";
+      return;
+    }
+    secLookupRunning=true;$("sec-fetch").disabled=true;
+    status.textContent="Checking the SEC ticker register and annual XBRL filing…";
+    const key="levios-sec-annual-v1-"+symbol;
+    try{
+      let report=null;
+      try{
+        const cache=JSON.parse(sessionStorage.getItem(key)||"null");
+        if(cache&&Number.isFinite(cache.at)&&cache.at<=Date.now()&&
+           Date.now()-cache.at<6*60*60*1000&&cache.report?.status==="available"&&
+           cache.report.ticker===symbol)report=cache.report;
+      }catch{}
+      if(!report){
+        const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),24000);
+        try{
+          const response=await fetch("/api/research/sec-financials?symbol="+encodeURIComponent(symbol),{
+            method:"GET",credentials:"same-origin",cache:"no-store",redirect:"error",signal:controller.signal
+          });
+          if(!response.ok)throw Error("SEC Worker request returned "+response.status);
+          report=await response.json();
+        }finally{clearTimeout(timeout);}
+        if(report?.status==="available"){
+          try{sessionStorage.setItem(key,JSON.stringify({at:Date.now(),report}));}catch{}
+        }
+      }
+      if(report?.status!=="available"){
+        const reason=report?.status==="not_configured"?
+          "Cloudflare Worker SEC_USER_AGENT is not configured. Set a private, identifiable contact User-Agent in the Worker secrets.":
+          report?.status==="not_found"?"Ticker was not found in the SEC company register.":
+          "SEC data unavailable or annual concepts could not be validated. No financial values were invented.";
+        status.textContent=reason;
+        return;
+      }
+      if(report.ticker!==symbol||!/^https:\/\/www\.sec\.gov\/Archives\//.test(report.sourceUrl)||
+         !/^\d{4}-\d{2}-\d{2}$/.test(report.reportEnd)||
+         !report.computed||!Array.isArray(report.measures)||report.measures.length>12)
+         throw Error("SEC response did not pass client validation.");
+      const header=document.createElement("div");
+      const tag=document.createElement("span");
+      tag.textContent="SEC 10-K · "+report.ticker+" · "+report.cik+
+        " · PERIOD ENDED "+report.reportEnd;
+      const title=document.createElement("strong");title.textContent=report.name;
+      const note=document.createElement("small");
+      note.textContent="SEC accession "+report.accession+" · filed "+
+        report.filingDate+" · original XBRL tags, not analyst estimates.";
+      header.append(tag,title,note);panel.append(header);
+      const values=[
+        ["Year-over-year revenue growth","revenueGrowthPct","fund-growth","%"],
+        ["Annual operating margin","operatingMarginPct","fund-margin","%"],
+        ["Long-term debt/equity proxy","longTermDebtToEquity","fund-debt",""],
+        ["Annual FCF","freeCashFlowMillions","fund-fcf"," million USD"]
+      ];
+      // Clear previous company's inputs; never silently mix data across firms.
+      for(const id of ["fund-growth","fund-margin","fund-debt","fund-fcf","fund-pe"])
+        $(id).value="";
+      for(const [name,field,id,unit] of values){
+        const raw=report.computed[field];
+        const value=typeof raw==="number"&&Number.isFinite(raw)?raw:null;
+        const box=document.createElement("div"),label=document.createElement("span"),
+          detail=document.createElement("small");
+        label.textContent=name.toUpperCase();
+        detail.textContent=value===null?"Unavailable from consistent annual SEC facts.":
+          value.toLocaleString("en-US",{maximumFractionDigits:2})+unit+
+          " · prefilled from SEC. Verify before using.";
+        if(value!==null)$(id).value=String(Number(value.toFixed(8)));
+        box.append(label,detail);panel.append(box);
+      }
+      const link=document.createElement("a");link.href=report.sourceUrl;
+      link.target="_blank";link.rel="noopener noreferrer";
+      link.textContent="Open SEC source filing archive ↗";panel.append(link);
+      const caveats=document.createElement("small");
+      caveats.textContent=String(report.caveats||"Annual financials need independent review.");
+      panel.append(caveats);
+      $("fund-period").value=report.reportEnd;
+      $("fund-source").value=report.sourceUrl;
+      status.textContent="Loaded historical SEC annual data for "+symbol+
+        ". Complete any missing metrics and independently verify a dated P/E before evaluating.";
+    }catch(error){
+      status.textContent="SEC lookup failed: "+String(error?.message||"unavailable")+
+        ". Existing inputs have not been submitted as a recommendation.";
+    }finally{secLookupRunning=false;$("sec-fetch").disabled=false;}
+  }
   function submitFundamentalsResearch(event){
     event.preventDefault();
     const summary=$("fund-summary"),results=$("fund-results");
@@ -2708,6 +2803,7 @@
   $("journal-form").addEventListener("submit",submitHypothesis);
   $("journal-review-form").addEventListener("submit",submitHypothesisReview);
   $("journal-export").addEventListener("click",exportHypothesisJournal);
+  $("sec-fetch").addEventListener("click",()=>void loadSecAnnualFacts());
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
