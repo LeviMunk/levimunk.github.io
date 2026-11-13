@@ -161,3 +161,54 @@ test("reports malformed Alpaca account data without exposing it", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("outbound paper requests use Cloudflare-supported manual redirects", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (destination, options) => {
+    requests.push({ url: String(destination), redirect: options.redirect, method: options.method });
+    return String(destination).endsWith("/v2/account")
+      ? Response.json({ equity: "100000", cash: "99000", buying_power: "198000" })
+      : Response.json([]);
+  };
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/status"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID: "TEST_PAPER_ID", ALPACA_PAPER_SECRET_KEY: "TEST_PAPER_SECRET"},
+      authenticated
+    );
+    assert.equal((await response.json()).connected, true);
+    assert.equal(requests.length, 2);
+    assert.ok(requests.every(x => x.method === "GET" && x.redirect === "manual"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("does not follow Alpaca redirects or send keys to a redirect destination", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return new Response(null, {
+      status: 302,
+      headers: { location: "https://attacker.invalid/collect" }
+    });
+  };
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/status"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID: "TEST_PAPER_ID", ALPACA_PAPER_SECRET_KEY: "TEST_PAPER_SECRET"},
+      authenticated
+    );
+    const result = await response.json();
+    assert.equal(result.connected, false);
+    assert.equal(result.reason, "alpaca_http_error");
+    assert.equal(result.http_status, 302);
+    assert.equal(calls, 2);
+    assert.ok(!JSON.stringify(result).includes("attacker.invalid"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
