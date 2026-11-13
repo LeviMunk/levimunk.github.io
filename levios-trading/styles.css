@@ -302,3 +302,17 @@
  .decision-headline{font-size:21px}
  .decision-brief-panel{padding:17px}
 }
+
+
+/* Keep primary actions concise and de-emphasize optional explanations. */
+#daily-brief-cards .brief-priority strong{font-size:18px;line-height:1.3}
+#daily-brief-cards .brief-priority small{font-size:12px;line-height:1.5}
+#daily-brief-cards .brief-priority .research-disclosure{margin-top:5px}
+#daily-brief-cards .brief-priority .research-disclosure p{font-size:11px;line-height:1.55;margin:6px 0}
+#daily-brief-cards .brief-more-details{grid-column:1/-1;border:1px solid #34504f;border-radius:11px;padding:13px;background:#10252a}
+#daily-brief-cards .brief-more-details>summary{cursor:pointer;font-size:12px;font-weight:700;color:#a6f0d1}
+#daily-brief-cards .brief-more-details>.brief-priority{padding:12px;margin-top:10px;border:1px solid #34504f;border-radius:10px;display:flex;flex-direction:column;gap:8px}
+@media(max-width:800px){
+  #view-overview #daily-brief-cards{grid-template-columns:1fr}
+  #view-overview .account-view-toolbar{gap:12px}
+}
