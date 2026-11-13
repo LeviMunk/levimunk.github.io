@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./strategy-engine.js"></script>
   <script defer src="./validation-engine.js"></script>
+  <script defer src="./coach-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -242,6 +243,13 @@
             <div id="watch-candle-chart" class="tradingview-chart candle-tradingview-chart" role="img" aria-label="Interactive daily IEX candlestick price chart"></div>
             <p id="watch-candle-status" class="muted watch-candle-status" role="status" aria-live="polite">Open this tab in your protected dashboard to load IEX daily price bars.</p>
             <p class="muted footnote">Candles represent IEX-only daily OHLC aggregates, not the consolidated market. Zoom and crosshair are interactive. Historical snapshots are not tick-by-tick prices. Chart library attribution: <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, © 2025 TradingView, Inc.</p>
+          </div>
+          <div class="watch-price-panel" aria-labelledby="coach-heading">
+            <div class="panel-head"><div><p class="eyebrow">LEARN TO READ THE MARKET</p><h3 id="coach-heading">Trading Coach: chart observations</h3></div><span class="scorecard-period">EDUCATION · NOT SIGNALS</span></div>
+            <p class="muted">Uses the selected ticker's completed IEX daily candles. Learn what trend, recent price ranges and volatility mean, and what you should question before reaching a conclusion.</p>
+            <p id="coach-status" class="muted footnote" aria-live="polite">Select a watchlist ticker and load its daily candles to begin learning.</p>
+            <div id="coach-lessons" class="strategy-evaluation"><div><span>NO ANALYSIS YET</span><small>Insights will be grounded in actual historical candles, never fictional prices.</small></div></div>
+            <p class="muted footnote">IEX is not consolidated market data. On-demand chart interpretation, not continuous surveillance, alerts, predictions or recommendations.</p>
           </div>
           <p class="muted footnote">* Change compares the latest IEX trade with Alpaca's prior daily closing bar, when available. Quote timestamps are shown because prices can be stale outside market hours or for less-active stocks. This view uses REST snapshots, not a continuous streaming feed. It does not submit trades.</p>
           <a id="watch-private-link" class="text-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open protected live-data watchlist ↗</a>
