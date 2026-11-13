@@ -18,9 +18,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Generate UI from GitHub Pages assets
-        working-directory: levios-trading/worker
+      - name: Generate UI using Cloudflare's repository-root build command
         run: node build.mjs
+      - name: Verify root deployment configuration exists
+        run: |
+          test -f wrangler.jsonc
+          grep -q '"main": "levios-trading/worker/src/index.mjs"' wrangler.jsonc
+          test -f levios-trading/worker/generated-assets.mjs
       - name: Check public frontend JavaScript
         run: node --check levios-trading/app.js
       - name: Check Worker JavaScript
