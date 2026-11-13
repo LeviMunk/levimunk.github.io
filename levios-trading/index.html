@@ -20,6 +20,7 @@
         <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Overview</button>
         <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
         <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
+        <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
         <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Paper Trades</button>
         <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Data & Settings</button>
       </nav>
@@ -145,6 +146,33 @@
             <p class="muted footnote">Simplified test: no bid/ask spread, slippage, taxes, dividends or survivorship-bias controls. Past performance does not predict results.</p>
           </article>
         </div>
+      </section>
+      <section id="view-fills" class="view" aria-label="Alpaca paper execution history" hidden>
+        <article class="panel fills-panel">
+          <div class="panel-head fills-heading">
+            <div>
+              <p class="eyebrow">ALPACA PAPER / VERIFIED EXECUTIONS</p>
+              <h2>Trade history</h2>
+              <p class="muted fills-description">Actual fills and partial fills reported by Alpaca. This is separate from the browser practice ledger.</p>
+            </div>
+            <button id="fills-refresh" type="button" class="button secondary" disabled>Refresh fills</button>
+          </div>
+          <div class="fills-kpi">
+            <span id="fills-summary">Sign in to your secure Alpaca dashboard to view executed paper trades.</span>
+            <a id="fills-private-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open secure dashboard ↗</a>
+          </div>
+          <div class="scroll-table">
+            <table class="fills-table">
+              <thead><tr><th>Executed</th><th>Symbol</th><th>Side</th><th>Quantity</th><th>Price</th><th>Notional</th><th>Fill</th></tr></thead>
+              <tbody id="fills-rows"><tr><td class="empty" colspan="7">No Alpaca trade history loaded.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="fills-footer">
+            <p id="fills-status" role="status" aria-live="polite">Your historical transactions will appear here after connecting to Alpaca PAPER.</p>
+            <button id="fills-more" type="button" class="button secondary" hidden>Load older fills</button>
+          </div>
+          <p class="muted footnote">Execution history records fills, including partial fills. These are not live market quotes, open orders, or realized P/L calculations. No orders can be placed from this page.</p>
+        </article>
       </section>
       <section id="view-trades" class="view" aria-label="Paper trade journal" hidden>
         <div class="grid-2">
