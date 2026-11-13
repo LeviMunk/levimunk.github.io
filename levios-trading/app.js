@@ -1289,6 +1289,213 @@
     } catch { strategyVersions = []; strategyNextVersion = 1; }
     renderStrategyVersions();
   }
+  // Research approvals are browser-local workflow decisions only.
+  // They never change Cloudflare Worker settings or send an Alpaca order.
+  function renderValidationOptions(preferred = null) {
+    const selector = $("validation-candidate");
+    const original = preferred === null ? selector.value : String(preferred);
+    selector.replaceChildren(new Option(
+      "Select a saved research experiment", ""));
+    for (const run of [...strategyVersions].reverse()) {
+      selector.add(new Option("v" + run.version + " · " +
+        run.symbol + " · " + run.source + " · " +
+        run.settings.fast + "/" + run.settings.slow + " MA",
+        String(run.version)));
+    }
+    const valid = [...selector.options].some(option => option.value === original);
+    selector.value = valid ? original : "";
+    $("validation-review").disabled = !selector.value;
+    $("validation-approve").disabled = true;
+    renderValidationChampion();
+  }
+  function validationCandidate() {
+    const version = Number($("validation-candidate").value);
+    return Number.isSafeInteger(version)
+      ? strategyVersions.find(v => v.version === version) ?? null : null;
+  }
+  function validationContextChampion(candidate) {
+    return candidate && globalThis.LeviStrategyValidation
+      ? globalThis.LeviStrategyValidation.comparableChampion(
+          validationDecisions,candidate) : null;
+  }
+  function renderValidationChampion() {
+    const candidate = validationCandidate();
+    const champion = validationContextChampion(candidate);
+    $("validation-champion").textContent = !candidate
+      ? "Select an experiment to view its matching research champion."
+      : champion
+        ? "Current research champion for this exact dataset and test protocol: v" +
+          champion.version + " · evaluation " +
+          strategyLabelPercent(champion.testReturnPct) +
+          ". A new candidate must exceed this result without materially worsening drawdown."
+        : "No research champion for this exact dataset and test protocol. This candidate will be judged against buy-and-hold plus the other fixed gates.";
+  }
+  function renderValidationReview() {
+    const review = activeValidationReview;
+    const badge = $("validation-status-badge");
+    const list = $("validation-checks");
+    list.replaceChildren();
+    badge.classList.remove("eligible", "rejected");
+    $("validation-approve").disabled = !review?.eligible;
+    if (!review) {
+      badge.textContent = "NOT EVALUATED";
+      $("validation-summary").textContent =
+        "Select a saved experiment and run the fixed validation gates. Manual approval only.";
+      const item = document.createElement("li");
+      item.textContent = "Validation results and rejection reasons will appear here.";
+      list.appendChild(item);
+      renderValidationChampion();
+      return;
+    }
+    badge.textContent = review.eligible ? "GATES PASSED" : "REJECTED";
+    badge.classList.add(review.eligible ? "eligible" : "rejected");
+    const fails = review.checks.filter(check => !check.pass);
+    $("validation-summary").textContent = review.eligible
+      ? "v" + review.candidateVersion +
+        " meets the current research gates. Approval is a separate explicit action, not a deployment or prediction."
+      : "v" + review.candidateVersion + " failed " + fails.length +
+        " gate" + (fails.length === 1 ? "" : "s") +
+        ". Address the specific reasons before considering this strategy.";
+    for (const check of review.checks) {
+      const item = document.createElement("li");
+      item.className = check.pass ? "validation-pass" : "validation-fail";
+      item.textContent = (check.pass ? "PASS · " : "FAIL · ") +
+        check.explanation;
+      list.appendChild(item);
+    }
+    renderValidationChampion();
+  }
+  function renderValidationDecisions() {
+    const tbody = $("validation-decisions");
+    if (!validationDecisions.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No saved validation decisions yet.</td></tr>';
+    } else {
+      tbody.innerHTML = [...validationDecisions].reverse().slice(0,30).map(event => {
+        const when = typeof event.at === "string" ? event.at.slice(0,16).replace("T"," ") : "—";
+        const decision = event.kind === "approved_research"
+          ? "APPROVED RESEARCH" : event.passed ? "GATES PASSED" : "REJECTED";
+        const reasons = event.kind === "approved_research"
+          ? "Manually approved · " + event.contextKey?.split("|")[3]
+          : (event.failedCodes?.length
+            ? "Failed: " + event.failedCodes.join(", ") : "All fixed checks passed");
+        return '<tr><td>' + escapeHTML(when) + '</td><td>v' +
+          escapeHTML(String(event.candidateVersion)) + ' · ' +
+          escapeHTML(String(event.symbol || "")) + '</td><td>' +
+          escapeHTML(decision) + '</td><td>' +
+          escapeHTML(event.baselineVersion ? "v" + event.baselineVersion : "Buy & hold") +
+          '</td><td>' + escapeHTML(reasons) + '</td></tr>';
+      }).join("");
+    }
+    $("validation-audit-status").textContent = validationDecisions.length +
+      " locally stored research decision(s), newest 30 displayed. Export the research log for a full copy.";
+  }
+  function saveValidationEvent(event) {
+    const next = [...validationDecisions, event].slice(-MAX_VALIDATION_DECISIONS);
+    // Persist before updating UI. A failed write must not claim approval.
+    localStorage.setItem(VALIDATION_LOG_STORAGE_KEY, JSON.stringify(next));
+    validationDecisions = next;
+    renderValidationDecisions();
+  }
+  function loadValidationDecisions() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(VALIDATION_LOG_STORAGE_KEY) || "[]");
+      validationDecisions = Array.isArray(stored)
+        ? stored.slice(-MAX_VALIDATION_DECISIONS).filter(row =>
+          row && ["review", "approved_research"].includes(row.kind) &&
+          typeof row.at === "string" && Number.isSafeInteger(row.candidateVersion) &&
+          row.candidateVersion > 0 && typeof row.contextKey === "string" &&
+          row.contextKey.length < 512 &&
+          (!row.snapshot || (row.snapshot.version === row.candidateVersion &&
+            row.snapshot.settings && typeof row.snapshot.dataHash === "string")))
+        : [];
+    } catch { validationDecisions = []; }
+    renderValidationDecisions();
+    renderValidationOptions();
+    renderValidationReview();
+  }
+  function runValidationReview() {
+    const candidate = validationCandidate();
+    const validator = globalThis.LeviStrategyValidation;
+    if (!candidate || !validator) {
+      $("validation-summary").textContent =
+        "Save a valid research experiment before running approval gates.";
+      return;
+    }
+    const champion = validationContextChampion(candidate);
+    const result = validator.evaluate(candidate, champion);
+    const record = {
+      kind: "review", at: new Date().toISOString(),
+      candidateVersion: candidate.version, symbol:candidate.symbol,
+      contextKey: result.contextKey || "",
+      baselineVersion: result.baselineVersion,
+      passed: result.eligible,
+      failedCodes: result.checks.filter(check => !check.pass).map(check => check.code),
+      policyVersion: validator.version
+    };
+    try {
+      saveValidationEvent(record);
+    } catch {
+      $("validation-summary").textContent =
+        "Could not store the validation review in this browser. No approval was enabled.";
+      return;
+    }
+    activeValidationReview = {
+      ...result, candidateVersion:candidate.version,
+      candidateSavedAt:candidate.savedAt
+    };
+    renderValidationReview();
+  }
+  function approveValidationReview() {
+    const candidate = validationCandidate();
+    const review = activeValidationReview;
+    const validator = globalThis.LeviStrategyValidation;
+    if (!candidate || !review?.eligible || !validator ||
+        candidate.version !== review.candidateVersion ||
+        candidate.savedAt !== review.candidateSavedAt) {
+      $("validation-summary").textContent =
+        "This review is stale. Re-run the validation gates before approving.";
+      $("validation-approve").disabled = true;
+      return;
+    }
+    // Re-check gates against the latest approved champion before persisting.
+    const champion = validationContextChampion(candidate);
+    const current = validator.evaluate(candidate, champion);
+    if (!current.eligible || current.contextKey !== review.contextKey ||
+        current.baselineVersion !== review.baselineVersion) {
+      activeValidationReview = null;
+      renderValidationReview();
+      $("validation-summary").textContent =
+        "The baseline or validation evidence changed. Re-run the gates before approval.";
+      return;
+    }
+    if (!window.confirm("Approve v" + candidate.version +
+        " as a BROWSER-LOCAL RESEARCH champion only? This does NOT place broker orders, deploy strategies, or establish future profitability.")) {
+      return;
+    }
+    const event = {
+      kind:"approved_research", at:new Date().toISOString(),
+      candidateVersion:candidate.version, symbol:candidate.symbol,
+      contextKey:current.contextKey, baselineVersion:current.baselineVersion,
+      passed:true, failedCodes:[],
+      policyVersion:validator.version,
+      snapshot:{...candidate, settings:{...candidate.settings}}
+    };
+    try {
+      saveValidationEvent(event);
+    } catch {
+      $("validation-summary").textContent =
+        "Browser storage failed: no research champion was approved.";
+      return;
+    }
+    activeValidationReview = null;
+    renderValidationReview();
+    $("validation-summary").textContent =
+      "Research champion v" + candidate.version +
+      " approved locally. No trading permissions or strategies were deployed.";
+    renderValidationChampion();
+    showToast("Approved research champion v" + candidate.version + " (browser only)");
+  }
+
   function runStrategyWorkbench() {
     if (!globalThis.LeviStrategyEngine) throw Error("Strategy engine is unavailable. Refresh the page.");
     const {source, symbol, rows} = strategySourceInfo();
