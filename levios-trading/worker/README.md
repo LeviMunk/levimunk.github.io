@@ -211,6 +211,14 @@ For each fold, the engine independently runs three long-only moving-average para
 
 **Not continuous execution:** each fold's calculation uses its own simulated equity path from dataset inception to establish indicators and the position held at that fold boundary. Fold returns must not be added or interpreted as a stitched, executable account equity curve. The backtest uses hypothetical next-close fills and excludes important execution friction, splits, dividends and survivorship biases. Repeatedly altering research choices after seeing these same dates contaminates any out-of-sample claim; true prospective paper validation is still required. No broker orders, new credentials, extra network requests or paid services.
 
+## Trading Coach: contextual IEX education (tenth incremental upgrade)
+
+The protected IEX Watchlist now includes **Trading Coach** below its existing candlestick chart. It interprets actual *completed* IEX daily bars already fetched for the selected chart ticker: last close versus the 20-day average, optional 20-versus-50-day average, position inside the recent 20-session high/low range, and annualized close-to-close volatility calculated from the last 20 log returns. Each observation has an explanation of what the statistic does and does not mean and a question for the user to investigate.
+
+The browser excludes the unfinished current New York session from coach analysis. It displays explicit insufficient-data and invalid-candle states, makes no extra Alpaca requests, and never invents prices, automated trade signals, trading orders or predictions. IEX-only prices do not represent the entire consolidated market and may differ from SIP bars. The coach provides educational observations **only when the chart is loaded**: there is no 24/7 monitoring, push notification, economic calendar, earnings/news analysis, or AI-generated natural-language interpretation yet.
+
+The independent `coach-engine.js` is bundled into the Worker through `build.mjs`, served by the same Cloudflare Access authentication gate as other dashboard assets, and regression-tested in `worker/test/coach.test.mjs`.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
