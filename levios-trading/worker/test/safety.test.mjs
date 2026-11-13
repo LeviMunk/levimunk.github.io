@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import handler from "../src/index.mjs";
+import { equityScorecard } from "../src/performance.mjs";
 
 const url = "https://levimunk-alpaca.levivanstap.workers.dev";
 const authenticated = { access: { getIdentity: async () => ({ email: "owner@example.test" }) } };
@@ -258,6 +259,10 @@ test("private portfolio history is read-only and returns only Alpaca-approved P/
     assert.equal(body.points[2].profit_loss, 65.79);
     assert.equal(body.points[2].equity, 100065.79);
     assert.equal(body.points[2].profit_loss_pct, 0.0006579);
+    assert.equal(body.scorecard.observations, 3);
+    assert.equal(body.scorecard.observed_peak_equity, 100065.79);
+    assert.equal(body.scorecard.observed_low_equity, 100000);
+    assert.equal(body.scorecard.max_observed_drawdown_pct, 0);
     assert.deepEqual(Object.keys(body.points[0]).sort(), ["equity","profit_loss","profit_loss_pct","timestamp"]);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, "https://paper-api.alpaca.markets/v2/account/portfolio/history?period=1M&timeframe=1D");
@@ -563,4 +568,77 @@ test("IEX errors, missing credentials and rate limits are safe and explicit", as
     const bad=await handler.fetch(new Request(url+"/api/market/watchlist?symbols=AAPL"),env,authenticated);
     assert.equal((await bad.json()).reason,"alpaca_invalid_response");
   }finally{globalThis.fetch=originalFetch;}
+});
+
+test("equity scorecard uses period high watermark for percentage drawdown", () => {
+  const data = [
+    {timestamp: 100, equity: 100},
+    {timestamp: 200, equity: 120},
+    {timestamp: 300, equity: 90},
+    {timestamp: 400, equity: 130}
+  ];
+  const stats = equityScorecard(data);
+  assert.deepEqual(stats, {
+    observations: 4,
+    first_timestamp: 100,
+    last_timestamp: 400,
+    observed_peak_equity: 130,
+    observed_low_equity: 90,
+    max_observed_drawdown_pct: 25,
+    max_observed_drawdown_usd: 30
+  });
+});
+
+test("equity scorecard returns 0% for a rising or flat history, not fake losses", () => {
+  assert.equal(equityScorecard([
+    {timestamp: 1, equity: 10000},
+    {timestamp: 2, equity: 10000},
+    {timestamp: 3, equity: 10100}
+  ]).max_observed_drawdown_pct, 0);
+  assert.equal(equityScorecard([
+    {timestamp: 1, equity: 10000},
+    {timestamp: 2, equity: 10000}
+  ]).max_observed_drawdown_usd, 0);
+});
+
+test("equity scorecard refuses to invent drawdown from sparse or missing data", () => {
+  const empty = equityScorecard([]);
+  assert.equal(empty.observations, 0);
+  assert.equal(empty.max_observed_drawdown_pct, null);
+  assert.equal(empty.observed_peak_equity, null);
+  const single = equityScorecard([{timestamp: 10, equity: 12345}]);
+  assert.equal(single.observations, 1);
+  assert.equal(single.max_observed_drawdown_pct, null);
+  assert.equal(single.max_observed_drawdown_usd, null);
+  assert.equal(single.observed_peak_equity, 12345);
+});
+
+test("equity scorecard rejects bad data, orders by timestamp, and deduplicates", () => {
+  const stats = equityScorecard([
+    {timestamp: 3, equity: 90},
+    {timestamp: 1, equity: 100},
+    {timestamp: 2, equity: 120},
+    {timestamp: 2, equity: 999999},
+    {timestamp: 4, equity: -1},
+    {timestamp: 5, equity: Infinity},
+    {timestamp: "6", equity: 100}
+  ]);
+  assert.equal(stats.observations, 3);
+  assert.equal(stats.max_observed_drawdown_pct, 25);
+  assert.equal(stats.max_observed_drawdown_usd, 30);
+  assert.equal(stats.observed_peak_equity, 120);
+  assert.equal(stats.observed_low_equity, 90);
+  assert.equal(stats.first_timestamp, 1);
+  assert.equal(stats.last_timestamp, 3);
+});
+
+test("maximum-dollar drawdown belongs to same event as percentage drawdown", () => {
+  const stats = equityScorecard([
+    {timestamp:1,equity:100},
+    {timestamp:2,equity:80}, // 20% = $20
+    {timestamp:3,equity:200},
+    {timestamp:4,equity:170} // 15% = $30; not the max percentage
+  ]);
+  assert.equal(stats.max_observed_drawdown_pct, 20);
+  assert.equal(stats.max_observed_drawdown_usd, 20);
 });
