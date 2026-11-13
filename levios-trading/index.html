@@ -11,6 +11,7 @@
   <script defer src="./strategy-engine.js"></script>
   <script defer src="./validation-engine.js"></script>
   <script defer src="./coach-engine.js"></script>
+  <script defer src="./radar-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -226,6 +227,17 @@
                 <tr><td colspan="8" class="empty">Open this watchlist in your protected LeviOS dashboard to load IEX quotes.</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="watch-price-panel" aria-labelledby="radar-heading">
+            <div class="panel-head">
+              <div><p class="eyebrow">WATCHLIST INTELLIGENCE / ON-DEMAND</p><h3 id="radar-heading">Market Radar</h3></div>
+              <span class="scorecard-period">IEX · HISTORICAL</span>
+            </div>
+            <p class="muted">Scan up to 12 watchlist tickers for unusual completed-session price moves, IEX-only volume spikes, and closes outside the prior 20-session range. Every observation includes its evidence and a question to research.</p>
+            <div class="button-row"><button id="radar-scan" type="button" class="button secondary">Scan watchlist</button></div>
+            <p id="radar-status" class="muted footnote" role="status" aria-live="polite">No scan yet. Scans run when you request them, not continuously in the background.</p>
+            <div id="radar-results" class="strategy-evaluation"><div><span>NOT SCANNED</span><small>Read-only educational monitoring. No trades or alerts.</small></div></div>
+            <p class="muted footnote">Uses completed IEX daily candles, not SIP/consolidated market data. This first version does not monitor earnings, headlines, SEC filings or economic announcements. No future price predictions or automated trading decisions.</p>
           </div>
           <div class="watch-price-panel">
             <div class="panel-head watch-chart-header">
