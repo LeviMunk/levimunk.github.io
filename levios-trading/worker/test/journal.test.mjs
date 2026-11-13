@@ -17,7 +17,7 @@ test("forces thesis, counterpoint, invalidation and risk into original immutable
 test("review is a separate immutable reflection with explicit hypothetical changes",()=>{
  const x=p(),r=j.review(x,{grade:"mixed",reviewPrice:103,observation:"Price rose but volume stayed weak",
  lesson:"A price increase does not verify the rationale"},"2026-11-20T10:00:00Z");
- assert.equal(r.originalReferencePrice,100);assert.equal(r.hypotheticalChangePct,3);
+ assert.equal(r.originalReferencePrice,100);assert.ok(Math.abs(r.hypotheticalChangePct-3)<1e-9);
  assert.equal(x.createdAt,time);assert.ok(Object.isFrozen(r));
 });
 test("plans cannot be silently overwritten or reviewed twice",()=>{
