@@ -231,9 +231,9 @@
                 <label for="watch-chart-symbol">Ticker</label>
                 <select id="watch-chart-symbol" aria-label="Stock for candlestick chart"></select>
                 <div class="pnl-range" role="group" aria-label="Historical price chart period">
-                  <button type="button" data-ohlc-range="1M" aria-pressed="false">1M</button>
-                  <button type="button" data-ohlc-range="3M" aria-pressed="true" class="active">3M</button>
-                  <button type="button" data-ohlc-range="1Y" aria-pressed="false">1Y</button>
+                  <button type="button" class="pnl-range-button" data-ohlc-range="1M" aria-pressed="false">1M</button>
+                  <button type="button" class="pnl-range-button active" data-ohlc-range="3M" aria-pressed="true">3M</button>
+                  <button type="button" class="pnl-range-button" data-ohlc-range="1Y" aria-pressed="false">1Y</button>
                 </div>
               </div>
             </div>
@@ -337,7 +337,7 @@
           </article>
         </div>
       </section>
-      <footer class="footer"><span>LEVIOS TRADING LAB / v0.3 · GITHUB + CLOUDFLARE</span><span>Research & education only. Not financial advice.</span></footer>
+      <footer class="footer"><span>LEVIOS TRADING LAB / v0.4 · GITHUB + CLOUDFLARE</span><span>Research &amp; education only. Not financial advice. Charting: <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>.</span></footer>
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
