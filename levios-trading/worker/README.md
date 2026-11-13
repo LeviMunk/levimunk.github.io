@@ -6,6 +6,20 @@ The protected Worker is what you open from any computer or phone to see your **a
 
 **This is not yet live** until you create/connect the Cloudflare Worker and add Access + private secrets. None of these steps transfers your domain, changes Bluehost DNS, requires your ThinkCentre to be online, or requires paid hosting at small personal usage levels.
 
+## Current Cloudflare build configuration (root directory)
+
+**Already fixed in GitHub:** The repository now includes root-level `build.mjs` and `wrangler.jsonc` compatibility files. This allows Cloudflare's existing root-directory build settings to work unchanged:
+
+- **Root directory:** leave blank (repository root)
+- **Build command:** `node build.mjs`
+- **Deploy command:** `npx wrangler deploy`
+- **Production branch:** `main`
+- **Worker name:** `levios-alpaca`
+
+If you previously saw `Cannot find module '/opt/buildhome/repo/build.mjs'`, the new GitHub commit fixes that specific problem. In Cloudflare, go to **Workers & Pages → your Worker → Deployments/Builds → Retry deployment**, or allow the connected GitHub integration to rebuild on push. Cloudflare needs to fetch the new GitHub commit.
+
+If you already set root directory to `levios-trading/worker`, the original `node build.mjs` and `npx wrangler deploy` commands still work there as well. **Do not combine a nested root directory with a root-prefixed command.**
+
 ## One-time steps in Cloudflare (no command line necessary)
 
 1. Open [Cloudflare Dashboard](https://dash.cloudflare.com/). Create/sign into a Cloudflare account and select the **Free** Workers plan. **Do not add or transfer `levimunk.com` as a domain.** There is no DNS step.
