@@ -190,5 +190,69 @@
       };
     });
   }
-  scope.LeviStrategyEngine = Object.freeze({version: VERSION, run, checksum, evaluationWindows});
+  // Expanding-window historical simulation. Each training selection uses ONLY
+  // bars available before its evaluation window. The small candidate grid is
+  // fixed in code to keep the research protocol reproducible.
+  function walkForward(rows, settings) {
+    validate(rows, settings);
+    if (rows.length < 150) {
+      throw Error("Walk-forward testing requires at least 150 daily closes.");
+    }
+    const candidates = [{fast:5,slow:20},{fast:10,slow:30},{fast:20,slow:50}];
+    const initial = Math.floor(rows.length / 2);
+    const remaining = rows.length - initial;
+    const cuts = [initial, initial + Math.floor(remaining / 3),
+      initial + Math.floor(2 * remaining / 3), rows.length];
+    const baseSettings = {splitPct:70,feeBps:settings.feeBps,
+      slippageBps:settings.slippageBps};
+    const folds = [];
+    for (let fold=0;fold<3;fold++) {
+      const trainEnd=cuts[fold], evalEnd=cuts[fold+1];
+      // All parameter selection stops strictly before the evaluation dates.
+      const training=rows.slice(0,trainEnd);
+      let champion=null;
+      for (const choice of candidates) {
+        const trial=run(training,{...baseSettings,...choice});
+        const score=trial.full.returnPct-trial.full.holdPct;
+        if (!champion || score>champion.score+1e-10) {
+          champion={...choice,score};
+        }
+      }
+      // Simulate the selected rule from inception through the end of this
+      // fold to preserve the strategy's indicator warmup and position state.
+      // A fold is an independent hypothetical portfolio, NOT an executable
+      // continuous account that switches strategies across fold boundaries.
+      const sample=run(rows.slice(0,evalEnd),{...baseSettings,
+        fast:champion.fast,slow:champion.slow});
+      const before=sample.curve[trainEnd-1].equity;
+      const after=sample.curve[evalEnd-1].equity;
+      const beforeHold=sample.benchmark[trainEnd-1];
+      const afterHold=sample.benchmark[evalEnd-1];
+      let peak=before,drawdown=0;
+      for(let i=trainEnd;i<evalEnd;i++){
+        peak=Math.max(peak,sample.curve[i].equity);
+        drawdown=Math.min(drawdown,(sample.curve[i].equity/peak-1)*100);
+      }
+      const returnPct=(after/before-1)*100;
+      const holdPct=(afterHold/beforeHold-1)*100;
+      folds.push({
+        fold:fold+1,trainStart:training[0].date,
+        trainEnd:training.at(-1).date,
+        evalStart:rows[trainEnd].date,evalEnd:rows[evalEnd-1].date,
+        trainObservations:trainEnd,evalObservations:evalEnd-trainEnd,
+        fast:champion.fast,slow:champion.slow,
+        trainingExcessPctPoints:champion.score,
+        returnPct,holdPct,excessPctPoints:returnPct-holdPct,
+        maxDrawdownPct:drawdown,
+        executions:sample.executions.filter(x=>
+          x.date>=rows[trainEnd].date && x.date<=rows[evalEnd-1].date).length
+      });
+    }
+    return {version:"levios-walk-forward-v1",dataHash:checksum(rows),
+      method:"expanding-training-three-chronological-evaluation-folds",
+      candidates,folds,
+      positiveFolds:folds.filter(f=>f.excessPctPoints>0).length,
+      caveat:"Historical repeated out-of-sample simulation, not untouched forward/live testing. Each fold has independent carried-in positions; fold returns are not a stitched executable equity curve. Close-only hypothetical fills, IEX coverage and corporate-action limitations apply."};
+  }
+  scope.LeviStrategyEngine = Object.freeze({version: VERSION, run, checksum, evaluationWindows, walkForward});
 })(globalThis);
