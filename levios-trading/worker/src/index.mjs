@@ -84,7 +84,10 @@ async function fetchPaperData(env, pathname) {
     response = await fetch(ALPACA_BASE + pathname, {
       method: "GET",
       headers,
-      redirect: "error",
+      // Cloudflare Workers does not implement fetch redirect: "error".
+      // Use "manual" and refuse any 3xx response rather than following it
+      // with private Alpaca authentication headers.
+      redirect: "manual",
       signal: AbortSignal.timeout(8000)
     });
   } catch (error) {
