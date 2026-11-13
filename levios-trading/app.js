@@ -236,6 +236,10 @@
     const privateWorker = window.location.hostname.endsWith(".workers.dev");
     const connected = Boolean(alpacaSnapshot?.connected);
     const paper = accountView === "alpaca";
+    if (paper && connected) {
+      $("metric-pl").textContent = "Paper brokerage account · not live money";
+      $("metric-pl").className = "";
+    }
     for (const button of document.querySelectorAll("[data-pnl-range]")) {
       const selected = button.dataset.pnlRange === pnlRange;
       button.classList.toggle("active", selected);
@@ -272,6 +276,9 @@
         const pnlText = (pnl > 0 ? "+" : pnl < 0 ? "−" : "") + money(Math.abs(pnl));
         $("pnl-value").textContent = pnlText;
         $("pnl-value").classList.add(pnl >= 0 ? "positive" : "negative");
+        // Mirror the period P/L in the equity card, clearly labeled as PAPER.
+        $("metric-pl").textContent = pnlText + " " + pnlRange + " P/L · Alpaca PAPER";
+        $("metric-pl").className = pnl >= 0 ? "gain" : "loss";
         if (last.profit_loss_pct !== null && last.profit_loss_pct !== undefined &&
             Number.isFinite(last.profit_loss_pct)) {
           const percent = last.profit_loss_pct * 100;
@@ -310,7 +317,12 @@
           const padding = Math.max(1, (max - min) * 0.12);
           const low = min - padding;
           const high = max + padding;
-          const left = 83, right = 779, top = 19, bottom = 219;
+          const compact = window.matchMedia("(max-width: 600px)").matches;
+          const chartWidth = compact ? 390 : 800;
+          chart.setAttribute("viewBox", "0 0 " + chartWidth + " 250");
+          const left = compact ? 63 : 83;
+          const right = chartWidth - 21;
+          const top = 19, bottom = 219;
           const x = i => left + (right - left) * i / (rows.length - 1);
           const y = value => bottom - (value - low) / (high - low) * (bottom - top);
           for (let i = 0; i <= 4; i++) {
@@ -727,6 +739,9 @@
       void loadProfitLoss();
     });
   }
+  window.addEventListener("resize", () => {
+    if (pnlHistory?.points?.length > 1 && accountView === "alpaca") renderProfitLoss();
+  });
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
   $("alpaca-disconnect").addEventListener("click", () => {
