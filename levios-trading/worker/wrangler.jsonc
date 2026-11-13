@@ -1,7 +1,7 @@
 {
   // The existing public portfolio stays on GitHub Pages.
   // This Worker serves a separate private, authenticated copy of the dashboard.
-  "name": "levimunk-github-io",
+  "name": "levimunk-alpaca",
   "main": "src/index.mjs",
   "compatibility_date": "2026-11-12",
   "workers_dev": true
