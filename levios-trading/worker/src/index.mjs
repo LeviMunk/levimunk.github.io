@@ -16,6 +16,8 @@ import { positionRiskSummary } from "./risk.mjs";
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
 const MAX_WATCHLIST_SYMBOLS = 12;
+const CHART_PERIODS = Object.freeze({ "1M": 32, "3M": 95, "1Y": 370 });
+const MAX_CANDLE_BARS = 400;
 const SOURCE_ORIGIN = "https://levimunk.com";
 const MAX_POSITIONS = 100;
 const HISTORY_RANGE_PERIODS = Object.freeze({ "1W": "1W", "1M": "1M", "3M": "3M", "1Y": "1A" });
@@ -382,6 +384,79 @@ async function iexSnapshots(env, symbols) {
   };
 }
 
+// Historical *IEX* OHLC bars for the authenticated candlestick chart.
+// Bar volume and prices cover only IEX, not SIP/consolidated exchanges.
+async function iexDailyBars(env, symbol, range) {
+  if (!env.ALPACA_PAPER_KEY_ID || !env.ALPACA_PAPER_SECRET_KEY) {
+    return {connected:false,feed:"iex",symbol,range,reason:"alpaca_paper_secrets_missing",
+      message:"Alpaca PAPER credentials are not configured."};
+  }
+  const from = new Date(Date.now() - CHART_PERIODS[range] * 86400000).toISOString();
+  const params = new URLSearchParams({
+    timeframe: "1Day", start: from, feed: "iex",
+    adjustment: "raw", sort: "asc", limit: String(MAX_CANDLE_BARS)
+  });
+  let response;
+  try {
+    response = await fetch(ALPACA_MARKET_DATA_BASE +
+      "/v2/stocks/" + encodeURIComponent(symbol) + "/bars?" + params.toString(), {
+        method: "GET",
+        headers: {
+          "APCA-API-KEY-ID": env.ALPACA_PAPER_KEY_ID,
+          "APCA-API-SECRET-KEY": env.ALPACA_PAPER_SECRET_KEY,
+          "Accept": "application/json"
+        },
+        redirect: "manual",
+        signal: AbortSignal.timeout(8000)
+      });
+  } catch (error) {
+    const reason = error?.name === "TimeoutError" || error?.name === "AbortError"
+      ? "alpaca_timeout" : "alpaca_network_error";
+    return {connected:false,feed:"iex",symbol,range,reason,
+      message:"Could not reach Alpaca IEX daily bars."};
+  }
+  if (!response.ok) {
+    const code = response.status === 401 || response.status === 403
+      ? "alpaca_credentials_rejected"
+      : response.status === 429 ? "alpaca_rate_limited"
+      : response.status >= 500 ? "alpaca_service_error" : "alpaca_http_error";
+    return {connected:false,feed:"iex",symbol,range,reason:code,
+      http_status:response.status,message:"Alpaca IEX daily bars unavailable."};
+  }
+  let payload;
+  try { payload = await response.json(); } catch {
+    return {connected:false,feed:"iex",symbol,range,reason:"alpaca_invalid_response",
+      message:"Alpaca returned invalid daily bar data."};
+  }
+  if (!payload || !Array.isArray(payload.bars)) {
+    return {connected:false,feed:"iex",symbol,range,reason:"alpaca_invalid_response",
+      message:"Alpaca returned invalid daily bar data."};
+  }
+  const bars = [];
+  const seen = new Set();
+  for (const item of payload.bars.slice(0, MAX_CANDLE_BARS)) {
+    if (!item || typeof item.t !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(item.t) ||
+        !Number.isFinite(Date.parse(item.t))) continue;
+    const time = item.t.slice(0, 10);
+    const open = Number(item.o), high = Number(item.h);
+    const low = Number(item.l), close = Number(item.c);
+    if ([item.o,item.h,item.l,item.c].some(value => value === null || value === undefined) ||
+        ![open,high,low,close].every(value => Number.isFinite(value) && value > 0) ||
+        low > Math.min(open,close,high) || high < Math.max(open,close,low)) continue;
+    if (seen.has(time)) continue;
+    seen.add(time);
+    const volume = item.v == null ? null : Number(item.v);
+    bars.push({
+      time, open, high, low, close,
+      volume: Number.isFinite(volume) && volume >= 0 ? volume : null
+    });
+  }
+  bars.sort((a,b) => a.time.localeCompare(b.time));
+  return {connected:true,feed:"iex",feed_scope:"single_exchange",
+    symbol,range,timeframe:"1Day",truncated:Boolean(payload.next_page_token),
+    bars};
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -414,6 +489,23 @@ export default {
         return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       }
       return json(await recentTradeFills(env, cursor));
+    }
+    if (url.pathname === "/api/market/bars") {
+      const keys = [...url.searchParams.keys()];
+      const symbols = url.searchParams.getAll("symbol");
+      const ranges = url.searchParams.getAll("range");
+      const symbol = symbols[0] || "";
+      const range = ranges[0] || "";
+      if (symbols.length !== 1 || ranges.length !== 1 ||
+          keys.some(key => key !== "symbol" && key !== "range") ||
+          !watchlistSymbolPattern.test(symbol) ||
+          !Object.hasOwn(CHART_PERIODS,range)) {
+        return json({error:"Provide a valid ticker symbol and range (1M, 3M or 1Y)."},400);
+      }
+      if (request.method === "HEAD") {
+        return new Response(null,{status:200,headers:commonHeaders("application/json")});
+      }
+      return json(await iexDailyBars(env,symbol,range));
     }
     if (url.pathname === "/api/market/watchlist") {
       const symbolValues = url.searchParams.getAll("symbols");
