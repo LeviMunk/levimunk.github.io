@@ -61,36 +61,72 @@ async function authorizationStatus(env, ctx) {
   }
 }
 
+// Only hardcoded diagnostic codes are returned to the signed-in user.
+// Never return arbitrary fetch exceptions, Alpaca response bodies or headers:
+// they can contain account identifiers or other private information.
+function alpacaFailure(code, endpoint, httpStatus) {
+  const error = new Error(code);
+  error.safeCode = code;
+  error.safeEndpoint = endpoint;
+  if (httpStatus) error.safeHttpStatus = httpStatus;
+  return error;
+}
+
 async function fetchPaperData(env, pathname) {
+  const endpoint = pathname === "/v2/account" ? "account" : "positions";
   const headers = {
     "APCA-API-KEY-ID": env.ALPACA_PAPER_KEY_ID,
     "APCA-API-SECRET-KEY": env.ALPACA_PAPER_SECRET_KEY,
     "Accept": "application/json"
   };
-  const response = await fetch(ALPACA_BASE + pathname, {
-    method: "GET",
-    headers,
-    redirect: "error",
-    signal: AbortSignal.timeout(8000)
-  });
-  if (!response.ok) {
-    throw new Error(response.status === 401 || response.status === 403
-      ? "Alpaca rejected the paper credentials."
-      : "Alpaca returned HTTP " + response.status + ".");
+  let response;
+  try {
+    response = await fetch(ALPACA_BASE + pathname, {
+      method: "GET",
+      headers,
+      redirect: "error",
+      signal: AbortSignal.timeout(8000)
+    });
+  } catch (error) {
+    // Timeouts and network failures are distinct from invalid credentials.
+    const code = error?.name === "TimeoutError" || error?.name === "AbortError"
+      ? "alpaca_timeout" : "alpaca_network_error";
+    throw alpacaFailure(code, endpoint);
   }
-  return response.json();
+  if (!response.ok) {
+    const status = response.status;
+    const code = status === 401 || status === 403 ? "alpaca_credentials_rejected"
+      : status === 429 ? "alpaca_rate_limited"
+      : status >= 500 ? "alpaca_service_error"
+      : "alpaca_http_error";
+    throw alpacaFailure(code, endpoint, status);
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw alpacaFailure("alpaca_invalid_response", endpoint);
+  }
 }
 
 async function accountSnapshot(env) {
   if (!env.ALPACA_PAPER_KEY_ID || !env.ALPACA_PAPER_SECRET_KEY) {
-    return { connected: false, mode: "paper", message: "Alpaca PAPER keys are not yet configured in Cloudflare Worker Secrets." };
+    return {
+      connected: false,
+      mode: "paper",
+      reason: "alpaca_paper_secrets_missing",
+      message: "Alpaca PAPER keys are not yet configured in Cloudflare Worker Secrets."
+    };
   }
   try {
     const [account, positions] = await Promise.all([
       fetchPaperData(env, "/v2/account"),
       fetchPaperData(env, "/v2/positions")
     ]);
-    if (!account || !Array.isArray(positions)) throw new Error("Unexpected Alpaca response.");
+    if (!account || typeof account !== "object" ||
+        account.equity == null || account.cash == null || account.buying_power == null ||
+        !Array.isArray(positions)) {
+      throw alpacaFailure("alpaca_invalid_response", "account_or_positions");
+    }
     return {
       connected: true,
       mode: "paper",
@@ -109,11 +145,19 @@ async function accountSnapshot(env) {
       }))
     };
   } catch (error) {
-    // Do not echo network details, headers, or secret values in responses.
-    const message = error.message === "Alpaca rejected the paper credentials."
-      ? error.message
+    // Do not echo exception messages or Alpaca response bodies to the browser.
+    const allowedCodes = new Set([
+      "alpaca_credentials_rejected", "alpaca_rate_limited", "alpaca_service_error",
+      "alpaca_http_error", "alpaca_timeout", "alpaca_network_error", "alpaca_invalid_response"
+    ]);
+    const reason = allowedCodes.has(error?.safeCode) ? error.safeCode : "alpaca_unexpected_error";
+    const message = reason === "alpaca_credentials_rejected"
+      ? "Alpaca rejected the paper API credentials."
       : "Alpaca paper account is temporarily unavailable.";
-    return { connected: false, mode: "paper", message };
+    const result = { connected: false, mode: "paper", reason, message };
+    if (error?.safeEndpoint) result.endpoint = error.safeEndpoint;
+    if (Number.isInteger(error?.safeHttpStatus)) result.http_status = error.safeHttpStatus;
+    return result;
   }
 }
 
