@@ -34,6 +34,10 @@ test("protected dashboard and assets are served after login", async () => {
   assert.match(html, /id="pnl-chart"/);
   assert.match(html, /data-pnl-range="1W"/);
   assert.match(html, /data-pnl-range="1Y"/);
+  assert.match(html, /data-view="fills"/);
+  assert.match(html, /id="view-fills"/);
+  assert.match(html, /id="fills-rows"/);
+  assert.match(html, /id="fills-more"/);
   assert.match(html, /id="broker-connection-internals" hidden aria-hidden="true"/);
   assert.match(html, /class="grid-2 holdings-section"/);
   assert.match(html, /id="private-trading-link"/);
@@ -333,4 +337,114 @@ test("portfolio history rejects malicious or malformed points instead of fabrica
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("private execution fills are read-only, sanitized and never expose order IDs", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (destination, options) => {
+    requests.push({url:String(destination), method:options.method, redirect:options.redirect});
+    return Response.json([
+      {
+        activity_type:"FILL", id:"20261112000000001::PRIVATE-ORDER-ID",
+        order_id:"PRIVATE-ORDER-ID", symbol:"SPY", qty:"0.5",
+        price:"600.25", side:"buy", type:"partial_fill",
+        transaction_time:"2026-11-12T15:01:03.000Z",
+        account_number:"SECRET_ACCOUNT_ID"
+      },
+      {
+        activity_type:"FILL", id:"20261112000000000::PRIVATE-ID-2",
+        symbol:"AAPL", qty:"2", price:"200", side:"sell",
+        type:"fill", transaction_time:"2026-11-12T15:00:00.000Z"
+      }
+    ]);
+  };
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_KEY",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+  try {
+    const response=await handler.fetch(new Request(url+"/api/alpaca/fills"),env,authenticated);
+    assert.equal(response.status,200);
+    const body=await response.json();
+    assert.equal(body.connected,true);
+    assert.equal(body.mode,"paper");
+    assert.equal(body.fills.length,2);
+    assert.equal(body.page_size,50);
+    assert.equal(body.next_page_token,null);
+    assert.deepEqual(body.fills[0],{
+      time:"2026-11-12T15:01:03.000Z",symbol:"SPY",
+      side:"buy",qty:"0.5",price:"600.25",
+      notional:300.13,type:"partial_fill"
+    });
+    assert.equal(body.fills[1].side,"sell");
+    assert.equal(requests.length,1);
+    assert.equal(requests[0].url,"https://paper-api.alpaca.markets/v2/account/activities/FILL?direction=desc&page_size=50");
+    assert.equal(requests[0].method,"GET");
+    assert.equal(requests[0].redirect,"manual");
+    assert.ok(!JSON.stringify(body).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(body).includes("SECRET_ACCOUNT_ID"));
+    assert.ok(!JSON.stringify(body).includes("TEST_SECRET"));
+    const rejected=await handler.fetch(new Request(url+"/api/alpaca/fills",{method:"POST"}),env,authenticated);
+    assert.equal(rejected.status,405);
+    assert.equal(requests.length,1);
+  } finally {globalThis.fetch=originalFetch;}
+});
+
+test("trade-history pagination uses only a validated Alpaca cursor", async () => {
+  const originalFetch=globalThis.fetch;
+  const requests=[];
+  globalThis.fetch=async (destination) => {
+    requests.push(String(destination));
+    return Response.json(Array.from({length:50},(_,i)=>({
+      activity_type:"FILL",id:"20261112::"+String(i).padStart(4,"0"),
+      symbol:"SPY",qty:"1",price:"600",side:"buy",
+      type:"fill",transaction_time:"2026-11-12T15:00:00Z"
+    })));
+  };
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_KEY",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+  try {
+    const response=await handler.fetch(new Request(url+"/api/alpaca/fills?page_token=20261112%3A%3A0000"),env,authenticated);
+    const data=await response.json();
+    assert.equal(data.fills.length,50);
+    assert.equal(data.next_page_token,"20261112::0049");
+    assert.equal(requests[0],"https://paper-api.alpaca.markets/v2/account/activities/FILL?direction=desc&page_size=50&page_token=20261112%3A%3A0000");
+    for(const query of [
+      "page_token=x%26direction%3Dasc",
+      "page_token=%3Cscript%3E",
+      "page_token=abc&page_token=def",
+      "page_size=1000",
+      "page_token="
+    ]){
+      const invalid=await handler.fetch(new Request(url+"/api/alpaca/fills?"+query),env,authenticated);
+      assert.equal(invalid.status,400);
+    }
+    assert.equal(requests.length,1);
+  } finally {globalThis.fetch=originalFetch;}
+});
+
+test("trade history fails closed without Cloudflare Access and never calls Alpaca", async () => {
+  const originalFetch=globalThis.fetch;
+  let requests=0;
+  globalThis.fetch=async()=>{requests++;return Response.json([])};
+  try{
+    const response=await handler.fetch(new Request(url+"/api/alpaca/fills"),
+      {...authorizedEnv,ALPACA_PAPER_KEY_ID:"KEY",ALPACA_PAPER_SECRET_KEY:"SECRET"}, {});
+    assert.equal(response.status,403);
+    assert.equal(requests,0);
+  } finally {globalThis.fetch=originalFetch;}
+});
+
+test("trade history handles empty fills and missing keys without fake trades", async () => {
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async()=>Response.json([]);
+  try {
+    const missing=await handler.fetch(new Request(url+"/api/alpaca/fills"),authorizedEnv,authenticated);
+    const missingData=await missing.json();
+    assert.equal(missingData.connected,false);
+    assert.equal(missingData.reason,"alpaca_paper_secrets_missing");
+    const result=await handler.fetch(new Request(url+"/api/alpaca/fills"),
+      {...authorizedEnv,ALPACA_PAPER_KEY_ID:"KEY",ALPACA_PAPER_SECRET_KEY:"SECRET"},authenticated);
+    const body=await result.json();
+    assert.equal(body.connected,true);
+    assert.deepEqual(body.fills,[]);
+    assert.equal(body.next_page_token,null);
+  } finally {globalThis.fetch=originalFetch;}
 });
