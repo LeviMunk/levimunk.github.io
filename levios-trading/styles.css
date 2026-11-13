@@ -80,3 +80,14 @@
  .pnl-stats strong{font-size:18px}
  .pnl-graph,.pnl-chart{min-height:190px}
 }
+
+/* Keep legacy connection controls wired to JavaScript, but out of view.
+   Only the authenticated Worker can read Alpaca; no visible setup panel. */
+#broker-connection-internals[hidden]{display:none!important}
+.holdings-section{grid-template-columns:minmax(0,1fr)}
+.private-dash-link{font-size:11px;color:#9eecd4;font-weight:750;text-decoration:none;border-bottom:1px solid #4a9d88;padding-bottom:2px;white-space:nowrap}
+.private-dash-link:hover{color:#ddfff3;border-bottom-color:#ddfff3}
+.private-dash-link[hidden]{display:none!important}
+@media(max-width:720px){
+ .private-dash-link{width:max-content;white-space:normal}
+}
