@@ -424,7 +424,7 @@
     for (const point of points) {
       const time = point.time || (Number.isSafeInteger(point.timestamp)
         ? new Date(point.timestamp * 1000).toISOString().slice(0, 10) : null);
-      if (!time || !/^\\d{4}-\\d{2}-\\d{2}$/.test(time)) continue;
+      if (!time || !/^\d{4}-\d{2}-\d{2}$/.test(time)) continue;
       const value = toValue(point);
       if (value && Object.values(value).every(Number.isFinite)) {
         unique.set(time, {time, ...value});
