@@ -219,6 +219,14 @@ The browser excludes the unfinished current New York session from coach analysis
 
 The independent `coach-engine.js` is bundled into the Worker through `build.mjs`, served by the same Cloudflare Access authentication gate as other dashboard assets, and regression-tested in `worker/test/coach.test.mjs`.
 
+## On-demand Market Radar (eleventh incremental upgrade)
+
+The IEX Watchlist now offers **Scan watchlist** for up to twelve tracked stock/ETF tickers. Scans use the existing authenticated `GET /api/market/bars?symbol=...&range=3M` endpoint, with at most two requests in flight. No new API credentials or paid data provider are required. Only historical bars dated before today's New York market date are evaluated; an unfinished session never becomes a completed radar observation. The radar discards truncated responses and reports unavailable data rather than silently inferring values.
+
+The deterministic `radar-engine.js` examines: (1) a completed-session price change of at least 2% and twice the prior 20-comparison average absolute daily move; (2) positive IEX venue volume at least 2× the average of 15 or more valid earlier sessions, if volume is available; (3) a last close above the prior twenty-session high or below the prior twenty-session low. It displays exact evidence, the methodological limitation, and a question to research for every observation. A zero-finding result does **not** imply safety. Radar results stay in the browser's memory during the session and are not used as trading instructions.
+
+This is **manual on-demand scanning, not 24/7 monitoring, automatic alerting, exchange-wide scanning, or a news/earnings calendar**. Alpaca's free IEX feed reflects one venue and raw historical bars; corporate actions, market-wide volume, and consolidated SIP are not available from these observations. No background automation, order routes, write operations, external telemetry, or AI price predictions are added.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
