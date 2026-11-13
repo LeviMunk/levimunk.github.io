@@ -16,6 +16,8 @@ const SOURCE_ORIGIN = "https://levimunk.com";
 const MAX_POSITIONS = 100;
 const HISTORY_RANGE_PERIODS = Object.freeze({ "1W": "1W", "1M": "1M", "3M": "3M", "1Y": "1A" });
 const MAX_HISTORY_POINTS = 400;
+const FILLS_PAGE_SIZE = 50;
+const MAX_FILL_CURSOR_LENGTH = 256;
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -76,7 +78,8 @@ function alpacaFailure(code, endpoint, httpStatus) {
 
 async function fetchPaperData(env, pathname) {
   const endpoint = pathname.startsWith("/v2/account/portfolio/history?")
-    ? "history" : pathname === "/v2/account" ? "account" : "positions";
+    ? "history" : pathname.startsWith("/v2/account/activities/FILL?")
+      ? "fills" : pathname === "/v2/account" ? "account" : "positions";
   const headers = {
     "APCA-API-KEY-ID": env.ALPACA_PAPER_KEY_ID,
     "APCA-API-SECRET-KEY": env.ALPACA_PAPER_SECRET_KEY,
@@ -230,6 +233,63 @@ async function portfolioHistory(env, range) {
   }
 }
 
+// Alpaca FILL activities are individual executions, including partial fills.
+// This is a trade ledger, NOT a realized profit/loss calculation.
+async function recentTradeFills(env, pageToken = null) {
+  if (!env.ALPACA_PAPER_KEY_ID || !env.ALPACA_PAPER_SECRET_KEY) {
+    return { connected: false, mode: "paper", reason: "alpaca_paper_secrets_missing",
+      message: "Alpaca PAPER credentials are not configured." };
+  }
+  const params = new URLSearchParams({
+    direction: "desc", page_size: String(FILLS_PAGE_SIZE)
+  });
+  if (pageToken) params.set("page_token", pageToken);
+  try {
+    const raw = await fetchPaperData(env, "/v2/account/activities/FILL?" + params.toString());
+    if (!Array.isArray(raw)) throw alpacaFailure("alpaca_invalid_response", "fills");
+    const items = [];
+    for (const fill of raw.slice(0, FILLS_PAGE_SIZE)) {
+      if (!fill || fill.activity_type !== "FILL") continue;
+      const symbol = String(fill.symbol || "").trim().toUpperCase();
+      const side = String(fill.side || "").toLowerCase();
+      const quantity = Number(fill.qty), price = Number(fill.price);
+      const time = typeof fill.transaction_time === "string" ? fill.transaction_time : "";
+      if (!/^[A-Z0-9./_-]{1,40}$/.test(symbol) ||
+          !["buy", "sell"].includes(side) ||
+          !Number.isFinite(quantity) || quantity <= 0 ||
+          !Number.isFinite(price) || price <= 0 ||
+          !Number.isFinite(Date.parse(time))) continue;
+      items.push({
+        time, symbol, side, qty: String(fill.qty), price: String(fill.price),
+        notional: Math.round(quantity * price * 100) / 100,
+        type: fill.type === "partial_fill" ? "partial_fill" : "fill"
+      });
+    }
+    const lastId = raw.length === FILLS_PAGE_SIZE
+      ? String(raw[raw.length - 1]?.id || "") : "";
+    const nextPageToken = lastId.length <= MAX_FILL_CURSOR_LENGTH &&
+      /^[a-zA-Z0-9:._-]+$/.test(lastId) ? lastId : null;
+    return {
+      connected: true, mode: "paper",
+      fills: items,
+      next_page_token: nextPageToken,
+      page_size: FILLS_PAGE_SIZE
+    };
+  } catch (error) {
+    const permitted = new Set([
+      "alpaca_credentials_rejected", "alpaca_rate_limited", "alpaca_service_error",
+      "alpaca_http_error", "alpaca_timeout", "alpaca_network_error", "alpaca_invalid_response"
+    ]);
+    const reason = permitted.has(error?.safeCode) ? error.safeCode : "alpaca_unexpected_error";
+    const result = { connected: false, mode: "paper", reason,
+      message: reason === "alpaca_credentials_rejected"
+        ? "Alpaca rejected the PAPER credentials for trade history."
+        : "Alpaca trade history is temporarily unavailable." };
+    if (Number.isInteger(error?.safeHttpStatus)) result.http_status = error.safeHttpStatus;
+    return result;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -248,6 +308,20 @@ export default {
     if (url.pathname === "/api/alpaca/status") {
       if (request.method === "HEAD") return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       return json(await accountSnapshot(env));
+    }
+    if (url.pathname === "/api/alpaca/fills") {
+      const keys = [...url.searchParams.keys()];
+      const tokens = url.searchParams.getAll("page_token");
+      const cursor = tokens[0] || null;
+      if (tokens.length > 1 || keys.some(key => key !== "page_token") ||
+          (tokens.length && (!cursor || cursor.length > MAX_FILL_CURSOR_LENGTH ||
+            !/^[a-zA-Z0-9:._-]+$/.test(cursor)))) {
+        return json({ error: "Invalid trade-history page token." }, 400);
+      }
+      if (request.method === "HEAD") {
+        return new Response(null, { status: 200, headers: commonHeaders("application/json") });
+      }
+      return json(await recentTradeFills(env, cursor));
     }
     if (url.pathname === "/api/alpaca/history") {
       const range = url.searchParams.get("range") || "1M";
