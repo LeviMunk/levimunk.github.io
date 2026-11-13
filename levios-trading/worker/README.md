@@ -264,6 +264,13 @@ The Stock Research tab is an evidence-first learning aid inspired by the modular
 
 No new API keys or secrets. The basic Alpha Vantage OVERVIEW endpoint is premium as of the provider's currently published documentation; FMP Basic coverage/licensing is limited. SEC's free EDGAR companyfacts is a possible future integration but requires appropriate CIK mapping, user-agent and rate-limit controls. This feature does NOT claim to automatically source or verify numbers, produce fair value/expected returns or advise real trades. Uses the same authenticated Worker asset and unit tests.
 
+## SEC EDGAR annual financials (Upgrade 19)
+The private Stock Research tab can load public annual (10-K) XBRL facts on-demand through `GET /api/research/sec-financials?symbol=TICKER`. The Worker fetches only allowlisted `www.sec.gov/files/company_tickers.json` and `data.sec.gov/api/xbrl/companyfacts/CIK##########.json`, with no user-defined upstream URLs, redirect following, CORS, paid API keys or brokerage order permissions. It requires `SEC_USER_AGENT` to be set **privately** on the Worker, with an identifiable application and working administrative contact email; the contact never appears in GitHub or browser data. SEC fair-access guidelines allow no more than 10 requests/second; this is a low-volume, manually triggered 2-request workflow with browser session caching and a single active lookup, not a crawler.
+
+The parser requires annual 10-K reporting durations of roughly one fiscal year, same-period comparisons for operating margin and FCF, and same-year comparable revenue for growth. If current and noncurrent debt tags and shareholders' equity are present on the same report date, a **long-term debt/equity proxy** can be derived; otherwise the field remains empty. Missing XBRL concepts are null, never assumed zero. Report accession, filing date, period, concept tags and a SEC archive link are shown. The existing P/E remains manually sourced because SEC financial filings alone cannot establish a current market multiple. SEC reports can be restated and taxonomy varies across companies; industry context is still required.
+
+SEC data is free but no live response is claimed until the Worker secret is configured and the live endpoint has been separately verified. The authenticated Worker test suite uses synthetic SEC fixtures and never contacts the agency. No new provider secrets committed to GitHub.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.

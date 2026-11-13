@@ -105,6 +105,19 @@ test("earnings API requires Access, valid tickers and never places orders",async
   assert.equal(result.status,"not_configured");
   assert.deepEqual(result.events,[]);
 });
+test("SEC financial lookup requires Access and private agent and rejects unsafe queries",async()=>{
+  const endpoint=url+"/api/research/sec-financials?symbol=AAPL";
+  const denied=await handler.fetch(new Request(endpoint),authorizedEnv,{});
+  assert.equal(denied.status,403);
+  const bad=await handler.fetch(new Request(endpoint+"&redirect=https://bad.example"),authorizedEnv,authenticated);
+  assert.equal(bad.status,400);
+  const post=await handler.fetch(new Request(endpoint,{method:"POST"}),authorizedEnv,authenticated);
+  assert.equal(post.status,405);
+  const head=await handler.fetch(new Request(endpoint,{method:"HEAD"}),authorizedEnv,authenticated);
+  assert.equal(head.status,200);
+  const noAgent=await (await handler.fetch(new Request(endpoint),authorizedEnv,authenticated)).json();
+  assert.equal(noAgent.status,"not_configured");
+});
 test("unknown paths fail with 404", async () => {
   const res = await handler.fetch(new Request(url + "/api/orders"), authorizedEnv, authenticated);
   assert.equal(res.status, 404);

@@ -14,6 +14,7 @@ import { equityScorecard } from "./performance.mjs";
 import { positionRiskSummary } from "./risk.mjs";
 import { fetchOfficialEvents } from "./event-feeds.mjs";
 import { fetchEarnings, validateSymbols } from "./earnings-feed.mjs";
+import { fetchSecFinancials } from "./sec-financials.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
@@ -491,6 +492,14 @@ export default {
         return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       }
       return json(await recentTradeFills(env, cursor));
+    }
+    if (url.pathname === "/api/research/sec-financials") {
+      const symbol=url.searchParams.getAll("symbol");
+      if(symbol.length!==1||[...url.searchParams.keys()].some(k=>k!=="symbol")||
+         !/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol[0]))
+         return json({error:"Exactly one valid ticker required."},400);
+      if(request.method==="HEAD")return new Response(null,{status:200,headers:commonHeaders("application/json")});
+      return json(await fetchSecFinancials(env,symbol[0]));
     }
     if (url.pathname === "/api/market/earnings") {
       const keys=[...url.searchParams.keys()];
