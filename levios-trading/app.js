@@ -1810,43 +1810,56 @@
   function renderDailyBrief(){
     const cards=$("daily-brief-cards");cards.replaceChildren();
     if(!briefingRecords){
-      const block=document.createElement("div");
-      const label=document.createElement("span");label.textContent="FIRST STEP";
-      const headline=document.createElement("strong");headline.textContent="Review your risk before seeking a trade.";
-      const note=document.createElement("small");note.textContent="Run the analysis for completed IEX daily data. No recommendation has been generated yet.";
-      block.append(label,headline,note);cards.append(block);return;
+      const card=document.createElement("div");
+      const title=document.createElement("strong");title.textContent="Start with your current risk.";
+      const note=document.createElement("small");note.textContent="Run Review my portfolio for a short action list.";
+      card.append(title,note);cards.append(card);return;
     }
     if(briefingSymbols!==watchSymbols.join(",")){
-      const warning=document.createElement("div");
-      warning.textContent="Watchlist changed since analysis. Run it again for current tickers.";
-      cards.append(warning);return;
+      const message=document.createElement("p");message.className="muted";
+      message.textContent="Watchlist changed. Run your portfolio review again.";
+      cards.append(message);return;
     }
-    const summaries=globalThis.LeviDecisionGuide.summarize(briefingRecords);
-    for(const item of summaries.ready){
-      const card=document.createElement("div");
+    const ranked=globalThis.LeviDecisionGuide.summarize(briefingRecords).ready;
+    const missing=briefingRecords.filter(r=>!r.ready);
+    function makeCard(item){
+      const card=document.createElement("div");card.className="brief-priority";
       const label=document.createElement("span");
-      label.textContent=item.symbol+" · "+item.asOf+" · COMPLETED IEX DAILY";
-      const headline=document.createElement("strong");headline.textContent=item.title;
-      const evidence=document.createElement("small");
-      evidence.textContent="Why: "+item.why+" IEX close "+formatIexPrice(item.lastClose)+
-        ", MA20 "+formatIexPrice(item.ma20)+", MA50 "+formatIexPrice(item.ma50)+". "+
-        (item.held?("PAPER position "+item.qty+
-          (item.weightPct!==null?" · "+item.weightPct.toFixed(1)+"% of reported paper equity.":"."))
-        :"Not shown as an open PAPER holding.");
-      const next=document.createElement("small");next.textContent="Next: "+item.next;
-      const changes=document.createElement("small");changes.textContent="What changes this: "+item.changes;
-      card.append(label,headline,evidence,next,changes);
-      cards.append(card);
+      label.textContent=item.symbol+" · "+item.asOf;
+      const title=document.createElement("strong");title.textContent=item.title;
+      const next=document.createElement("small");next.textContent=item.next;
+      const more=document.createElement("details");more.className="research-disclosure";
+      const summary=document.createElement("summary");summary.textContent="Why this matters";
+      const reason=document.createElement("p");reason.textContent=item.why;
+      const metrics=document.createElement("p");
+      metrics.textContent="IEX close "+formatIexPrice(item.lastClose)+
+        " · 20-day average "+formatIexPrice(item.ma20)+
+        " · 50-day average "+formatIexPrice(item.ma50)+
+        (item.weightPct!==null?" · PAPER exposure "+item.weightPct.toFixed(1)+"%":"");
+      const change=document.createElement("p");change.textContent="Reassess when: "+item.changes;
+      more.append(summary,reason,metrics,change);
+      card.append(label,title,next,more);return card;
     }
-    const misses=briefingRecords.filter(r=>!r.ready);
-    for(const item of misses){
-      const card=document.createElement("div");
-      const title=document.createElement("span");title.textContent=item.symbol+" · DATA UNAVAILABLE";
-      const message=document.createElement("small");message.textContent=item.reason+
-        " No buy, hold or sell guidance is offered for this ticker.";
-      card.append(title,message);cards.append(card);
+    for(const item of ranked.slice(0,3))cards.append(makeCard(item));
+    const rest=ranked.slice(3);
+    if(rest.length||missing.length){
+      const disclosure=document.createElement("details");
+      disclosure.className="brief-more-details";
+      const summary=document.createElement("summary");
+      summary.textContent="Show "+(rest.length+missing.length)+" more ticker"+
+        (rest.length+missing.length===1?"":"s");
+      disclosure.append(summary);
+      for(const item of rest)disclosure.append(makeCard(item));
+      for(const item of missing){
+        const card=document.createElement("div");
+        const label=document.createElement("strong");
+        label.textContent=item.symbol+" · Data unavailable";
+        const note=document.createElement("small");note.textContent=item.reason;
+        card.append(label,note);disclosure.append(card);
+      }
+      cards.append(disclosure);
     }
-    if(!briefingRecords.length)cards.textContent="No tracked instruments available.";
+    if(!ranked.length&&!missing.length)cards.textContent="No stocks selected.";
   }
   async function runDailyBrief(){
     if(briefingRunning)return;
