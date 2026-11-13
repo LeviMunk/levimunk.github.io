@@ -1523,6 +1523,35 @@
         " No values have been estimated or fabricated.";
     }
   }
+  function runWalkForwardWorkbench() {
+    const status=$("walkforward-status");
+    const tbody=$("walkforward-rows");
+    try {
+      if (!globalThis.LeviStrategyEngine?.walkForward) {
+        throw Error("Walk-forward engine unavailable. Refresh the dashboard.");
+      }
+      const {source,symbol,rows}=strategySourceInfo();
+      const analysis=globalThis.LeviStrategyEngine.walkForward(rows,strategySettings());
+      tbody.innerHTML=analysis.folds.map(f =>
+        "<tr><td>Fold "+f.fold+"</td><td>"+escapeHTML(f.trainEnd)+
+        "</td><td>"+escapeHTML(f.evalStart+" to "+f.evalEnd)+
+        "</td><td>"+f.fast+"/"+f.slow+
+        "</td><td>"+strategyLabelPercent(f.trainingExcessPctPoints)+
+        "</td><td>"+strategyLabelPercent(f.returnPct)+
+        "</td><td>"+strategyLabelPercent(f.holdPct)+
+        "</td><td>"+strategyLabelPercent(f.excessPctPoints)+
+        "</td><td>"+strategyLabelPercent(f.maxDrawdownPct)+
+        "</td><td>"+f.executions+"</td></tr>"
+      ).join("");
+      status.textContent=symbol+" · "+source+" · "+analysis.folds.length+
+        " chronological folds · "+analysis.positiveFolds+
+        " / 3 beat their same-window benchmark · fingerprint "+
+        analysis.dataHash+". These results are historical and do not authorize an order.";
+    } catch (error) {
+      tbody.innerHTML='<tr><td colspan="10" class="empty">No valid walk-forward results. Check the source and history length.</td></tr>';
+      status.textContent=String(error?.message||"Walk-forward testing failed.");
+    }
+  }
   function runStrategyWorkbench() {
     if (!globalThis.LeviStrategyEngine) throw Error("Strategy engine is unavailable. Refresh the page.");
     const {source, symbol, rows} = strategySourceInfo();
@@ -1807,6 +1836,7 @@
   $("strategy-source").addEventListener("change", updateStrategySource);
   $("strategy-split").addEventListener("input", updateStrategySource);
   $("strategy-load-iex").addEventListener("click", () => void loadStrategyIexHistory());
+  $("walkforward-run").addEventListener("click", runWalkForwardWorkbench);
   $("strategy-save").addEventListener("click", saveStrategyVersion);
   $("strategy-export").addEventListener("click", exportStrategyVersions);
   $("validation-candidate").addEventListener("change", () => {
