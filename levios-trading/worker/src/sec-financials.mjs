@@ -23,18 +23,21 @@ function annual(f){
 function validFact(f){return f&&DATE.test(f.end||"")&&finite(f.val)&&TEN_K.has(f.form)}
 function concept(facts,tags,kind,anchor=null){
  const gaap=facts?.facts?.["us-gaap"]||{};
+ const all=[];
  for(const tag of tags){
   const candidates=gaap[tag]?.units?.USD;
   if(!Array.isArray(candidates))continue;
-  const filtered=candidates.filter(f=>(kind==="annual"?annual(f):validFact(f))&&
-     (!anchor||f.end===anchor.end&&
-       (kind==="instant"||Math.abs(days(anchor.start,f.start))<=15)));
-  if(!filtered.length)continue;
-  filtered.sort((a,b)=>b.end.localeCompare(a.end)||
-    String(b.filed||"").localeCompare(String(a.filed||"")));
-  return {...filtered[0],tag};
+  for(const f of candidates){
+   if(!(kind==="annual"?annual(f):validFact(f)))continue;
+   if(anchor&&(f.end!==anchor.end||
+      (kind!=="instant"&&Math.abs(days(anchor.start,f.start))>15)))continue;
+   all.push({...f,tag,tagPriority:tags.indexOf(tag)});
+  }
  }
- return null;
+ all.sort((a,b)=>b.end.localeCompare(a.end)||
+   String(b.filed||"").localeCompare(String(a.filed||""))||
+   a.tagPriority-b.tagPriority);
+ return all[0]||null;
 }
 function safeTickerMap(data,ticker){
  if(!data||typeof data!=="object"||Array.isArray(data))throw Error("sec_ticker_map_invalid");
@@ -51,15 +54,18 @@ export function summarizeSecFacts(payload,{ticker,cik,name}){
  if(!revenue)throw Error("sec_annual_revenue_unavailable");
  const anchor={start:revenue.start,end:revenue.end};
  const gaap=payload.facts?.["us-gaap"]||{};
- let previous=null;
+ const previousCandidates=[];
  for(const tag of TAGS.revenue){
   const values=gaap[tag]?.units?.USD;
   if(!Array.isArray(values))continue;
-  const candidates=values.filter(x=>annual(x)&&x.end<anchor.end&&
-    days(x.end,anchor.end)>=315&&days(x.end,anchor.end)<=420);
-  candidates.sort((a,b)=>b.end.localeCompare(a.end)||String(b.filed||"").localeCompare(String(a.filed||"")));
-  if(candidates.length){previous={...candidates[0],tag};break;}
+  for(const x of values){
+   if(annual(x)&&x.end<anchor.end&&days(x.end,anchor.end)>=315&&
+      days(x.end,anchor.end)<=420)previousCandidates.push({...x,tag});
+  }
  }
+ previousCandidates.sort((a,b)=>b.end.localeCompare(a.end)||
+   String(b.filed||"").localeCompare(String(a.filed||"")));
+ const previous=previousCandidates[0]||null;
  const op=concept(payload,TAGS.operating,"annual",anchor);
  const cash=concept(payload,TAGS.cash,"annual",anchor);
  const capex=concept(payload,TAGS.capex,"annual",anchor);
