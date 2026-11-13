@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b121b">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="LeviOS Outreach: private prospecting and follow-up workspace.">
+  <title>LeviOS Outreach | Private Workspace</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <div id="app-shell" class="shell" hidden>
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand"><div class="brandmark">L<span>O</span></div><div><strong>LEVIOS</strong><small>OUTREACH COMMAND</small></div></div>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav id="navigation" class="nav">
+        <button type="button" data-view="overview" class="nav-item active"><span class="nav-symbol">◫</span> Overview</button>
+        <button type="button" data-view="queue" class="nav-item"><span class="nav-symbol">↗</span> Outreach Queue <span id="nav-ready" class="nav-count">0</span></button>
+        <button type="button" data-view="contacts" class="nav-item"><span class="nav-symbol">⊞</span> People & Companies</button>
+        <button type="button" data-view="pipeline" class="nav-item"><span class="nav-symbol">▤</span> Pipeline</button>
+        <button type="button" data-view="followups" class="nav-item"><span class="nav-symbol">◷</span> Follow-ups <span id="nav-due" class="nav-count">0</span></button>
+        <button type="button" data-view="insights" class="nav-item"><span class="nav-symbol">◩</span> Insights</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="vault-status"><span class="status-dot"></span> Local vault unlocked</div><div class="sidebar-small">Encrypted on this browser · No cloud sync yet</div><button id="lock-button" class="sidebar-lock" type="button">⌁ &nbsp; Lock workspace</button></div>
+    </aside>
+    <div class="main-area">
+      <header class="topbar">
+        <div class="mobile-brand"><span>◈</span> LEVIOS OUTREACH</div>
+        <div class="crumb">PERSONAL WORKSPACE <span>/</span> <strong id="top-view">OVERVIEW</strong></div>
+        <div class="top-actions"><span class="private-pill"><span class="status-dot"></span> PRIVATE · DEVICE ONLY</span><button id="add-top" class="button button-primary" type="button">+ Add opportunity</button></div>
+      </header>
+      <main class="content" id="main-content" tabindex="-1">
+        <div class="page-heading"><div><div class="eyebrow" id="eyebrow">THURSDAY, NOVEMBER 12</div><h1 id="page-title">Outreach with intention<span class="lime-dot">.</span></h1><p id="page-subtitle">Know who matters, what to say, and when to follow up.</p></div><button type="button" id="add-main" class="button button-secondary">New prospect <span>↗</span></button></div>
+        <div id="view-root" aria-live="polite"></div>
+      </main>
+      <footer class="footer"><span>LEVIOS OUTREACH <b>v0.1</b></span><span>Browser-local encrypted prototype · Export backups regularly</span></footer>
+    </div>
+  </div>
+
+  <div id="unlock-screen" class="unlock-screen">
+    <div class="unlock-art"><div class="unlock-orbit orbit-one"></div><div class="unlock-orbit orbit-two"></div><div class="unlock-monogram">LO<span>.</span></div><div class="unlock-caption">MAKE CONNECTIONS<br>THAT COMPOUND.</div></div>
+    <div class="unlock-panel"><div class="unlock-heading"><span class="mini-mark">◆ LEVIOS / OUTREACH</span><h1 id="unlock-title">Your outreach,<br><em>organized.</em></h1><p id="unlock-description">A focused space for prospects, meaningful messages and reliable follow-through.</p></div>
+      <form id="vault-form"><label for="vault-pass">Vault passphrase</label><input type="password" id="vault-pass" placeholder="At least 12 characters" autocomplete="new-password" minlength="12" required><div id="confirm-pass-field"><label for="vault-confirm">Confirm passphrase</label><input type="password" id="vault-confirm" placeholder="Enter it again" autocomplete="new-password" minlength="12"></div><button id="vault-submit" class="button button-primary wide" type="submit">Create my private workspace ↗</button><p id="vault-error" class="error" role="alert"></p></form>
+      <div class="security-note"><span>◈</span><p><strong>Your contacts stay in this browser.</strong> Data is encrypted with your passphrase before local storage. There is no server account or cross-device sync in this first release. If you lose your passphrase or clear browser data without a backup, your records cannot be recovered.</p></div>
+    </div>
+  </div>
+
+  <dialog id="record-modal" class="modal"><form id="record-form" method="dialog"><div class="modal-head"><div><div class="eyebrow">OPPORTUNITY RECORD</div><h2 id="record-title">New opportunity</h2></div><button type="button" class="close-modal" data-close="record-modal" aria-label="Close">×</button></div>
+    <div class="form-grid">
+      <label class="field">Business / organization <em>*</em><input required maxlength="150" name="name" placeholder="e.g., Poppy Bakery"></label>
+      <label class="field">Category<select name="type"><option value="Business">Business prospect</option><option value="Career">Career / recruiter</option><option value="Networking">Professional networking</option><option value="Collaboration">Collaboration</option></select></label>
+      <label class="field">Industry / focus<input maxlength="120" name="industry" placeholder="Bakery, SaaS, marketing..."></label>
+      <label class="field">Location<input maxlength="120" name="location" placeholder="Milwaukee, WI"></label>
+      <label class="field">Contact person<input maxlength="120" name="person" placeholder="If verified"></label>
+      <label class="field">Preferred channel<select name="channel"><option value="Email">Email</option><option value="LinkedIn">LinkedIn</option><option value="Instagram">Instagram</option><option value="Other">Other</option></select></label>
+      <label class="field">Email<input type="email" name="email" maxlength="254" placeholder="Publicly verified email"></label>
+      <label class="field">Profile / social URL<input type="url" name="profile" maxlength="500" placeholder="https://www.linkedin.com/in/..."></label>
+      <label class="field">Business website<input type="url" name="website" maxlength="500" placeholder="https://..."></label>
+      <label class="field">Opportunity stage<select name="stage"><option>Discovered</option><option>Researched</option><option>Draft Ready</option><option>Contacted</option><option>Responded</option><option>Concept Shared</option><option>Interested</option><option>Proposal</option><option>Won</option><option>Closed</option></select></label>
+      <label class="field">Follow-up date<input type="date" name="followup"></label>
+      <label class="field">Portfolio concept URL<input type="url" name="concept" maxlength="500" placeholder="https://..."></label>
+    </div>
+    <label class="field full-field">Why this opportunity?<textarea name="angle" maxlength="1200" rows="2" placeholder="Specific verified compliment or outreach angle"></textarea></label>
+    <label class="field full-field">Email subject (when relevant)<input name="subject" maxlength="200" placeholder="Example Bakery - Website Portfolio"></label>
+    <label class="field full-field">Message draft<textarea name="draft" maxlength="9000" rows="6" placeholder="Write or paste a personalized message..."></textarea></label>
+    <label class="field full-field">Private notes<textarea name="notes" maxlength="4000" rows="2" placeholder="Research, sources, reminders..."></textarea></label>
+    <div id="record-error" class="error" role="alert"></div><div class="modal-actions"><button id="delete-record" type="button" class="button button-danger" hidden>Delete</button><div class="actions-spacer"></div><button type="button" class="button button-secondary" data-close="record-modal">Cancel</button><button type="submit" class="button button-primary">Save opportunity</button></div>
+  </form></dialog>
+  <dialog id="confirm-modal" class="modal modal-compact"><div class="modal-head"><div><div class="eyebrow">CONFIRM THE ACTION</div><h2>Did you send it?</h2></div><button type="button" class="close-modal" data-close="confirm-modal" aria-label="Close">×</button></div><p id="confirm-desc">LeviOS does not automatically know whether a message was sent.</p><div class="modal-actions"><button id="confirm-not-sent" class="button button-secondary">Not yet</button><button id="confirm-sent" class="button button-primary">Yes, I sent it</button></div></dialog>
+  <input id="import-file" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+</body>
+</html>
