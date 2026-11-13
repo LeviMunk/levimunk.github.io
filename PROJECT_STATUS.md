@@ -74,3 +74,5 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 
 ## How to resume in a new chat
 “Inspect `PROJECT_STATUS.md` in `LeviMunk/levimunk.github.io`, check the latest PR and CI, and continue the next LeviOS Trading change using feature branches. Do not modify order permissions, domain/DNS or Worker secrets.”
+
+- Three-tab LeviOS trading UX: Command Center (actual PAPER prediction wins/losses and no fictional autonomous performance), Trade Desk (completed IEX candles and ledger), Academy (long/short lessons). Old tools are under Advanced tools and remain functional.
