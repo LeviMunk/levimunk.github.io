@@ -546,6 +546,7 @@ export default {
       "/app.js": [assets.app, "text/javascript; charset=utf-8"],
       "/strategy-engine.js": [assets.strategyEngine, "text/javascript; charset=utf-8"],
       "/validation-engine.js": [assets.validationEngine, "text/javascript; charset=utf-8"],
+      "/coach-engine.js": [assets.coachEngine, "text/javascript; charset=utf-8"],
       "/lightweight-charts.js": [assets.chartLib, "text/javascript; charset=utf-8"],
       "/styles.css": [assets.css, "text/css; charset=utf-8"]
     }[url.pathname];
