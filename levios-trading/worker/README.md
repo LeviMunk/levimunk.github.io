@@ -144,6 +144,31 @@ LeviOS now **installs and bundles the actual open-source [TradingView Lightweigh
 
 **Future research/bot concept:** The diagram shared in this conversation is an architectural *proposal*, not evidence of a profitable self-improving bot. Research, backtesting, out-of-sample testing and paper monitoring can be added as **separately audited modules**. Automated order submission remains disabled and is not required for data/charting improvements.
 
+## Strategy Testing Workbench (sixth incremental upgrade)
+
+The previous single-result moving-average demo is now a **reproducible research workbench** using the standalone `levios-trading/strategy-engine.js` module. The same module runs on public GitHub Pages or the Cloudflare Access-protected Worker, without API credentials or extra infrastructure.
+
+**Data sources**
+- Uploaded `date,close` CSV prices (existing Market Data import); the explicitly labeled **FICTIONAL DEMO** series is also supported.
+- Optional real `Alpaca IEX` daily closing bars, fetched read-only through the already protected `/api/market/bars?symbol=...&range=1Y` endpoint. Excludes today's unfinished New York market-date bar. It never pulls or alters broker positions. Bars are IEX-only, **not consolidated SIP**, and raw data may be unadjusted for splits and dividends. If the year is truncated or too short, research execution is stopped.
+
+**Execution and validation rules**
+- Fixed, long-only fast/slow SMA. Parameter range `2 ≤ fast < slow ≤ 250`. Signals form after a completed daily close, and an order fills at the **following recorded day's close**. This is a simplified execution assumption; real close fills and spreads aren't guaranteed. No future prices are used to generate signals.
+- Fee and adverse slippage can be specified independently at `0–200 basis points` each per execution. Same initial assumed fee/slippage is charged to buy-and-hold for a fair baseline. No taxes, dividends, market impact, liquidity model or corporate-action adjustment.
+- Chronological split of 50–85% earlier data and a later evaluation window. Moving-average positions carry across the split. Test return begins from the previous day's equity baseline so prior training-period profits are not counted as evaluation returns.
+- **This is not automatically an unbiased holdout once viewed.** Re-running different parameter combinations after checking the later dates destroys the strict blind-test assumption. Promotion to a live strategy is NOT implemented.
+- Freqtrade's look-ahead-bias guidance inspired prefix-invariance and next-bar-execution tests, without installing or copying its trading bot. See [Freqtrade lookahead analysis](https://www.freqtrade.io/en/latest/lookahead-analysis/).
+
+**Research versioning**
+- Save a run manually as v1, v2, etc., including parameters, train/evaluation results, relative buy-and-hold, date coverage, engine version, data source and an **8-character non-cryptographic FNV-1a fingerprint** for reproducibility.
+- Retain the newest 25 experiments in browser localStorage, with a one-click JSON export. This is **per browser**, not an account-synced experiment database; it contains no Alpaca keys.
+- The experiment log does not deploy code or trade automatically. Proposed strategy improvements still require out-of-sample verification and explicit review.
+
+**Automated tests**
+- `levios-trading/worker/test/strategy.test.mjs` checks repeatability, no forward data leakage when extending a historical series, next-close execution delay, fee and slippage effects, split boundaries, missing data and invalid parameters.
+- `levios-trading/worker/test/safety.test.mjs` verifies the shared engine is hosted behind Cloudflare Access.
+- GitHub Actions runs both tests in the existing build workflow.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
