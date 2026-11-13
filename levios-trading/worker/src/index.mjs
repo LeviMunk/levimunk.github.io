@@ -13,6 +13,7 @@ import { assets } from "../generated-assets.mjs";
 import { equityScorecard } from "./performance.mjs";
 import { positionRiskSummary } from "./risk.mjs";
 import { fetchOfficialEvents } from "./event-feeds.mjs";
+import { fetchEarnings, validateSymbols } from "./earnings-feed.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
@@ -491,6 +492,15 @@ export default {
       }
       return json(await recentTradeFills(env, cursor));
     }
+    if (url.pathname === "/api/market/earnings") {
+      const keys=[...url.searchParams.keys()];
+      const values=url.searchParams.getAll("symbols");
+      const symbols=values.length===1?values[0].split(",").map(v=>v.toUpperCase()):[];
+      if(values.length!==1||keys.some(x=>x!=="symbols"))return json({error:"Invalid earnings symbol query."},400);
+      try{validateSymbols(symbols);}catch{return json({error:"Invalid earnings symbol query."},400);}
+      if(request.method==="HEAD")return new Response(null,{status:200,headers:commonHeaders("application/json")});
+      return json(await fetchEarnings(env,symbols));
+    }
     if (url.pathname === "/api/market/events") {
       if (url.search) return json({error:"No query parameters permitted."},400);
       if (request.method === "HEAD")
@@ -558,6 +568,7 @@ export default {
       "/coach-engine.js": [assets.coachEngine, "text/javascript; charset=utf-8"],
       "/radar-engine.js": [assets.radarEngine, "text/javascript; charset=utf-8"],
       "/events-engine.js": [assets.eventsEngine, "text/javascript; charset=utf-8"],
+      "/earnings-engine.js": [assets.earningsEngine, "text/javascript; charset=utf-8"],
       "/lightweight-charts.js": [assets.chartLib, "text/javascript; charset=utf-8"],
       "/styles.css": [assets.css, "text/css; charset=utf-8"]
     }[url.pathname];

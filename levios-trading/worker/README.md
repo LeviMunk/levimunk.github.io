@@ -239,6 +239,11 @@ When the signed-in user opens **Market Events**, LeviOS automatically fetches `G
 
 Cloudflare Access-protected `workers.dev` does not support the Workers Cache API; this upgrade deliberately avoids Cache API and KV/D1 binding changes. Source fetches happen when the calendar is opened (and when manually refreshed), **not when the browser is closed**. This is *not* unattended periodic monitoring or push alerts. Only upcoming BLS Employment Situation, JOLTS, CPI, PPI, BEA GDP and Personal Income/Outlays are supported. Both upstream schedules can change and must be verified at the agencies. Regression coverage: `worker/test/event-feeds.test.mjs` plus Worker safety tests.
 
+## Company earnings intelligence (Upgrade 14)
+The Market Events tab includes Earnings Intelligence for the local IEX watchlist. The independent `earnings-engine.js` has a dated, linked NVIDIA company-confirmed earnings-call announcement and issuer investor-relations links for the initial watchlist. Its confirmation refers to the event in the linked announcement; the fiscal report release time may differ from the call time. No extrapolated/guessed future earnings dates.
+
+Optional **Alpha Vantage** estimates can supplement the dashboard after you privately set a Cloudflare Worker secret named `ALPHAVANTAGE_API_KEY`. The protected `GET /api/market/earnings?symbols=AAPL,MSFT` endpoint validates 1–12 unique watchlist tickers, requests a 3-month provider calendar once, filters to the selected tickers, validates CSV format, and labels all provider entries **provider_estimate**, never issuer_confirmed. The secret is never returned in JSON or exposed to browser JS or GitHub. Missing credentials give an explicit unavailable state, not a fabricated schedule. Free API rates/terms apply; avoid excessive refreshes. This is a manually refreshed research panel with short-lived browser cache, not unattended notifications. No changes to Alpaca, Cloudflare Access policy, DNS or hosting.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
