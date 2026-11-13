@@ -732,3 +732,103 @@ test("authenticated Alpaca account response exposes only sanitized risk summary"
     assert.ok(!JSON.stringify(data).includes("TEST_SECRET"));
   }finally{globalThis.fetch=originalFetch;}
 });
+
+test("self-hosted TradingView bundle is protected, real, and served same-origin", async () => {
+  const res = await handler.fetch(new Request(url + "/lightweight-charts.js"), authorizedEnv, authenticated);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /text\/javascript/);
+  const script = await res.text();
+  assert.ok(script.length > 50000, "Chart package must be a real browser bundle");
+  assert.match(script, /TradingView|LightweightCharts/);
+  assert.equal(res.headers.get("access-control-allow-origin"), null);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  const denied = await handler.fetch(new Request(url + "/lightweight-charts.js"), authorizedEnv, {});
+  assert.equal(denied.status, 403);
+});
+
+test("IEX daily candlesticks sanitize OHLC bars and never expose Alpaca response metadata", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (destination, opts) => {
+    calls.push({url:String(destination),method:opts.method,redirect:opts.redirect,headers:opts.headers});
+    return Response.json({
+      symbol:"SPY", account_number:"PRIVATE",
+      bars: [
+        {t:"2026-11-10T05:00:00Z",o:600,h:604,l:598,c:602,v:123456,secret:"PRIVATE"},
+        {t:"2026-11-11T05:00:00Z",o:602,h:608,l:601,c:606,v:98765},
+        {t:"2026-11-12T05:00:00Z",o:606,h:605,l:601,c:603,v:123}, // invalid high
+        {t:"BAD_DATE",o:607,h:610,l:600,c:607,v:100}
+      ], next_page_token:null
+    });
+  };
+  try {
+    const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_ID",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+    const res=await handler.fetch(new Request(url+"/api/market/bars?symbol=SPY&range=3M"),env,authenticated);
+    assert.equal(res.status,200);
+    const data=await res.json();
+    assert.equal(data.connected,true);
+    assert.equal(data.feed,"iex");
+    assert.equal(data.symbol,"SPY");
+    assert.equal(data.range,"3M");
+    assert.equal(data.timeframe,"1Day");
+    assert.equal(data.bars.length,2);
+    assert.deepEqual(data.bars[0],{
+      time:"2026-11-10",open:600,high:604,low:598,close:602,volume:123456
+    });
+    assert.equal(data.truncated,false);
+    assert.equal(calls.length,1);
+    assert.ok(calls[0].url.startsWith("https://data.alpaca.markets/v2/stocks/SPY/bars?"));
+    assert.ok(calls[0].url.includes("feed=iex"));
+    assert.ok(calls[0].url.includes("timeframe=1Day"));
+    assert.ok(calls[0].url.includes("limit=400"));
+    assert.equal(calls[0].method,"GET");
+    assert.equal(calls[0].redirect,"manual");
+    assert.ok(!JSON.stringify(data).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(data).includes("TEST_SECRET"));
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("IEX bars reject untrusted query parameters, bad ranges and anonymous clients", async () => {
+  const originalFetch = globalThis.fetch;
+  let called = 0;
+  globalThis.fetch = async () => {called++; return Response.json({bars:[]});};
+  try {
+    const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_ID",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+    for (const query of [
+      "", "symbol=SPY", "symbol=SPY&range=1D",
+      "symbol=spy&range=1M", "symbol=SPY&range=1M&feed=sip",
+      "symbol=SPY&symbol=QQQ&range=1M",
+      "symbol=SPY&range=1M&range=1Y",
+      "symbol=SPY%2Ffoo&range=3M",
+      "symbol=SPY%26feed%3Dsip&range=3M"
+    ]) {
+      const res=await handler.fetch(new Request(url+"/api/market/bars?"+query),env,authenticated);
+      assert.equal(res.status,400,query);
+    }
+    assert.equal(called,0);
+    const anonymous = await handler.fetch(new Request(url+"/api/market/bars?symbol=SPY&range=1M"),env,{});
+    assert.equal(anonymous.status,403);
+    const post=await handler.fetch(new Request(url+"/api/market/bars?symbol=SPY&range=1M",{method:"POST"}),env,authenticated);
+    assert.equal(post.status,405);
+    assert.equal(called,0);
+  } finally { globalThis.fetch=originalFetch; }
+});
+
+test("IEX bars have honest empty and rate-limit states", async () => {
+  const originalFetch=globalThis.fetch;
+  const env={...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_ID",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+  try {
+    globalThis.fetch = async () => Response.json({bars:[],next_page_token:null});
+    let res=await handler.fetch(new Request(url+"/api/market/bars?symbol=QQQ&range=1M"),env,authenticated);
+    let data=await res.json();
+    assert.equal(data.connected,true);
+    assert.deepEqual(data.bars,[]);
+    globalThis.fetch=async()=>new Response("PRIVATE",{status:429});
+    res=await handler.fetch(new Request(url+"/api/market/bars?symbol=QQQ&range=1M"),env,authenticated);
+    data=await res.json();
+    assert.equal(data.connected,false);
+    assert.equal(data.reason,"alpaca_rate_limited");
+    assert.equal(data.http_status,429);
+    assert.ok(!JSON.stringify(data).includes("PRIVATE"));
+  }finally{globalThis.fetch=originalFetch;}
+});
