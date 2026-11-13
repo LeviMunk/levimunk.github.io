@@ -197,6 +197,12 @@ A separate **Validation & Promotion** section now follows the Strategy Lab's Sav
 
 `levios-trading/worker/test/validation.test.mjs` checks successful and rejected gates, missing data, fictional prices, stress costs, mismatched baselines, champion improvement, and approval selection. The existing `safety.test.mjs` verifies the validation module is served only after Cloudflare Access. CI runs all strategy, validation, and account safety suites.
 
+## Three-window strategy consistency diagnostic (eighth incremental upgrade)
+
+The Strategy Testing Workbench now reports three sequential, non-overlapping subperiods **inside the existing evaluation period** for each completed backtest, with start/end dates, observation count, strategy return, same-window buy-and-hold, excess return (percentage points), maximum observed drawdown, and hypothetical execution count. The first window starts on the existing evaluation split date. Returns use the preceding day's equity as their baseline, so no price changes are double-counted at boundaries.
+
+The view is deliberately **diagnostic, not walk-forward retraining**: the same parameter set was chosen for the original backtest and no independent future observations are introduced. Three windows do not constitute three blind tests. The component reads in-memory backtest results and makes no additional network or Alpaca requests. If fewer than 30 evaluation bars exist, it displays an insufficient-history state rather than inventing results. Regression coverage lives in `levios-trading/worker/test/strategy.test.mjs`.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
