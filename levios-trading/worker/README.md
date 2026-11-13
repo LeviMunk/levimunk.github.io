@@ -259,6 +259,11 @@ Home now begins with **What should I do next?** and a one-click PAPER watchlist 
 
 This is a deterministic educational decision aid, NOT an investment adviser, a quantified expected return or an executable buy/sell recommendation. It does not check company fundamentals/valuation, tax lots, order books, position correlations, money at risk outside the PAPER account, or a user's investor suitability. If data is unavailable, invalid or incomplete, the system abstains. No unattended checks, broker write routes, billing, new secrets or additional paid data providers. A button explicitly runs the brief using protected read-only Alpaca IEX bar requests (max two concurrent requests), with risk review prioritized. The existing deeper overview and P/L analytics remain below the simplified top panel.
 
+## Stock Research v1 (Upgrade 18)
+The Stock Research tab is an evidence-first learning aid inspired by the modular research pipeline of OpenBB and the explicit factor/valuation sections of open-source equity research screeners. It has no new market-data subscription or endpoint. Users must manually enter five numeric metrics and a public SEC or annual-report URL; the URL is an *unverified reference* supplied by the user, NOT parsed or confirmed by the software. Positive/negative checks use coarse, documented illustrative thresholds for growth, operating margin, leverage, FCF, and P/E. They are not sector-neutral, historically validated, or sufficient for valuation. The result is strictly "worth deeper research", "investigate risks", "more evidence needed", or "update financial data" and explicitly abstains from actionable stock recommendations.
+
+No new API keys or secrets. The basic Alpha Vantage OVERVIEW endpoint is premium as of the provider's currently published documentation; FMP Basic coverage/licensing is limited. SEC's free EDGAR companyfacts is a possible future integration but requires appropriate CIK mapping, user-agent and rate-limit controls. This feature does NOT claim to automatically source or verify numbers, produce fair value/expected returns or advise real trades. Uses the same authenticated Worker asset and unit tests.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.

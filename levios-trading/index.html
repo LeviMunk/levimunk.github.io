@@ -17,6 +17,7 @@
   <script defer src="./catalyst-engine.js"></script>
   <script defer src="./journal-engine.js"></script>
   <script defer src="./decision-guide.js"></script>
+  <script defer src="./fundamentals-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -30,6 +31,7 @@
         <button class="nav-item" type="button" data-view="watchlist"><span class="nav-symbol">◉</span> IEX Watchlist</button>
         <button class="nav-item" type="button" data-view="events"><span class="nav-symbol">◷</span> Market Events</button>
         <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
+        <button class="nav-item" type="button" data-view="research"><span class="nav-symbol">◇</span> Stock Research</button>
         <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
         <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
         <button class="nav-item" type="button" data-view="journal"><span class="nav-symbol">✎</span> Hypothesis Journal</button>
@@ -346,6 +348,34 @@
             <div id="market-summary" class="chart-summary">Select an imported symbol.</div>
             <svg id="market-chart" class="chart" role="img" aria-label="Historical closing price chart" viewBox="0 0 800 230" preserveAspectRatio="none"></svg>
             <p class="muted footnote">For research only. Prices are uploaded manually and are not adjusted for corporate actions.</p>
+          </article>
+        </div>
+      </section>
+            <section id="view-research" class="view" aria-label="Evidence-based stock research" hidden>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">FUNDAMENTALS / EVIDENCE FIRST</p><h2>Analyze company quality and price</h2></div><span class="scorecard-period">NO ORDERS</span></div>
+            <p class="muted">Use figures from an issuer filing and an independently checked valuation source. The five-input rubric is a *learning aid*, not a validated stock rating. The source link is your evidence reference; LeviOS does not automatically verify its contents.</p>
+            <form id="fundamentals-form" class="form-stack">
+              <label for="fund-symbol">Ticker</label><input id="fund-symbol" value="MSFT" maxlength="10" required>
+              <label for="fund-period">Financial reporting period end</label><input id="fund-period" type="date" required>
+              <label for="fund-source">SEC filing or annual report URL</label><input id="fund-source" type="url" maxlength="400" placeholder="https://www.sec.gov/Archives/..." required>
+              <label for="fund-growth">Year-over-year revenue growth (%)</label><input id="fund-growth" type="number" step="any" min="-100" max="500" required>
+              <label for="fund-margin">Operating margin (%)</label><input id="fund-margin" type="number" step="any" min="-100" max="100" required>
+              <label for="fund-debt">Debt / equity ratio</label><input id="fund-debt" type="number" step="any" min="0" required>
+              <label for="fund-pe">Trailing price-to-earnings ratio</label><input id="fund-pe" type="number" step="any" min="0" required>
+              <label for="fund-fcf">Free cash flow (millions, same reporting period)</label><input id="fund-fcf" type="number" step="any" required>
+              <button type="submit" class="button primary">Evaluate evidence</button>
+              <p id="fund-feedback" class="form-feedback" role="status"></p>
+            </form>
+            <p class="muted footnote">P/E is a market valuation metric and may not be from the filing itself. Record its date and source in your own notes. Do not compare unrelated annual and quarterly metrics as though they covered the same period.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">CONDITIONAL ASSESSMENT</p><h2>What should I investigate?</h2></div></div>
+            <p id="fund-summary" class="muted" aria-live="polite">No assessment yet. Missing or unverified numbers never receive an invented grade.</p>
+            <div id="fund-results" class="strategy-evaluation"></div>
+            <p class="muted footnote">The dashboard does not calculate fair value or recommend actual orders. For now it provides research readiness and risk warnings, not a personalized Buy/Hold/Sell determination.</p>
+            <a class="text-link" href="https://www.sec.gov/search-filings" target="_blank" rel="noopener noreferrer">Find a filing with SEC EDGAR ↗</a>
           </article>
         </div>
       </section>
