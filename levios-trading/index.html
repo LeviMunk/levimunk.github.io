@@ -119,6 +119,50 @@
           <p id="scorecard-status" class="muted scorecard-status" aria-live="polite">Sign in to load account performance statistics.</p>
           <p class="muted footnote">Raw equity drawdown measures the largest observed decline from a previous equity peak. It is not cash-flow-adjusted; deposits and withdrawals can distort it. Win rate and profit factor are intentionally withheld until closed trades can be matched reliably.</p>
         </article>
+        <article class="panel risk-panel" aria-labelledby="risk-heading">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">POSITION RISK / ALPACA PAPER</p>
+              <h2 id="risk-heading">Exposure &amp; concentration</h2>
+              <p class="muted risk-description">A snapshot of your open positions. Calculated from Alpaca's signed market values, not the simulator.</p>
+            </div>
+            <span class="scorecard-period">READ-ONLY</span>
+          </div>
+          <div class="risk-stats">
+            <div class="risk-metric">
+              <span>GROSS POSITION EXPOSURE</span>
+              <strong id="risk-gross">—</strong>
+              <small id="risk-gross-pct">Compared with account equity</small>
+            </div>
+            <div class="risk-metric">
+              <span>LARGEST HOLDING</span>
+              <strong id="risk-largest">—</strong>
+              <small id="risk-largest-share">Share of gross exposure</small>
+            </div>
+            <div class="risk-metric">
+              <span>TOP THREE CONCENTRATION</span>
+              <strong id="risk-top3">—</strong>
+              <small>Percentage of all open exposure</small>
+            </div>
+            <div class="risk-metric">
+              <span>OPEN UNREALIZED P/L</span>
+              <strong id="risk-unrealized">—</strong>
+              <small>Open positions only; excludes closed trades</small>
+            </div>
+          </div>
+          <div class="risk-exposure">
+            <div class="risk-exposure-top">
+              <span><strong>Long</strong> <span id="risk-long">—</span></span>
+              <span><strong>Short</strong> <span id="risk-short">—</span></span>
+            </div>
+            <div class="risk-exposure-track" role="img" id="risk-exposure-label" aria-label="Long versus short share of gross exposure">
+              <div class="risk-long-bar" id="risk-long-bar"></div>
+              <div class="risk-short-bar" id="risk-short-bar"></div>
+            </div>
+          </div>
+          <p id="risk-status" class="muted risk-status" role="status" aria-live="polite">Sign in to your protected Alpaca PAPER dashboard to see risk metrics.</p>
+          <p class="muted footnote">Gross exposure is the sum of absolute position values, not cash spent or actual borrowed margin. Concentration is relative to currently open positions. These figures omit options Greeks, intraday risk, liquidity, correlation and market-wide exposure outside this account.</p>
+        </article>
         <div class="grid-2 holdings-section">
           <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">ALPACA PAPER ACCOUNT</p><h2 id="holdings-heading">Brokerage paper positions</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades" hidden>Open journal →</button></div>
             <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Unrealized P/L</th><th id="holdings-fourth-heading">Market value</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">Alpaca disconnected. Sign in to the private bridge and refresh.</td></tr></tbody></table></div>
