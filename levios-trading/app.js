@@ -1776,8 +1776,47 @@
         " IEX-only historical observations, not real-time buy/sell orders.";
     }finally{briefingRunning=false;$("daily-brief-run").disabled=false;}
   }
+  function submitFundamentalsResearch(event){
+    event.preventDefault();
+    const summary=$("fund-summary"),results=$("fund-results");
+    results.replaceChildren();
+    try{
+      const e=globalThis.LeviFundamentals;
+      if(!e)throw Error("Stock research engine unavailable.");
+      const data=e.assess({
+        symbol:$("fund-symbol").value.trim().toUpperCase(),
+        periodEnd:$("fund-period").value,sourceUrl:$("fund-source").value,
+        revenueGrowth:$("fund-growth").value,operatingMargin:$("fund-margin").value,
+        debtToEquity:$("fund-debt").value,priceToEarnings:$("fund-pe").value,
+        freeCashFlow:$("fund-fcf").value
+      },currentNYTradingDate());
+      summary.textContent=data.symbol+" · "+data.headline+" · Reporting period "+
+        data.periodEnd+" · "+data.favorable+" favorable / "+data.cautions+
+        " caution flags across 5 illustrative factors. This is not a stock rating.";
+      const intro=document.createElement("div");
+      const label=document.createElement("span");label.textContent="NEXT RESEARCH ACTION";
+      const what=document.createElement("strong");what.textContent=data.next;
+      intro.append(label,what);results.append(intro);
+      for(const check of data.checks){
+        const box=document.createElement("div"),name=document.createElement("span");
+        name.textContent=check.label.toUpperCase()+" · "+
+          (check.caution?"CAUTION":check.good?"FAVORABLE":"MIXED");
+        const expl=document.createElement("small");expl.textContent=check.explain;
+        box.append(name,expl);results.append(box);
+      }
+      const source=document.createElement("a");source.href=data.sourceUrl;
+      source.rel="noopener noreferrer";source.target="_blank";
+      source.textContent="Recheck supplied financial document ↗";results.append(source);
+      const limitations=document.createElement("small");
+      limitations.textContent=data.limitations;results.append(limitations);
+      feedback("fund-feedback","Analyzed manually supplied figures. No brokerage orders sent.");
+    }catch(error){
+      summary.textContent="Research incomplete. No rating or action was generated.";
+      feedback("fund-feedback",String(error?.message||error),true);
+    }
+  }
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -2669,6 +2708,7 @@
   $("journal-form").addEventListener("submit",submitHypothesis);
   $("journal-review-form").addEventListener("submit",submitHypothesisReview);
   $("journal-export").addEventListener("click",exportHypothesisJournal);
+  $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
