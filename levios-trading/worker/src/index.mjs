@@ -452,6 +452,7 @@ export default {
       "/": [assets.html, "text/html; charset=utf-8"],
       "/index.html": [assets.html, "text/html; charset=utf-8"],
       "/app.js": [assets.app, "text/javascript; charset=utf-8"],
+      "/lightweight-charts.js": [assets.chartLib, "text/javascript; charset=utf-8"],
       "/styles.css": [assets.css, "text/css; charset=utf-8"]
     }[url.pathname];
     if (!staticContent) return json({ error: "Not found" }, 404);
