@@ -1717,11 +1717,13 @@
       return;
     }
     if(!globalThis.LeviDecisionGuide){status.textContent="Decision engine unavailable; refresh page.";return;}
-    const symbols=watchSymbols.slice(0,12);
-    if(!symbols.length){status.textContent="Add a watchlist ticker before analysis.";return;}
-    const today=currentNYTradingDate();
     const holdings=alpacaSnapshot?.connected && Array.isArray(alpacaSnapshot.positions)?
       alpacaSnapshot.positions:[];
+    const heldSymbols=holdings.map(h=>String(h.symbol||"").toUpperCase())
+      .filter(s=>/^[A-Z][A-Z0-9.-]{0,9}$/.test(s));
+    const symbols=[...new Set([...heldSymbols,...watchSymbols])].slice(0,12);
+    if(!symbols.length){status.textContent="Add a watchlist ticker before analysis.";return;}
+    const today=currentNYTradingDate();
     const equity=alpacaSnapshot?.connected?Number(alpacaSnapshot.account?.equity):null;
     const results=new Array(symbols.length);let cursor=0,completed=0;
     briefingRunning=true;$("daily-brief-run").disabled=true;
@@ -1763,11 +1765,11 @@
     try{
       await Promise.all([worker(),worker()]);
       briefingRecords=results;
-      briefingSymbols=symbols.join(",");
+      briefingSymbols=watchSymbols.join(",");
       renderDailyBrief();
       const missing=results.filter(x=>!x.ready).length;
       status.textContent="Research completed for "+(results.length-missing)+
-        " / "+results.length+" tickers · "+missing+" unavailable · "+
+        " / "+results.length+" tickers (PAPER holdings first) · "+missing+" unavailable · "+
         (alpacaSnapshot?.connected?
           "PAPER holdings used for risk review.":
           "PAPER holdings unavailable: hold and concentration guidance cannot be personalized.")+
