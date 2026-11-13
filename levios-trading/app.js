@@ -1030,7 +1030,7 @@
   }
 
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -1534,19 +1534,20 @@
       showToast("Simulated trade saved locally.");
     }catch(err){feedback("trade-feedback",err.message,true);}
   });
-  $("backtest-form").addEventListener("submit",e=>{
+  $("backtest-form").addEventListener("submit", e => {
     e.preventDefault();
-    try{
-      const symbol=$("strategy-symbol").value;
-      const r=runBacktest(symbol,Number($("fast").value),Number($("slow").value));
-      $("result-return").textContent=pct(r.returnPct);
-      $("result-hold").textContent=pct(r.holdPct);
-      $("result-dd").textContent=pct(r.maxDD);
-      $("result-trades").textContent=String(r.trades);
-      chart("equity-chart",r.curve,"equity");
-      feedback("backtest-feedback","Backtest complete on "+r.curve.length+" observations.");
-    }catch(err){feedback("backtest-feedback",err.message,true);}
+    try { runStrategyWorkbench(); }
+    catch (error) {
+      activeStrategyRun = null;
+      $("strategy-save").disabled = true;
+      feedback("backtest-feedback", String(error?.message || "Research run failed."), true);
+    }
   });
+  $("strategy-source").addEventListener("change", updateStrategySource);
+  $("strategy-split").addEventListener("input", updateStrategySource);
+  $("strategy-load-iex").addEventListener("click", () => void loadStrategyIexHistory());
+  $("strategy-save").addEventListener("click", saveStrategyVersion);
+  $("strategy-export").addEventListener("click", exportStrategyVersions);
   $("mode-alpaca").addEventListener("click", () => {
     if (!alpacaSnapshot || !alpacaSnapshot.connected) return;
     accountView = "alpaca";
@@ -1672,7 +1673,10 @@
     render();showToast("Practice portfolio reset.");
   });
   loadWatchSymbols();
-  load();render();showView("overview");
+  load();
+  loadStrategyVersions();
+  updateStrategySource();
+  render();showView("overview");
   renderWatchlist();
   const privateWorker = window.location.hostname.endsWith(".workers.dev");
   $("private-trading-link").hidden = privateWorker;
