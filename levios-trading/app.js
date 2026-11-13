@@ -3090,12 +3090,26 @@
         "</td><td>"+strategyLabelPercent(f.maxDrawdownPct)+
         "</td><td>"+f.executions+"</td></tr>"
       ).join("");
+      $("walkforward-candidates").innerHTML=analysis.leaderboard.map(c =>
+        "<tr><td>"+c.fast+"/"+c.slow+
+        "</td><td>"+c.positiveFolds+" / 3"+
+        "</td><td>"+strategyLabelPercent(c.weightedExcessPctPoints)+
+        "</td><td>"+strategyLabelPercent(c.maxDrawdownPct)+
+        "</td><td>"+c.executions+
+        "</td><td>"+c.reviewStatus+"</td></tr>"
+      ).join("");
+      $("walkforward-candidate-note").textContent=
+        "Ranked by positive historical folds, then observation-weighted excess. " +
+        "REVIEW requires at least 2 positive folds, 2 simulated executions, positive weighted excess, " +
+        "and drawdown no worse than 15%. This is NOT the strategy promotion gate and not forward paper evidence.";
       status.textContent=symbol+" · "+source+" · "+analysis.folds.length+
         " chronological folds · "+analysis.positiveFolds+
         " / 3 beat their same-window benchmark · fingerprint "+
         analysis.dataHash+". These results are historical and do not authorize an order.";
     } catch (error) {
       tbody.innerHTML='<tr><td colspan="10" class="empty">No valid walk-forward results. Check the source and history length.</td></tr>';
+      $("walkforward-candidates").innerHTML='<tr><td colspan="6" class="empty">Candidate ranking unavailable.</td></tr>';
+      $("walkforward-candidate-note").textContent="No results saved or promoted.";
       status.textContent=String(error?.message||"Walk-forward testing failed.");
     }
   }
