@@ -19,6 +19,7 @@
   <script defer src="./decision-guide.js"></script>
   <script defer src="./fundamentals-engine.js"></script>
   <script defer src="./valuation-engine.js"></script>
+  <script defer src="./peer-thesis-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -392,11 +393,15 @@
           </div><span class="scorecard-period">IEX + SEC · READ-ONLY</span></div>
           <form id="valuation-form" class="form-stack">
             <label for="valuation-first">First company ticker</label><input id="valuation-first" maxlength="10" value="MSFT" required>
+            <p class="muted footnote">Optional candidate peers are editorial examples, not automatically verified industry matches. Examine their revenue models before using them.</p>
+            <div class="button-row"><button type="button" id="valuation-peer-suggest" class="button secondary">Suggest research peers</button></div>
+            <div id="valuation-peer-options" class="strategy-evaluation" aria-live="polite"></div>
             <label for="valuation-second">Second company ticker</label><input id="valuation-second" maxlength="10" value="AAPL" required>
             <button type="submit" class="button primary">Compare financials &amp; valuation</button>
           </form>
           <p id="valuation-status" class="muted footnote" role="status" aria-live="polite">Available in the authenticated private dashboard. Missing or stale sources mean no multiple is produced.</p>
           <div id="valuation-results" class="strategy-evaluation"></div>
+          <div id="valuation-thesis" class="strategy-evaluation" aria-live="polite"></div>
           <p class="muted footnote">P/S, P/E and P/FCF are approximate proxies calculated with annual diluted weighted-average shares and recent IEX-only prices, not authoritative market capitalization or trailing-12-month consensus estimates. Fiscal periods must be within 120 days to compare; different industries may not be meaningful peers. These ratios alone do not predict stock returns.</p>
         </article>
       </section>

@@ -53,8 +53,10 @@ jobs:
         run: node --check levios-trading/worker/src/sec-financials.mjs
       - name: Check relative valuation engine syntax
         run: node --check levios-trading/valuation-engine.js
+      - name: Check peer-thesis research engine syntax
+        run: node --check levios-trading/peer-thesis-engine.js
       - name: Check Worker JavaScript
         run: node --check levios-trading/worker/src/index.mjs
       - name: Test authentication and read-only APIs
         working-directory: levios-trading/worker
-        run: node --test test/safety.test.mjs test/strategy.test.mjs test/validation.test.mjs test/coach.test.mjs test/radar.test.mjs test/events.test.mjs test/event-feeds.test.mjs test/earnings.test.mjs test/catalyst.test.mjs test/journal.test.mjs test/decision-guide.test.mjs test/fundamentals.test.mjs test/sec-financials.test.mjs test/valuation.test.mjs
+        run: node --test test/safety.test.mjs test/strategy.test.mjs test/validation.test.mjs test/coach.test.mjs test/radar.test.mjs test/events.test.mjs test/event-feeds.test.mjs test/earnings.test.mjs test/catalyst.test.mjs test/journal.test.mjs test/decision-guide.test.mjs test/fundamentals.test.mjs test/sec-financials.test.mjs test/valuation.test.mjs test/peer-thesis.test.mjs
