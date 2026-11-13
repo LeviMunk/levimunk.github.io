@@ -770,6 +770,7 @@
   });
   load();render();showView("overview");
   const privateWorker = window.location.hostname.endsWith(".workers.dev");
+  $("private-trading-link").hidden = privateWorker;
   if (privateWorker) {
     $("alpaca-endpoint").value = window.location.origin;
   } else {
