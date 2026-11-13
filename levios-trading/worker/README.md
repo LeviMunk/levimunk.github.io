@@ -254,6 +254,11 @@ Standalone `journal-engine.js` adapted to LeviOS using design ideas from [LuxAlg
 
 Saved locally in the browser under `levios-hypothesis-journal-v1` with a 100-entry bound, input validation, exported JSON backup, and explicit local-only warnings. Browser storage isn't cryptographically tamper-proof and doesn't sync between machines. The standalone journal engine is bundled into the protected Cloudflare Worker and tested in `worker/test/journal.test.mjs`. Other existing portfolio exports do not automatically include these entries; use the journal's dedicated Export button.
 
+## Action-first decision support home (Upgrade 17)
+Home now begins with **What should I do next?** and a one-click PAPER watchlist brief. The transparent `decision-guide.js` borrows action-prioritization ideas from FolioOrb, KaanCan1/portfolio-tracker and risk/analytics reporting concepts from QuantStats, without installing their runtimes. The briefing requires 50 valid **completed** daily IEX closes for each symbol and sorts: (1) excessive PAPER concentration above a simple 25% equity screening threshold, (2) held instruments below both 20/50 daily moving averages, (3) other held instruments, (4) unheld instruments above both averages, (5) wait/investigate. Each action states why, next research steps and what evidence could change it.
+
+This is a deterministic educational decision aid, NOT an investment adviser, a quantified expected return or an executable buy/sell recommendation. It does not check company fundamentals/valuation, tax lots, order books, position correlations, money at risk outside the PAPER account, or a user's investor suitability. If data is unavailable, invalid or incomplete, the system abstains. No unattended checks, broker write routes, billing, new secrets or additional paid data providers. A button explicitly runs the brief using protected read-only Alpaca IEX bar requests (max two concurrent requests), with risk review prioritized. The existing deeper overview and P/L analytics remain below the simplified top panel.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
