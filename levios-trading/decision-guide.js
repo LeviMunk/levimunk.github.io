@@ -7,7 +7,7 @@
 const NUM=x=>typeof x==="number"&&Number.isFinite(x);
 const mean=xs=>xs.reduce((a,b)=>a+b,0)/xs.length;
 const SYMBOL=/^[A-Z][A-Z0-9.-]{0,9}$/;
-function examine({symbol,bars,holding=null,equity=null,asOfLimit=null}){
+function examine({symbol,bars,holding=null,equity=null,asOfLimit=null,holdingsVerified=false}){
  if(!SYMBOL.test(symbol)||!Array.isArray(bars)||bars.length<50)
   return {symbol,ready:false,reason:"At least 50 completed historical daily IEX candles are required."};
  const rows=bars.map(b=>({date:String(b.time||b.date||""),close:Number(b.close)}));
@@ -25,7 +25,12 @@ function examine({symbol,bars,holding=null,equity=null,asOfLimit=null}){
  const weight=NUM(equity)&&equity>0&&NUM(mv)?Math.abs(mv)/equity*100:null;
  const above20=last.close>ma20,above50=last.close>ma50;
  let kind,title,why,next,changes;
- if(held&&weight!==null&&weight>25){
+ if(!holdingsVerified){
+   kind="verify-portfolio";title="VERIFY PAPER HOLDINGS FIRST";
+   why="The PAPER account has not confirmed its positions, so ownership and exposure are unknown.";
+   next="Connect the private read-only PAPER account and rerun the brief before choosing an entry or exit.";
+   changes="Reassess when holdings and equity are verified.";
+ }else if(held&&weight!==null&&weight>25){
    kind="risk-review";title="REVIEW CONCENTRATION";
    why="This position is above 25% of your PAPER equity by absolute reported market value.";
    next="Review diversification, your original thesis, and whether reducing exposure fits your risk plan.";
@@ -57,7 +62,7 @@ function examine({symbol,bars,holding=null,equity=null,asOfLimit=null}){
 }
 function summarize(results){
  const ready=results.filter(x=>x.ready),unavailable=results.length-ready.length;
- const priorities={"risk-review":0,"exit-review":1,"hold-review":2,"entry-research":3,"wait":4};
+ const priorities={"verify-portfolio":0,"risk-review":1,"exit-review":2,"hold-review":3,"entry-research":4,"wait":5};
  return {ready:ready.sort((a,b)=>priorities[a.kind]-priorities[b.kind]||a.symbol.localeCompare(b.symbol)),
    unavailable,observed:ready.length};
 }
