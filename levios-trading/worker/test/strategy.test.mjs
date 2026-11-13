@@ -86,3 +86,20 @@ test("data fingerprint reflects changed input without relying on network or brok
   assert.notEqual(engine.checksum(rows),engine.checksum(different));
   assert.equal(engine.run(rows,settings).version,"levios-ma-v1");
 });
+
+test("robustness divides only the evaluation period into three non-overlapping windows",()=>{
+  const run=engine.run(series(180),settings);
+  const windows=engine.evaluationWindows(run);
+  assert.equal(windows.length,3);
+  assert.deepEqual(windows.map(w=>w.observations),[18,18,18]);
+  assert.equal(windows[0].startDate,run.splitDate);
+  assert.equal(windows[2].endDate,run.dataEnd);
+  assert.equal(windows.reduce((s,w)=>s+w.executions,0),run.test.executions);
+  assert.ok(windows.every(w=>Number.isFinite(w.returnPct)&&Number.isFinite(w.holdPct)&&Number.isFinite(w.excessPctPoints)&&w.maxDrawdownPct<=0));
+  assert.equal(windows.at(-1).window,3);
+});
+
+test("robustness rejects too-short periods without inventing observations",()=>{
+  const run=engine.run(series(90),{...settings,fast:2,slow:4,splitPct:70});
+  assert.throws(()=>engine.evaluationWindows(run),/At least 30/);
+});
