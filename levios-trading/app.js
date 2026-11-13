@@ -1667,6 +1667,112 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
+  let briefingRunning=false,briefingRecords=null,briefingSymbols="";
+  function renderDailyBrief(){
+    const cards=$("daily-brief-cards");cards.replaceChildren();
+    if(!briefingRecords){
+      const block=document.createElement("div");
+      const label=document.createElement("span");label.textContent="FIRST STEP";
+      const headline=document.createElement("strong");headline.textContent="Review your risk before seeking a trade.";
+      const note=document.createElement("small");note.textContent="Run the analysis for completed IEX daily data. No recommendation has been generated yet.";
+      block.append(label,headline,note);cards.append(block);return;
+    }
+    if(briefingSymbols!==watchSymbols.join(",")){
+      const warning=document.createElement("div");
+      warning.textContent="Watchlist changed since analysis. Run it again for current tickers.";
+      cards.append(warning);return;
+    }
+    const summaries=globalThis.LeviDecisionGuide.summarize(briefingRecords);
+    for(const item of summaries.ready){
+      const card=document.createElement("div");
+      const label=document.createElement("span");
+      label.textContent=item.symbol+" · "+item.asOf+" · COMPLETED IEX DAILY";
+      const headline=document.createElement("strong");headline.textContent=item.title;
+      const evidence=document.createElement("small");
+      evidence.textContent="Why: "+item.why+" IEX close "+formatIexPrice(item.lastClose)+
+        ", MA20 "+formatIexPrice(item.ma20)+", MA50 "+formatIexPrice(item.ma50)+". "+
+        (item.held?("PAPER position "+item.qty+
+          (item.weightPct!==null?" · "+item.weightPct.toFixed(1)+"% of reported paper equity.":"."))
+        :"Not shown as an open PAPER holding.");
+      const next=document.createElement("small");next.textContent="Next: "+item.next;
+      const changes=document.createElement("small");changes.textContent="What changes this: "+item.changes;
+      card.append(label,headline,evidence,next,changes);
+      cards.append(card);
+    }
+    const misses=briefingRecords.filter(r=>!r.ready);
+    for(const item of misses){
+      const card=document.createElement("div");
+      const title=document.createElement("span");title.textContent=item.symbol+" · DATA UNAVAILABLE";
+      const message=document.createElement("small");message.textContent=item.reason+
+        " No buy, hold or sell guidance is offered for this ticker.";
+      card.append(title,message);cards.append(card);
+    }
+    if(!briefingRecords.length)cards.textContent="No tracked instruments available.";
+  }
+  async function runDailyBrief(){
+    if(briefingRunning)return;
+    const status=$("daily-brief-status");
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="For private IEX market analysis, open the authenticated Cloudflare dashboard.";
+      return;
+    }
+    if(!globalThis.LeviDecisionGuide){status.textContent="Decision engine unavailable; refresh page.";return;}
+    const symbols=watchSymbols.slice(0,12);
+    if(!symbols.length){status.textContent="Add a watchlist ticker before analysis.";return;}
+    const today=currentNYTradingDate();
+    const holdings=alpacaSnapshot?.connected && Array.isArray(alpacaSnapshot.positions)?
+      alpacaSnapshot.positions:[];
+    const equity=alpacaSnapshot?.connected?Number(alpacaSnapshot.account?.equity):null;
+    const results=new Array(symbols.length);let cursor=0,completed=0;
+    briefingRunning=true;$("daily-brief-run").disabled=true;
+    status.textContent="Checking "+symbols.length+
+      " symbols against completed IEX daily bars. No orders will be submitted.";
+    async function one(index){
+      const symbol=symbols[index],controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),12000);
+      try{
+        const response=await fetch("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=3M",{
+          method:"GET",credentials:"same-origin",cache:"no-store",
+          redirect:"error",signal:controller.signal
+        });
+        if(!response.ok)throw Error("HTTP "+response.status);
+        const payload=await response.json();
+        if(payload?.connected!==true||payload.feed!=="iex"||
+          payload.symbol!==symbol||payload.truncated===true||!Array.isArray(payload.bars))
+          throw Error("Missing or incomplete IEX data");
+        const complete=payload.bars.filter(x=>typeof x?.time==="string"&&x.time<today);
+        return globalThis.LeviDecisionGuide.examine({
+          symbol,bars:complete,
+          holding:holdings.find(h=>h.symbol===symbol)||null,
+          equity:Number.isFinite(equity)&&equity>0?equity:null,
+          asOfLimit:today
+        });
+      }catch(error){
+        return {symbol,ready:false,reason:error?.name==="AbortError"?
+          "Historical prices timed out.":String(error?.message||"History unavailable.")};
+      }finally{clearTimeout(timeout);}
+    }
+    const worker=async()=>{
+      while(cursor<symbols.length){
+        const index=cursor++;
+        results[index]=await one(index);completed++;
+        status.textContent="Analyzed "+completed+" / "+symbols.length+" symbols…";
+      }
+    };
+    try{
+      await Promise.all([worker(),worker()]);
+      briefingRecords=results;
+      briefingSymbols=symbols.join(",");
+      renderDailyBrief();
+      const missing=results.filter(x=>!x.ready).length;
+      status.textContent="Research completed for "+(results.length-missing)+
+        " / "+results.length+" tickers · "+missing+" unavailable · "+
+        (alpacaSnapshot?.connected?
+          "PAPER holdings used for risk review.":
+          "PAPER holdings unavailable: hold and concentration guidance cannot be personalized.")+
+        " IEX-only historical observations, not real-time buy/sell orders.";
+    }finally{briefingRunning=false;$("daily-brief-run").disabled=false;}
+  }
   function showView(name) {
     const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
@@ -1684,7 +1790,7 @@
     $("view-description").textContent = headings[name][1];
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="journal") renderHypothesisJournal();
-    if (name==="overview") renderAccountSummary();
+    if (name==="overview"){renderAccountSummary();renderDailyBrief();}
     if (name==="market") plotHistory();
     if (name==="events"){renderMarketEvents();renderEarnings();void refreshMarketEvents(false);void refreshWatchlistEarnings(false);}
     if (name === "watchlist") {
@@ -2560,6 +2666,7 @@
   $("journal-form").addEventListener("submit",submitHypothesis);
   $("journal-review-form").addEventListener("submit",submitHypothesisReview);
   $("journal-export").addEventListener("click",exportHypothesisJournal);
+  $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
   $("earnings-refresh").addEventListener("click",()=>void refreshWatchlistEarnings(true));
