@@ -916,6 +916,7 @@
     return {text:label, stale:Date.now() - time > 5 * 60 * 1000};
   }
   function renderWatchlist() {
+    syncCandleSymbol();
     const worker = window.location.hostname.endsWith(".workers.dev");
     $("watch-private-link").hidden = worker;
     $("watch-refresh").disabled = !worker || watchFetching || watchSymbols.length === 0;
@@ -1039,7 +1040,11 @@
     if (name==="market") plotHistory();
     if (name === "watchlist") {
       renderWatchlist();
-      if (document.visibilityState === "visible") void loadWatchlist(false);
+      renderCandleChart();
+      if (document.visibilityState === "visible") {
+        void loadWatchlist(false);
+        if (!Array.isArray(candleBars)) void loadCandleBars();
+      }
     }
     if (name==="fills") {
       renderFills();
@@ -1398,6 +1403,7 @@
       watchRefreshTime = null;
       renderWatchlist();
       void loadWatchlist(true);
+      if ($("view-watchlist").classList.contains("active")) void loadCandleBars();
     } catch (error) {
       feedback("watch-feedback", String(error.message || "Invalid ticker."), true);
     }
@@ -1416,8 +1422,22 @@
     saveWatchSymbols();
     renderWatchlist();
     if (watchSymbols.length) void loadWatchlist(true);
+    if ($("view-watchlist").classList.contains("active")) void loadCandleBars();
+    else candleBars = null;
   });
   $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
+  $("watch-chart-symbol").addEventListener("change", () => {
+    candleSymbol = $("watch-chart-symbol").value;
+    void loadCandleBars();
+  });
+  for (const button of document.querySelectorAll("[data-ohlc-range]")) {
+    button.addEventListener("click", () => {
+      const range = button.dataset.ohlcRange;
+      if (!["1M","3M","1Y"].includes(range) || candleRange === range) return;
+      candleRange = range;
+      void loadCandleBars();
+    });
+  }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" &&
         $("view-watchlist").classList.contains("active")) void loadWatchlist(false);
