@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import handler from "../src/index.mjs";
 import { equityScorecard } from "../src/performance.mjs";
 import { positionRiskSummary } from "../src/risk.mjs";
@@ -831,4 +832,32 @@ test("IEX bars have honest empty and rate-limit states", async () => {
     assert.equal(data.http_status,429);
     assert.ok(!JSON.stringify(data).includes("PRIVATE"));
   }finally{globalThis.fetch=originalFetch;}
+});
+
+test("actual TradingView chart adapter accepts ISO daily candles and P/L timestamps", () => {
+  // Run the real pure frontend adapter (not a reimplementation), to prevent
+  // accidentally double-escaped date regexes from blanking the charts.
+  const app = readFileSync(new URL("../../app.js", import.meta.url), "utf8");
+  const begin = app.indexOf("  function chartDailyData(");
+  const end = app.indexOf("\n  function renderTradingViewPnl(", begin);
+  assert.ok(begin >= 0 && end > begin);
+  const chartDailyData = new Function(app.slice(begin,end) + "\nreturn chartDailyData;")();
+  const candles = chartDailyData([
+    {time:"2026-11-11",open:10,high:14,low:9,close:13},
+    {time:"BAD",open:12,high:15,low:11,close:14},
+    {time:"2026-11-10",open:9,high:12,low:8,close:11},
+    {time:"2026-11-11",open:10,high:15,low:9,close:14}
+  ], p => ({open:p.open,high:p.high,low:p.low,close:p.close}));
+  assert.deepEqual(candles, [
+    {time:"2026-11-10",open:9,high:12,low:8,close:11},
+    {time:"2026-11-11",open:10,high:15,low:9,close:14}
+  ]);
+  const pnl = chartDailyData([
+    {timestamp:1762732800,profit_loss:0},
+    {timestamp:1762819200,profit_loss:65.79}
+  ], p => ({value:p.profit_loss}));
+  assert.deepEqual(pnl,[
+    {time:"2025-11-10",value:0},
+    {time:"2025-11-11",value:65.79}
+  ]);
 });
