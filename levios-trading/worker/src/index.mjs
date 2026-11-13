@@ -41,17 +41,23 @@ function commonHeaders(type) {
   };
 }
 
-async function authorized(env, ctx) {
-  // Access is enforced by Cloudflare *before* Worker execution when enabled.
-  // Requiring ctx.access ensures this code fails CLOSED if Access is disabled.
-  if (!ctx?.access || typeof ctx.access.getIdentity !== "function") return false;
+async function authorizationStatus(env, ctx) {
+  // Cloudflare Access runs before our Worker when All traffic is protected.
+  // Keep this fail-closed: NEVER accept an unauthenticated request.
+  // Return only safe status codes, never any emails, tokens or keys.
+  if (!ctx?.access || typeof ctx.access.getIdentity !== "function") {
+    return { ok: false, reason: "access_not_authenticated" };
+  }
   const allowed = String(env?.ALLOWED_EMAIL || "").trim().toLowerCase();
-  if (!allowed) return false;
+  if (!allowed) return { ok: false, reason: "allowed_email_not_configured" };
   try {
     const identity = await ctx.access.getIdentity();
-    return String(identity?.email || "").trim().toLowerCase() === allowed;
+    const email = String(identity?.email || "").trim().toLowerCase();
+    if (!email) return { ok: false, reason: "access_identity_unavailable" };
+    if (email !== allowed) return { ok: false, reason: "allowed_email_mismatch" };
+    return { ok: true };
   } catch {
-    return false;
+    return { ok: false, reason: "access_identity_unavailable" };
   }
 }
 
@@ -114,8 +120,12 @@ async function accountSnapshot(env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (!(await authorized(env, ctx))) {
-      return json({ error: "Authenticated Cloudflare Access session required." }, 403);
+    const authorization = await authorizationStatus(env, ctx);
+    if (!authorization.ok) {
+      return json({
+        error: "Authenticated Cloudflare Access session required.",
+        reason: authorization.reason
+      }, 403);
     }
     if (request.method !== "GET" && request.method !== "HEAD") {
       return json({ error: "Read-only application. Orders and changes are not supported." }, 405);
