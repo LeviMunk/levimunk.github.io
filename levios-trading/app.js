@@ -494,6 +494,43 @@
     if (candleSymbol) select.value = candleSymbol;
     select.disabled = !candleSymbol;
   }
+  function renderTradingCoach() {
+    const status=$("coach-status"),lessons=$("coach-lessons");
+    lessons.replaceChildren();
+    if(candleRequesting){
+      status.textContent="Checking completed historical candles for "+candleSymbol+"…";
+      return;
+    }
+    if(candleError||!Array.isArray(candleBars)||!globalThis.LeviTradingCoach){
+      status.textContent=candleError||"Load historical IEX candles on the protected dashboard to see educational observations.";
+      return;
+    }
+    // Avoid treating the current, unfinished trading session as a completed day.
+    const nyDate=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",
+      year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+    const completed=candleBars.filter(b=>b && typeof b.time==="string" &&
+      b.time<nyDate);
+    const analysis=globalThis.LeviTradingCoach.analyze(completed);
+    if(!analysis.ready){
+      status.textContent=analysis.reason;
+      return;
+    }
+    status.textContent=candleSymbol+" · IEX only · "+analysis.sessions+
+      " completed daily observations · through "+analysis.asOf+
+      " · last close "+money(analysis.lastClose)+
+      ". No prediction or trading recommendation.";
+    for(const item of analysis.observations){
+      const card=document.createElement("div");
+      const heading=document.createElement("span");
+      heading.textContent=item.title.toUpperCase();
+      const fact=document.createElement("strong");
+      fact.textContent=item.fact;
+      const explain=document.createElement("small");
+      explain.textContent=item.explain+" Question to investigate: "+item.question;
+      card.append(heading,fact,explain);
+      lessons.appendChild(card);
+    }
+  }
   function renderCandleChart() {
     syncCandleSymbol();
     const privateWorker = window.location.hostname.endsWith(".workers.dev");
@@ -587,6 +624,7 @@
         throw Error(result?.reason || "IEX bars unavailable");
       }
       candleBars = result.bars;
+      renderTradingCoach();
       if (result.truncated) candleError = "Historical IEX bar range was truncated; try a shorter period.";
     } catch (error) {
       if (token !== candleRequestToken) return;
@@ -598,6 +636,7 @@
       if (token === candleRequestToken) {
         candleRequesting = false;
         renderCandleChart();
+        renderTradingCoach();
       }
     }
   }
@@ -1054,6 +1093,7 @@
     if (name === "watchlist") {
       renderWatchlist();
       renderCandleChart();
+      renderTradingCoach();
       if (document.visibilityState === "visible") {
         void loadWatchlist(false);
         if (!Array.isArray(candleBars)) void loadCandleBars();
