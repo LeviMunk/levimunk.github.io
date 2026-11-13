@@ -169,6 +169,34 @@ The previous single-result moving-average demo is now a **reproducible research 
 - `levios-trading/worker/test/safety.test.mjs` verifies the shared engine is hosted behind Cloudflare Access.
 - GitHub Actions runs both tests in the existing build workflow.
 
+## Strategy Validation & Promotion Gates (seventh incremental upgrade)
+
+A separate **Validation & Promotion** section now follows the Strategy Lab's Saved Experiment Versions. It is intended to prevent the research process from automatically accepting appealing backtest results. **Nothing is connected to an order API or actual strategy deployment.** An approval is a browser-local designation of a *research champion*, not a paper-trading activation or permission for an AI to trade.
+
+### How it works
+
+1. Run the Strategy Workbench using actual IEX history or dated CSV data, then **Save this run as version**. The saved version now includes evaluation observations and executions, plus a stress-test rerun with fees and slippage at least doubled (minimum 5 bps each). This uses the **same frozen price dataset and same split dates** as the original run.
+2. Select a saved version in **Validation & Promotion** and click **Run validation gates**. Fixed deterministic rules return a pass/fail with individual rejection explanations. A saved version created before these fields existed is rejected as incomplete; **rerun and save** rather than inventing a stress-test result. Fictional DEMO data may be explored but never approved.
+3. Default v1 policy, hard-coded and versioned in `levios-trading/validation-engine.js`:
+   - At least **30 evaluation observations** and **2 simulated evaluation-period executions**;
+   - Evaluation return at least **1.0 percentage point above buy-and-hold** over the same later dates, using the same initial cost assumptions;
+   - Evaluation maximum drawdown no worse than **−15%**;
+   - The higher-cost stress rerun must still **meet or beat its own buy-and-hold benchmark**;
+   - If an existing research champion shares the **same ticker, source, engine, data fingerprint, date coverage, split date and cost settings**, the candidate must improve evaluation return by **at least 0.5 percentage points** while worsening drawdown by **no more than 2 percentage points**.
+4. A passing review only enables a separate **Approve research champion** button. It requires an explicit confirmation and rechecks the latest champion first. Failed checks cannot be overridden with this button.
+5. Each review (including rejection) and explicit research approval is saved in an append-only-in-use browser-local decision log, up to 100 events, with the latest 30 displayed. Approvals contain a copy of the candidate's metrics so a previous champion can still be evaluated even if older experiment runs have rolled out of the saved 25-item table. **Export research log** now includes both experiment versions and validation decisions in one JSON file.
+
+### Limitations and safeguards
+
+- Decisions are kept in this browser's `localStorage`; users can edit or delete them. This is **not an immutable audit or independently verified research record**, and versions do not sync across devices. The data hash is a non-cryptographic FNV-1a fingerprint, not integrity attestation.
+- Repeatedly testing different candidates against the same later dates **contaminates the holdout**. None of these fixed thresholds guarantees a profitable strategy. Independent forward/walk-forward validation and rigorous cost models are still needed.
+- Backtest fills are **hypothetical next-close executions**. IEX prices are single-exchange and may be unadjusted for corporate actions or dividends. There is no survivorship-bias, liquidity, spread, queue, or tax simulation.
+- The new JS is bundled from the **same GitHub code into the Cloudflare Access-protected Worker**; both GitHub Pages and private dashboards share the rule engine. All private Alpaca APIs remain read-only. No webhook, trading key exposure, approval-to-deployment action, or AI-generated automatic strategy rewrite was added.
+
+### Tests
+
+`levios-trading/worker/test/validation.test.mjs` checks successful and rejected gates, missing data, fictional prices, stress costs, mismatched baselines, champion improvement, and approval selection. The existing `safety.test.mjs` verifies the validation module is served only after Cloudflare Access. CI runs all strategy, validation, and account safety suites.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
