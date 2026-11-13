@@ -16,6 +16,15 @@
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
+  const WATCHLIST_STORAGE_KEY = "levios-iex-watchlist-v1";
+  const WATCHLIST_DEFAULT = ["SPY", "QQQ", "AAPL", "MSFT", "NVDA"];
+  const WATCHLIST_MAX = 12;
+  let watchSymbols = WATCHLIST_DEFAULT.slice();
+  let watchSnapshots = new Map();
+  let watchRefreshTime = null;
+  let watchFetching = false;
+  let watchError = "";
+  let watchGeneration = 0;
   let fillRows = [];
   let fillCursor = null;
   let fillsLoaded = false;
@@ -518,8 +527,148 @@
     }
   }
 
+
+  function validWatchSymbol(input) {
+    const symbol = String(input || "").trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)) {
+      throw Error("Use a valid stock or ETF ticker (letters, numbers, periods or hyphens).");
+    }
+    return symbol;
+  }
+  function loadWatchSymbols() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY));
+      if (Array.isArray(saved) && saved.length <= WATCHLIST_MAX &&
+          saved.every(item => typeof item === "string")) {
+        const sanitized = saved.map(validWatchSymbol);
+        if (new Set(sanitized).size === sanitized.length) watchSymbols = sanitized;
+      }
+    } catch {
+      // A missing or corrupted saved list falls back to the starter list.
+    }
+  }
+  function saveWatchSymbols() {
+    try {
+      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(watchSymbols));
+    } catch {
+      feedback("watch-feedback", "This browser cannot save your watchlist permanently.", true);
+    }
+  }
+  function formatIexPrice(value) {
+    const n = Number(value);
+    if (value === null || value === undefined || !Number.isFinite(n) || n <= 0) return "—";
+    return n.toLocaleString("en-US", {style: "currency", currency:"USD",
+      minimumFractionDigits:2, maximumFractionDigits:n < 1 ? 4 : 2});
+  }
+  function formatIexTime(iso) {
+    const time = Date.parse(String(iso || ""));
+    if (!Number.isFinite(time)) return {text:"—", stale:false};
+    const label = new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York",
+      month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(time));
+    return {text:label, stale:Date.now() - time > 5 * 60 * 1000};
+  }
+  function renderWatchlist() {
+    const worker = window.location.hostname.endsWith(".workers.dev");
+    $("watch-private-link").hidden = worker;
+    $("watch-refresh").disabled = !worker || watchFetching || watchSymbols.length === 0;
+    const count = watchSymbols.length;
+    $("watch-poll-state").textContent = worker
+      ? "Refreshes every 60 seconds while this view is visible · IEX only"
+      : "Sign in to the protected Worker for live IEX snapshots";
+    $("watch-refresh-state").textContent = watchFetching
+      ? "Refreshing IEX snapshots…"
+      : watchRefreshTime
+        ? "Last request: " + new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York",
+          hour:"numeric",minute:"2-digit",second:"2-digit"}).format(watchRefreshTime) + " ET"
+        : "Snapshots not loaded yet";
+    if (watchError) {
+      feedback("watch-feedback", watchError, true);
+    } else {
+      feedback("watch-feedback",
+        count + " / " + WATCHLIST_MAX + " symbols. Saved locally in this browser. " +
+        "Data is IEX-only, not consolidated market coverage.");
+    }
+    if (!count) {
+      $("watch-rows").innerHTML = '<tr><td colspan="7" class="empty">Your watchlist is empty. Add a ticker to begin.</td></tr>';
+      return;
+    }
+    $("watch-rows").innerHTML = watchSymbols.map(symbol => {
+      const snap = worker ? watchSnapshots.get(symbol) : null;
+      const lastPrice = snap?.available ? formatIexPrice(snap.last_trade) : "—";
+      const changeValue = snap?.change;
+      const delta = changeValue === null || changeValue === undefined ||
+        !Number.isFinite(changeValue) ? "—" :
+        (changeValue > 0 ? "+" : changeValue < 0 ? "−" : "") +
+        formatIexPrice(Math.abs(changeValue));
+      const pct = Number.isFinite(snap?.change_percent) ?
+        " (" + (snap.change_percent > 0 ? "+" : "") +
+        snap.change_percent.toFixed(2) + "%)" : "";
+      const direction = Number.isFinite(changeValue)
+        ? changeValue >= 0 ? "positive" : "negative" : "";
+      const time = formatIexTime(snap?.trade_time);
+      const noData = worker && watchRefreshTime && !snap?.available;
+      const note = noData ? '<span class="watch-stale">No IEX trade available</span>' :
+        time.stale ? '<span class="watch-stale">Earlier trade · check timestamp</span>' : "";
+      return '<tr><td class="watch-symbol">' + escapeHTML(symbol) + '</td>' +
+        '<td>' + lastPrice + (snap?.last_trade == null ? note : "") + '</td>' +
+        '<td class="watch-delta ' + direction + '">' + delta + pct + '</td>' +
+        '<td>' + formatIexPrice(snap?.bid) + '</td>' +
+        '<td>' + formatIexPrice(snap?.ask) + '</td>' +
+        '<td class="watch-quote-time">' + escapeHTML(time.text) +
+        (snap?.last_trade != null ? note : "") + '</td>' +
+        '<td><button class="watch-remove" type="button" data-watch-remove="' +
+        escapeHTML(symbol) + '" aria-label="Remove ' +
+        escapeHTML(symbol) + ' from watchlist">Remove</button></td></tr>';
+    }).join("");
+  }
+
+  async function loadWatchlist(force = false) {
+    const worker = window.location.hostname.endsWith(".workers.dev");
+    if (!worker || watchFetching || !watchSymbols.length) return;
+    // A one-call batch request is much cheaper than one call per ticker.
+    if (!force && watchRefreshTime && Date.now() - watchRefreshTime.getTime() < 15000) return;
+    const generation = ++watchGeneration;
+    const symbolsAtRequest = watchSymbols.slice();
+    watchFetching = true;
+    watchError = "";
+    renderWatchlist();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch("/api/market/watchlist?symbols=" +
+        encodeURIComponent(symbolsAtRequest.join(",")), {
+        method: "GET", credentials: "same-origin", cache:"no-store",
+        redirect: "error", signal: controller.signal
+      });
+      if (!response.ok) throw Error("HTTP " + response.status);
+      const result = await response.json();
+      if (generation !== watchGeneration) return;
+      if (result?.connected !== true || result?.feed !== "iex" ||
+          !Array.isArray(result.symbols)) {
+        throw Error(result?.reason || "Alpaca IEX market data unavailable");
+      }
+      watchSnapshots = new Map(result.symbols
+        .filter(item => item && symbolsAtRequest.includes(item.symbol))
+        .map(item => [item.symbol,item]));
+      watchRefreshTime = new Date();
+    } catch (error) {
+      if (generation !== watchGeneration) return;
+      watchError = "Could not refresh IEX data (" +
+        (error?.name === "AbortError" ? "timeout" : String(error?.message || "connection error")) +
+        "). Existing prices are cleared to avoid presenting them as fresh.";
+      watchSnapshots = new Map();
+      watchRefreshTime = null;
+    } finally {
+      clearTimeout(timeout);
+      if (generation === watchGeneration) {
+        watchFetching = false;
+        renderWatchlist();
+      }
+    }
+  }
+
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -536,6 +685,10 @@
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
+    if (name === "watchlist") {
+      renderWatchlist();
+      if (document.visibilityState === "visible") void loadWatchlist(false);
+    }
     if (name==="fills") {
       renderFills();
       if (window.location.hostname.endsWith(".workers.dev") &&
@@ -877,6 +1030,48 @@
   window.addEventListener("resize", () => {
     if (pnlHistory?.points?.length > 1 && accountView === "alpaca") renderProfitLoss();
   });
+  $("watch-add-form").addEventListener("submit", event => {
+    event.preventDefault();
+    try {
+      const symbol = validWatchSymbol($("watch-symbol-input").value);
+      if (watchSymbols.includes(symbol)) throw Error(symbol + " is already being tracked.");
+      if (watchSymbols.length >= WATCHLIST_MAX) {
+        throw Error("Watchlist limit reached: remove a ticker before adding another.");
+      }
+      watchSymbols.push(symbol);
+      saveWatchSymbols();
+      $("watch-symbol-input").value = "";
+      watchRefreshTime = null;
+      renderWatchlist();
+      void loadWatchlist(true);
+    } catch (error) {
+      feedback("watch-feedback", String(error.message || "Invalid ticker."), true);
+    }
+  });
+  $("watch-rows").addEventListener("click", event => {
+    const button = event.target.closest("[data-watch-remove]");
+    if (!button) return;
+    const symbol = button.dataset.watchRemove;
+    if (!watchSymbols.includes(symbol)) return;
+    watchSymbols = watchSymbols.filter(item => item !== symbol);
+    watchSnapshots.delete(symbol);
+    watchGeneration++;
+    watchFetching = false;
+    watchRefreshTime = null;
+    watchError = "";
+    saveWatchSymbols();
+    renderWatchlist();
+    if (watchSymbols.length) void loadWatchlist(true);
+  });
+  $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" &&
+        $("view-watchlist").classList.contains("active")) void loadWatchlist(false);
+  });
+  setInterval(() => {
+    if (document.visibilityState === "visible" &&
+        $("view-watchlist").classList.contains("active")) void loadWatchlist(false);
+  }, 60000);
   $("fills-refresh").addEventListener("click", () => void loadFills(false));
   $("fills-more").addEventListener("click", () => void loadFills(true));
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
@@ -905,7 +1100,9 @@
     if(!persist(emptyState())) {showToast("Could not reset local data.");return;}
     render();showToast("Practice portfolio reset.");
   });
+  loadWatchSymbols();
   load();render();showView("overview");
+  renderWatchlist();
   const privateWorker = window.location.hostname.endsWith(".workers.dev");
   $("private-trading-link").hidden = privateWorker;
   if (privateWorker) {
