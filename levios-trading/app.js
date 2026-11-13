@@ -1202,7 +1202,7 @@
       for(const e of s.events){
         if(typeof e?.id!=="string"||typeof e?.name!=="string"||
           typeof e?.agency!=="string"||e.agency!==s.agency||
-          typeof e?.date!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(e.date)||
+          typeof e?.date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(e.date)||
           !["growth","inflation","labor"].includes(e.type)||
           !["BLS","BEA"].includes(e.agency)||
           typeof e.explain!=="string"||typeof e.question!=="string"||
