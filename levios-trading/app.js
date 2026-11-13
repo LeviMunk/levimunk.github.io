@@ -1667,6 +1667,145 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
+  let decisionBriefRunning=false;
+  async function requestDecisionBrief(event){
+    event.preventDefault();
+    if(decisionBriefRunning)return;
+    const output=$("decision-brief-output"),status=$("decision-brief-status");
+    output.replaceChildren();
+    const symbol=$("decision-brief-symbol").value.trim().toUpperCase();
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)){
+      status.textContent="Enter a valid stock ticker.";return;
+    }
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Open the protected LeviOS dashboard to run this brief.";
+      return;
+    }
+    if(!globalThis.LeviDecisionGuide||!globalThis.LeviDecisionBrief){
+      status.textContent="Decision research module unavailable. Refresh the dashboard.";return;
+    }
+    decisionBriefRunning=true;
+    $("decision-brief-form").querySelector("button").disabled=true;
+    const today=currentNYTradingDate();
+    status.textContent="Checking "+symbol+" against PAPER holdings, IEX history and SEC filings…";
+    async function getJSON(url,timeoutMs=18000){
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),timeoutMs);
+      try{
+        const response=await fetch(url,{method:"GET",cache:"no-store",
+          credentials:"same-origin",redirect:"error",signal:controller.signal});
+        if(!response.ok)throw Error("Data source returned "+response.status);
+        return await response.json();
+      }finally{clearTimeout(timer);}
+    }
+    try{
+      const positions=alpacaSnapshot?.connected&&Array.isArray(alpacaSnapshot.positions)?
+        alpacaSnapshot.positions:[];
+      const equity=Number(alpacaSnapshot?.account?.equity);
+      const observed=await Promise.allSettled([
+        getJSON("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=3M"),
+        getJSON("/api/research/sec-financials?symbol="+encodeURIComponent(symbol),24500)
+      ]);
+      let decision=null;
+      if(observed[0].status==="fulfilled"){
+        const response=observed[0].value;
+        if(response?.connected===true&&response.feed==="iex"&&
+           response.symbol===symbol&&response.truncated!==true&&
+           Array.isArray(response.bars)){
+          const completed=response.bars.filter(b=>typeof b?.time==="string"&&b.time<today);
+          decision=globalThis.LeviDecisionGuide.examine({
+            symbol,bars:completed,
+            holding:positions.find(p=>p.symbol===symbol)||null,
+            equity:Number.isFinite(equity)&&equity>0?equity:null,
+            holdingsVerified:Boolean(alpacaSnapshot?.connected&&
+              Array.isArray(alpacaSnapshot.positions)&&alpacaSnapshot.account),
+            asOfLimit:today
+          });
+        }
+      }
+      if(!decision)decision={symbol,ready:false};
+      let sec=null;
+      if(observed[1].status==="fulfilled"){
+        const result=observed[1].value;
+        if(result?.status==="available"&&result.ticker===symbol&&
+          Array.isArray(result.measures)&&result.measures.length<=15&&
+          typeof result.sourceUrl==="string"&&
+          /^https:\/\/www\.sec\.gov\/Archives\//.test(result.sourceUrl))
+          sec=result;
+      }
+      const latestThesis=hypothesisData.plans.find(p=>p.symbol===symbol)||null;
+      const result=globalThis.LeviDecisionBrief.generate({
+        symbol,decision,sec,today,thesis:latestThesis
+      });
+      const flag=document.createElement("span");
+      flag.className="decision-action "+(result.tone||"wait");
+      flag.textContent=result.action;
+      const headline=document.createElement("h3");
+      headline.className="decision-headline";headline.textContent=result.headline;
+      const next=document.createElement("p");next.className="brief-next";
+      next.textContent=result.next;
+      const proof=document.createElement("p");proof.className="brief-proof";
+      proof.textContent=(result.sourceDate?"IEX close "+result.sourceDate:"Price not verified")+
+        (result.secDate?" · SEC annual filing "+result.secDate:" · Recent annual SEC facts unavailable")+
+        " · "+(result.held?"Position shown in PAPER account":
+          decision.holdingsVerified?"No open PAPER position":"PAPER holdings not verified");
+      output.append(flag,headline,next,proof);
+      const groups=[
+        ["Evidence for",result.bull],
+        ["Reasons for caution",result.bear],
+        ["Still unknown",result.unknown]
+      ];
+      const columns=document.createElement("div");columns.className="decision-columns";
+      for(const [name,items] of groups){
+        const card=document.createElement("div");card.className="decision-column";
+        const head=document.createElement("h3");head.textContent=name;card.append(head);
+        const selected=items.length?items:["No verified evidence yet."];
+        for(const item of selected.slice(0,5)){
+          const p=document.createElement("p");p.textContent=item;card.append(p);
+        }
+        columns.append(card);
+      }
+      output.append(columns);
+      if(result.thesis){
+        const original=document.createElement("p");original.className="brief-proof";
+        original.textContent="Your saved thesis: "+result.thesis;output.append(original);
+      }
+      const actions=document.createElement("div");actions.className="button-row";
+      const research=document.createElement("button");
+      research.type="button";research.className="button secondary";research.textContent="Research financials";
+      research.addEventListener("click",()=>{
+        $("fund-symbol").value=symbol;showView("research");
+      });
+      const journal=document.createElement("button");
+      journal.type="button";journal.className="button secondary";journal.textContent="Write a trade plan";
+      journal.addEventListener("click",()=>{
+        $("journal-symbol").value=symbol;showView("journal");
+      });
+      actions.append(research,journal);output.append(actions);
+      if(result.sourceUrl){
+        const link=document.createElement("a");link.className="brief-source";
+        link.href=result.sourceUrl;link.target="_blank";link.rel="noopener noreferrer";
+        link.textContent="Verify SEC financial source ↗";output.append(link);
+      }
+      status.textContent=result.confidence==="partial"?
+        "Brief ready · conditional assessment. Verify quotes and the investment case before acting.":
+        "Brief limited · one or more essential data sources were unavailable.";
+    }catch(error){
+      status.textContent="Decision brief unavailable: "+String(error?.message||error);
+      output.replaceChildren();
+    }finally{
+      decisionBriefRunning=false;
+      $("decision-brief-form").querySelector("button").disabled=false;
+    }
+  }
+  function toggleOverviewDetails(){
+    const view=$("view-overview"),button=$("overview-more");
+    const next=!view.classList.contains("show-advanced");
+    view.classList.toggle("show-advanced",next);
+    button.setAttribute("aria-pressed",String(next));
+    button.textContent=next?"Hide advanced analytics":"Show advanced analytics";
+    if(next){renderAccountSummary();renderRiskSummary();}
+  }
   let briefingRunning=false,briefingRecords=null,briefingSymbols="";
   function renderDailyBrief(){
     const cards=$("daily-brief-cards");cards.replaceChildren();
@@ -2076,7 +2215,7 @@
     }
   }
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Your trading dashboard","Your priorities, portfolio and next research steps."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -2972,6 +3111,8 @@
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
   $("valuation-peer-suggest").addEventListener("click",suggestResearchPeers);
   $("valuation-form").addEventListener("submit",runValuationComparison);
+  $("decision-brief-form").addEventListener("submit",e=>void requestDecisionBrief(e));
+  $("overview-more").addEventListener("click",toggleOverviewDetails);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
