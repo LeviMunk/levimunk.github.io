@@ -34,6 +34,9 @@ test("protected dashboard and assets are served after login", async () => {
   assert.match(html, /id="pnl-chart"/);
   assert.match(html, /data-pnl-range="1W"/);
   assert.match(html, /data-pnl-range="1Y"/);
+  assert.match(html, /id="broker-connection-internals" hidden aria-hidden="true"/);
+  assert.match(html, /class="grid-2 holdings-section"/);
+  assert.match(html, /id="private-trading-link"/);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 });
 
