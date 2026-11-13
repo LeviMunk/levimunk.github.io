@@ -1745,6 +1745,7 @@
           symbol,bars:complete,
           holding:holdings.find(h=>h.symbol===symbol)||null,
           equity:Number.isFinite(equity)&&equity>0?equity:null,
+          holdingsVerified:Boolean(alpacaSnapshot?.connected),
           asOfLimit:today
         });
       }catch(error){
