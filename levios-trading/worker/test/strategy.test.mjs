@@ -103,3 +103,40 @@ test("robustness rejects too-short periods without inventing observations",()=>{
   const run=engine.run(series(90),{...settings,fast:2,slow:4,splitPct:70});
   assert.throws(()=>engine.evaluationWindows(run),/At least 30/);
 });
+
+test("walk-forward uses chronological expanding training and non-overlapping evaluations",()=>{
+  const result=engine.walkForward(series(180),settings);
+  assert.equal(result.version,"levios-walk-forward-v1");
+  assert.equal(result.folds.length,3);
+  assert.deepEqual(result.folds.map(x=>x.evalObservations),[30,30,30]);
+  assert.deepEqual(result.folds.map(x=>x.trainObservations),[90,120,150]);
+  assert.equal(result.folds[0].evalStart,series(180)[90].date);
+  assert.equal(result.folds[2].evalEnd,series(180)[179].date);
+  for(let i=0;i<3;i++){
+    const f=result.folds[i];
+    assert.ok(f.trainEnd<f.evalStart);
+    assert.ok([[5,20],[10,30],[20,50]].some(([a,b])=>f.fast===a&&f.slow===b));
+    assert.ok(Number.isFinite(f.excessPctPoints));
+    assert.ok(f.maxDrawdownPct<=0);
+    if(i>0)assert.ok(result.folds[i-1].evalEnd<f.evalStart);
+  }
+  assert.deepEqual(engine.walkForward(series(180),settings),result);
+});
+
+test("subsequent unseen dates cannot change earlier training decisions or evaluation outcomes",()=>{
+  const original=series(180);
+  const changed=original.map((row,i)=>i>=120?{...row,close:row.close+60*Math.sin(i/5)}:row);
+  const a=engine.walkForward(original,settings).folds;
+  const b=engine.walkForward(changed,settings).folds;
+  assert.deepEqual(a[0],b[0]);
+  assert.equal(a[1].fast,b[1].fast);
+  assert.equal(a[1].slow,b[1].slow);
+  assert.equal(a[1].trainingExcessPctPoints,b[1].trainingExcessPctPoints);
+});
+
+test("walk-forward rejects inadequate history and remains read-only",()=>{
+  assert.throws(()=>engine.walkForward(series(149),settings),/at least 150/);
+  const output=engine.walkForward(series(180),settings);
+  assert.equal(output.folds.reduce((n,x)=>n+x.evalObservations,0),90);
+  assert.ok(!("orders" in output));
+});
