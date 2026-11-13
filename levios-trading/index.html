@@ -26,6 +26,7 @@
       <div class="sidebar-bottom">
         <div class="mode-pill"><span class="live-dot"></span> PRIVATE ALPACA + BROWSER SIM</div>
         <p>Paper simulations only. No live quotes, brokerage orders, or real-money trading.</p>
+        <a class="back-link" href="https://levimunk.com/levios-trading/?practice=1">Browser-only practice lab ↗</a>
         <a class="back-link" href="../">← Back to LeviMunk.com</a>
       </div>
     </aside>
@@ -37,7 +38,7 @@
           <div class="hero-actions"><button id="btn-export-top" class="button secondary" type="button">Export data ↗</button></div>
         </div>
       </header>
-      <div class="notice" role="note"><strong>Research mode:</strong> Browser simulations remain separate from your Alpaca paper account. Simulated orders use imported historical closes, not current prices. <span>Alpaca balances appear only through your private bridge; never enter API keys here.</span></div>
+      <div class="notice" role="note"><strong>LeviOS account access:</strong> Visiting levimunk.com/levios-trading/ opens your secured Alpaca PAPER dashboard. <span>The browser-only simulator is available separately at <a href="https://levimunk.com/levios-trading/?practice=1">Practice Lab</a>. Never enter broker API keys into the website.</span></div>
       <section id="view-overview" class="view active" aria-label="Trading overview">
         <div class="account-view-toolbar" role="group" aria-label="Choose portfolio to display">
           <div class="account-view-label"><span class="eyebrow">ACCOUNT VIEW</span><small id="account-view-note">Alpaca paper account disconnected · sign in to view balances</small></div>
@@ -59,7 +60,7 @@
           </article>
           <article class="panel connection-card">
             <div class="panel-head"><div><p class="eyebrow">PRIVATE BROKER CONNECTION</p><h2>Alpaca paper account</h2></div><span id="alpaca-connection-badge" class="connection-status">NOT CONNECTED</span></div>
-            <p>Your real Alpaca PAPER account opens in a separate, Cloudflare-protected copy of this dashboard. <strong>Never enter Alpaca API keys here.</strong> No ThinkCentre or DNS changes are needed.</p>
+            <p>Your Alpaca PAPER account is available in the Cloudflare Access-protected dashboard. Open <a href="https://levimunk.com/levios-trading/">levimunk.com/levios-trading/</a> to sign in. <strong>Never enter Alpaca API keys here.</strong> No ThinkCentre or DNS changes are needed.</p>
             <form id="alpaca-connect-form" class="form-stack">
               <label for="alpaca-endpoint">Your private Cloudflare Worker address</label>
               <input id="alpaca-endpoint" type="url" value="https://levimunk-alpaca.levivanstap.workers.dev" placeholder="https://levimunk-alpaca.levivanstap.workers.dev" spellcheck="false" autocomplete="off" required>
