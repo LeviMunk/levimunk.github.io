@@ -8,6 +8,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>LeviOS Trading Lab | Levi Munk</title>
   <link rel="stylesheet" href="./styles.css">
+  <script defer src="./strategy-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -264,23 +265,76 @@
           </article>
         </div>
       </section>
-      <section id="view-strategy" class="view" aria-label="Strategy lab" hidden>
+      <section id="view-strategy" class="view" aria-label="Strategy research workbench" hidden>
         <div class="grid-2">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">EXPERIMENTS</p><h2>Moving-average strategy</h2></div></div>
-            <p class="muted">A simple long-only moving-average crossover test. Signals form at close; hypothetical execution uses the next closing price with a 0.1% fee per trade.</p>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">REPRODUCIBLE RESEARCH / v1</p><h2>Moving-average workbench</h2></div><span class="scorecard-period">NO BROKER ORDERS</span></div>
+            <p class="muted">Test a fixed long-only moving-average rule. Signals use completed daily closes; hypothetical orders fill at the <strong>following day's close</strong>, including configurable costs. This is a research approximation, not executable market fills.</p>
             <form id="backtest-form" class="form-stack">
-              <label for="strategy-symbol">Ticker</label><select id="strategy-symbol"></select>
-              <div class="form-columns"><div><label for="fast">Fast days</label><input id="fast" type="number" min="2" max="249" step="1" value="20" required></div><div><label for="slow">Slow days</label><input id="slow" type="number" min="3" max="250" step="1" value="50" required></div></div>
-              <button class="button primary" type="submit">Run historical backtest</button>
-              <p id="backtest-feedback" class="form-feedback" role="status"></p>
+              <label for="strategy-source">Price data source</label>
+              <select id="strategy-source">
+                <option value="csv">Imported daily closes (browser CSV / DEMO)</option>
+                <option value="iex">Alpaca IEX daily bars (protected Worker)</option>
+              </select>
+              <div id="strategy-csv-options">
+                <label for="strategy-symbol">Imported symbol</label>
+                <select id="strategy-symbol"></select>
+              </div>
+              <div id="strategy-iex-options" hidden>
+                <label for="strategy-iex-symbol">Alpaca IEX ticker</label>
+                <div class="strategy-iex-controls">
+                  <input id="strategy-iex-symbol" value="SPY" maxlength="10" spellcheck="false" autocapitalize="characters" placeholder="SPY">
+                  <button id="strategy-load-iex" class="button secondary" type="button">Load IEX history</button>
+                </div>
+                <p id="strategy-iex-status" class="muted footnote">Uses up to one year of IEX-only daily price bars through the read-only authenticated Worker. Data does not sync to your paper brokerage account.</p>
+              </div>
+              <div class="form-columns">
+                <div><label for="fast">Fast MA (days)</label><input id="fast" type="number" min="2" max="249" step="1" value="20" required></div>
+                <div><label for="slow">Slow MA (days)</label><input id="slow" type="number" min="3" max="250" step="1" value="50" required></div>
+              </div>
+              <div class="form-columns">
+                <div><label for="strategy-fee">Fee (basis points / execution)</label><input id="strategy-fee" type="number" min="0" max="200" step="1" value="10" required></div>
+                <div><label for="strategy-slippage">Slippage (basis points / execution)</label><input id="strategy-slippage" type="number" min="0" max="200" step="1" value="5" required></div>
+              </div>
+              <label for="strategy-split">Training portion: <strong id="strategy-split-label">70%</strong></label>
+              <input id="strategy-split" type="range" min="50" max="85" step="5" value="70">
+              <p class="muted footnote">The later <strong id="strategy-holdout-label">30%</strong> is the evaluation window. Parameters are not optimized automatically. Repeatedly inspecting and retuning against this window invalidates a genuinely blind holdout.</p>
+              <button class="button primary" type="submit">Run reproducible backtest</button>
+              <p id="backtest-feedback" class="form-feedback" role="status">Import historical closes or load IEX history to start.</p>
             </form>
           </article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TEST RESULTS</p><h2>Hypothetical performance</h2></div></div>
-            <div class="result-grid"><div><span>STRATEGY RETURN</span><strong id="result-return">—</strong></div><div><span>BUY & HOLD</span><strong id="result-hold">—</strong></div><div><span>MAX DRAWDOWN</span><strong id="result-dd">—</strong></div><div><span>EXECUTIONS</span><strong id="result-trades">—</strong></div></div>
-            <svg id="equity-chart" class="chart" role="img" aria-label="Hypothetical strategy equity chart" viewBox="0 0 800 230" preserveAspectRatio="none"></svg>
-            <p class="muted footnote">Simplified test: no bid/ask spread, slippage, taxes, dividends or survivorship-bias controls. Past performance does not predict results.</p>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">OUT-OF-SAMPLE EVALUATION</p><h2>Performance comparison</h2></div><span id="strategy-run-badge" class="scorecard-period">NOT TESTED</span></div>
+            <div class="strategy-evaluation">
+              <div><span>TRAINING RETURN</span><strong id="strategy-train-return">—</strong><small id="strategy-train-window">Waiting for data</small></div>
+              <div><span>EVALUATION RETURN</span><strong id="strategy-test-return">—</strong><small id="strategy-test-window">Later, unseen dates at first test</small></div>
+              <div><span>EVALUATION BUY &amp; HOLD</span><strong id="strategy-test-benchmark">—</strong><small>Same period and modeled transaction costs</small></div>
+              <div><span>EVALUATION MAX DRAWDOWN</span><strong id="strategy-test-drawdown">—</strong><small>Equity peak-to-trough within evaluation period</small></div>
+            </div>
+            <div class="result-grid">
+              <div><span>FULL STRATEGY RETURN</span><strong id="result-return">—</strong></div>
+              <div><span>FULL BUY &amp; HOLD</span><strong id="result-hold">—</strong></div>
+              <div><span>FULL MAX DRAWDOWN</span><strong id="result-dd">—</strong></div>
+              <div><span>EXECUTIONS</span><strong id="result-trades">—</strong></div>
+            </div>
+            <svg id="equity-chart" class="chart" role="img" aria-label="Hypothetical equity curve" viewBox="0 0 800 230" preserveAspectRatio="none"></svg>
+            <p id="strategy-data-proof" class="muted footnote">A run will show the data fingerprint, source, split date and engine version for reproducibility.</p>
+            <p class="muted footnote">Close-only model, no next-day opening quotes, bid/ask execution, taxes, dividends, split adjustments or intraday fills. This is <strong>not</strong> Alpaca paper-account performance.</p>
           </article>
         </div>
+        <article class="panel strategy-versions">
+          <div class="panel-head"><div><p class="eyebrow">RESEARCH LOG</p><h2>Saved experiment versions</h2></div><div class="button-row">
+            <button id="strategy-save" type="button" class="button primary" disabled>Save this run as version</button>
+            <button id="strategy-export" type="button" class="button secondary">Export research log</button>
+          </div></div>
+          <p class="muted footnote">Save parameters and outcomes for comparison, without saving account credentials. Versions are kept in <strong>this browser only</strong> (maximum 25). Re-running a strategy does not make its evaluation period blind again.</p>
+          <div class="scroll-table">
+            <table class="strategy-version-table"><thead><tr><th>Version</th><th>Saved</th><th>Symbol / source</th><th>Configuration</th><th>Train</th><th>Evaluation</th><th>Benchmark</th><th>Data fingerprint</th></tr></thead>
+              <tbody id="strategy-versions"><tr><td colspan="8" class="empty">No saved strategy versions yet.</td></tr></tbody>
+            </table>
+          </div>
+          <p id="strategy-version-status" class="muted footnote" aria-live="polite"></p>
+        </article>
       </section>
       <section id="view-fills" class="view" aria-label="Alpaca paper execution history" hidden>
         <article class="panel fills-panel">
