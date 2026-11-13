@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import handler from "../src/index.mjs";
 import { equityScorecard } from "../src/performance.mjs";
+import { positionRiskSummary } from "../src/risk.mjs";
+import preciseSum from "../src/vendor/simple-statistics/sum.mjs";
 
 const url = "https://levimunk-alpaca.levivanstap.workers.dev";
 const authenticated = { access: { getIdentity: async () => ({ email: "owner@example.test" }) } };
@@ -641,4 +643,92 @@ test("maximum-dollar drawdown belongs to same event as percentage drawdown", () 
   ]);
   assert.equal(stats.max_observed_drawdown_pct, 20);
   assert.equal(stats.max_observed_drawdown_usd, 20);
+});
+
+test("vendored simple-statistics precision sum is active for risk calculations", () => {
+  assert.equal(preciseSum([0.1, 0.2, 0.3]), 0.6);
+  assert.equal(preciseSum([]), 0);
+});
+
+test("Alpaca risk report calculates gross, long, short and concentration correctly", () => {
+  const result = positionRiskSummary({equity:"10000.00"}, [
+    {symbol:"SPY",side:"long",market_value:"6000.00",unrealized_pl:"500"},
+    {symbol:"QQQ",side:"long",market_value:"3000.00",unrealized_pl:"-100"},
+    {symbol:"TSLA",side:"short",market_value:"2000.00",unrealized_pl:"-200"},
+    {symbol:"AAPL",side:"long",market_value:"1000.00",unrealized_pl:"50"}
+  ]);
+  assert.equal(result.reported_positions, 4);
+  assert.equal(result.priced_positions, 4);
+  assert.equal(result.complete, true);
+  assert.equal(result.gross_exposure, 12000);
+  assert.equal(result.net_exposure, 8000);
+  assert.equal(result.long_exposure, 10000);
+  assert.equal(result.short_exposure, 2000);
+  assert.equal(result.gross_exposure_pct_equity, 120);
+  assert.equal(result.largest_position_symbol, "SPY");
+  assert.equal(result.largest_position_market_value, 6000);
+  assert.equal(result.largest_position_pct_gross, 50);
+  assert.equal(result.top_three_pct_gross, 91.67);
+  assert.equal(result.open_unrealized_pnl, 250);
+});
+
+test("Alpaca account with no positions has exactly zero risk exposure", () => {
+  const result = positionRiskSummary({equity:"100000"},[]);
+  assert.equal(result.gross_exposure,0);
+  assert.equal(result.gross_exposure_pct_equity,0);
+  assert.equal(result.long_exposure,0);
+  assert.equal(result.short_exposure,0);
+  assert.equal(result.open_unrealized_pnl,0);
+  assert.equal(result.largest_position_symbol,null);
+  assert.equal(result.top_three_pct_gross,null);
+});
+
+test("Alpaca missing position values never silently underestimate exposure or unrealized P/L", () => {
+  const result = positionRiskSummary({equity:"10000"},[
+    {symbol:"AAPL",market_value:"1500",unrealized_pl:"30"},
+    {symbol:"MSFT",market_value:null,unrealized_pl:null}
+  ]);
+  assert.equal(result.complete,false);
+  assert.equal(result.missing_market_values,1);
+  assert.equal(result.missing_open_pnl,1);
+  assert.equal(result.gross_exposure,null);
+  assert.equal(result.net_exposure,null);
+  assert.equal(result.gross_exposure_pct_equity,null);
+  assert.equal(result.largest_position_symbol,null);
+  assert.equal(result.open_unrealized_pnl,null);
+});
+
+test("risk percentages require positive equity and short positions respect explicit side", () => {
+  const result = positionRiskSummary({equity:"0"},[
+    {symbol:"NVDA",market_value:"4000",side:"short",unrealized_pl:"-10"}
+  ]);
+  assert.equal(result.short_exposure,4000);
+  assert.equal(result.long_exposure,0);
+  assert.equal(result.net_exposure,-4000);
+  assert.equal(result.gross_exposure_pct_equity,null);
+});
+
+test("authenticated Alpaca account response exposes only sanitized risk summary", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async destination => {
+    if(String(destination).endsWith("/v2/account")) {
+      return Response.json({equity:"10000",cash:"1000",buying_power:"20000",account_number:"PRIVATE"});
+    }
+    return Response.json([{symbol:"SPY",side:"long",qty:"2",market_value:"1300",
+      unrealized_pl:"50",asset_id:"SECRET_ASSET"}]);
+  };
+  try {
+    const response=await handler.fetch(new Request(url+"/api/alpaca/status"),
+      {...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_ID",ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"},
+      authenticated);
+    const data=await response.json();
+    assert.equal(data.connected,true);
+    assert.equal(data.risk.gross_exposure,1300);
+    assert.equal(data.risk.open_unrealized_pnl,50);
+    assert.equal(data.risk.largest_position_symbol,"SPY");
+    assert.equal(data.positions_display_limited,false);
+    assert.ok(!JSON.stringify(data).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(data).includes("SECRET_ASSET"));
+    assert.ok(!JSON.stringify(data).includes("TEST_SECRET"));
+  }finally{globalThis.fetch=originalFetch;}
 });
