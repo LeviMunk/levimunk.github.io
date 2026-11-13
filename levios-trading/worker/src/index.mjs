@@ -252,6 +252,7 @@ export default {
     if (url.pathname === "/api/alpaca/history") {
       const range = url.searchParams.get("range") || "1M";
       if (!Object.hasOwn(HISTORY_RANGE_PERIODS, range) ||
+          url.searchParams.getAll("range").length > 1 ||
           [...url.searchParams.keys()].some(key => key !== "range")) {
         return json({ error: "Choose a supported history range: 1W, 1M, 3M, or 1Y." }, 400);
       }
