@@ -36,6 +36,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 - Relative Valuation v1: deliberate two-stock SEC/Alpaca IEX annual-multiple proxies and source-aligned peer comparisons; never a buy/sell winner or target price
 - Peer & Thesis v1: editorial candidate peers with explicit business-model differences; bull/bear/unknown evidence from validated two-stock valuation comparisons and research steps
 - Decision Brief v1: one-ticker conditional actions, verified PAPER position context, annual SEC evidence and completed IEX context; simplified Overview with progressive disclosure for advanced analytics
+- PAPER Prediction Scoreboard v1: pre-registered long entry/target/stop, on-demand completed IEX OHLC evaluation, win/loss/open/waiting/expired/ambiguous outcomes, local JSON export and R-multiple. No live trades.
 - Previous reference good build: `45f816c` (frontend, Worker tests, mobile and Pages all passed). This does not independently prove the private Cloudflare deployment.
 
 ## Security invariants

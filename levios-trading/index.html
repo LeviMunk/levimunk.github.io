@@ -21,6 +21,7 @@
   <script defer src="./valuation-engine.js"></script>
   <script defer src="./peer-thesis-engine.js"></script>
   <script defer src="./decision-brief-engine.js"></script>
+  <script defer src="./prediction-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -89,6 +90,33 @@
           </div>
           <details class="research-disclosure"><summary>Sources &amp; limitations</summary>
             <p>The brief draws on annual SEC filings and completed IEX single-exchange closes. Figures can be delayed or missing. It does not establish fair value, expected returns or a personal buy/sell instruction. No orders are placed.</p>
+          </details>
+        </article>
+                <article class="panel" aria-labelledby="paper-prediction-heading">
+          <div class="panel-head"><div><p class="eyebrow">PAPER PREDICTION TRACKER</p>
+            <h2 id="paper-prediction-heading">Did the trade idea work?</h2>
+            <p class="muted">Set the entry, profit target and safety exit before seeing the outcome. Track wins, losses, and untriggered plans using completed market data.</p>
+          </div><span class="scorecard-period">SIMULATION ONLY · NO ORDERS</span></div>
+          <form id="paper-prediction-form" class="form-stack">
+            <div class="form-columns">
+              <div><label for="paper-plan-symbol">Ticker</label><input id="paper-plan-symbol" value="MSFT" maxlength="10" required></div>
+              <div><label for="paper-plan-entry">Buy at / below ($)</label><input id="paper-plan-entry" type="number" min="0.01" step="0.01" required></div>
+              <div><label for="paper-plan-target">Take profit at ($)</label><input id="paper-plan-target" type="number" min="0.01" step="0.01" required></div>
+              <div><label for="paper-plan-stop">Cut losses at ($)</label><input id="paper-plan-stop" type="number" min="0.01" step="0.01" required></div>
+              <div><label for="paper-plan-risk">Hypothetical risk budget ($)</label><input id="paper-plan-risk" type="number" min="0.01" step="0.01" value="10" required></div>
+              <div><label for="paper-plan-expiry">Buy window (calendar days)</label><input id="paper-plan-expiry" type="number" min="1" max="60" step="1" value="14" required></div>
+            </div>
+            <div class="button-row">
+              <button type="submit" class="button primary">Save PAPER prediction</button>
+              <button id="paper-prediction-check" class="button secondary" type="button">Check results</button>
+              <button id="paper-prediction-export" class="button secondary" type="button">Export results</button>
+            </div>
+          </form>
+          <p id="paper-prediction-status" role="status" aria-live="polite" class="muted footnote">Predictions are saved in this browser only. The first result check uses completed IEX candles after the prediction is recorded.</p>
+          <div id="paper-prediction-score" class="strategy-evaluation"></div>
+          <div id="paper-prediction-records" class="strategy-evaluation"></div>
+          <details class="research-disclosure"><summary>How wins and losses are measured</summary>
+            <p>A long PAPER plan waits for the limit entry and then watches for the stop or target on subsequent completed IEX daily candles. Gaps may worsen losses. If both outcomes are possible within one candle, the result is marked ambiguous, not counted as a win. Plans that never trigger are shown separately. These are estimated outcomes, not broker fills, and checks occur only when you click Check results.</p>
           </details>
         </article>
         <div class="account-view-toolbar" role="group" aria-label="Choose portfolio to display">
