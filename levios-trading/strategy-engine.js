@@ -67,7 +67,9 @@
       endDate: curve[end].date,
       observations: end - start + 1,
       returnPct: (last / first - 1) * 100,
-      holdPct: (benchmark[end] / benchmark[start] - 1) * 100,
+      // At inception the buy-and-hold entry fee/slippage must count against
+      // the initial $10k, not disappear into its first marked equity.
+      holdPct: (benchmark[end] / (start === 0 ? CASH : benchmark[start]) - 1) * 100,
       maxDrawdownPct: maxDD,
       executions: tradeDays.filter(i => i > start && i <= end).length
     };
