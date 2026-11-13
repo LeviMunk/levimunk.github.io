@@ -47,6 +47,8 @@
   let watchFetching = false;
   let watchError = "";
   let watchGeneration = 0;
+  let radarScanning = false;
+  let radarSequence = 0;
   let fillRows = [];
   let fillCursor = null;
   let fillsLoaded = false;
@@ -1074,6 +1076,112 @@
     }
   }
 
+  function currentNYTradingDate() {
+    const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",
+      year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const get=type=>parts.find(x=>x.type===type)?.value;
+    return get("year")+"-"+get("month")+"-"+get("day");
+  }
+  async function scanMarketRadar() {
+    if(radarScanning)return;
+    const status=$("radar-status"),results=$("radar-results");
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Market Radar requires the authenticated Cloudflare dashboard.";
+      return;
+    }
+    if(!globalThis.LeviMarketRadar){
+      status.textContent="Market Radar engine not loaded. Refresh the dashboard.";
+      return;
+    }
+    const symbols=watchSymbols.slice();
+    if(!symbols.length){
+      status.textContent="Add tickers to the watchlist before scanning.";
+      return;
+    }
+    const sequence=++radarSequence;
+    radarScanning=true;
+    $("radar-scan").disabled=true;
+    results.replaceChildren();
+    status.textContent="Scanning "+symbols.length+" tickers using completed IEX daily candles…";
+    const today=currentNYTradingDate();
+    const findings=[];
+    let completed=0;
+    let unavailable=0;
+    // Bounded request concurrency reduces rate-limit pressure. Never persist
+    // private market data or forward it to another server.
+    async function scanOne(symbol){
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),11000);
+      try {
+        const response=await fetch("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=3M",{
+          method:"GET",credentials:"same-origin",cache:"no-store",
+          redirect:"error",signal:controller.signal
+        });
+        if(!response.ok)throw Error("HTTP "+response.status);
+        const payload=await response.json();
+        if(payload?.connected!==true||payload.feed!=="iex"||
+          payload.symbol!==symbol||payload.truncated===true||
+          !Array.isArray(payload.bars))throw Error("Incomplete IEX history");
+        const completedBars=payload.bars.filter(b=>
+          b&&typeof b.time==="string"&&b.time<today);
+        return globalThis.LeviMarketRadar.analyze(symbol,completedBars);
+      }catch(error){
+        return {symbol,ready:false,reason:error?.name==="AbortError"?
+          "Request timed out":String(error?.message||"IEX data unavailable")};
+      }finally{clearTimeout(timeout);}
+    }
+    // Two workers maximum, each consuming the next symbol in order.
+    let cursor=0;
+    const worker=async()=>{
+      while(cursor<symbols.length){
+        const index=cursor++;
+        const result=await scanOne(symbols[index]);
+        if(sequence!==radarSequence)return;
+        completed++;
+        if(!result.ready)unavailable++;
+        findings.push(result);
+        status.textContent="Scanned "+completed+" / "+symbols.length+" symbols…";
+      }
+    };
+    try{
+      await Promise.all([worker(),worker()]);
+      if(sequence!==radarSequence)return;
+      findings.sort((a,b)=>(b.flags||0)-(a.flags||0)||
+        symbols.indexOf(a.symbol)-symbols.indexOf(b.symbol));
+      for(const result of findings){
+        const box=document.createElement("div");
+        const title=document.createElement("span");
+        title.textContent=result.symbol+" · "+(result.ready?result.asOf:"DATA UNAVAILABLE");
+        const strong=document.createElement("strong");
+        strong.textContent=result.ready?
+          result.flags+" observation(s) · "+result.attention:
+          result.reason;
+        box.append(title,strong);
+        if(result.ready){
+          const context=document.createElement("small");
+          context.textContent="Latest completed IEX close "+formatIexPrice(result.lastClose)+
+            " · "+(result.movePct>=0?"+":"")+result.movePct.toFixed(2)+
+            "% session move. "+(result.quiet||"");
+          box.append(context);
+          for(const f of result.findings){
+            const note=document.createElement("small");
+            note.textContent=f.title+". "+f.evidence+" "+f.explain+
+              " Investigate: "+f.question;
+            box.append(note);
+          }
+        }
+        results.append(box);
+      }
+      status.textContent="Scan complete · "+(symbols.length-unavailable)+
+        " tickers analyzed · "+unavailable+" unavailable · "+
+        findings.reduce((s,x)=>s+(x.flags||0),0)+
+        " descriptive observations · last completed daily candles only. "+
+        "This snapshot does not update automatically.";
+    }finally{
+      radarScanning=false;
+      $("radar-scan").disabled=false;
+    }
+  }
   function showView(name) {
     const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
@@ -1962,6 +2070,7 @@
     if ($("view-watchlist").classList.contains("active")) void loadCandleBars();
     else candleBars = null;
   });
+  $("radar-scan").addEventListener("click", () => void scanMarketRadar());
   $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
   $("watch-chart-symbol").addEventListener("change", () => {
     candleSymbol = $("watch-chart-symbol").value;
