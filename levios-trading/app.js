@@ -506,8 +506,10 @@
       return;
     }
     // Avoid treating the current, unfinished trading session as a completed day.
-    const nyDate=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",
-      year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+    const dateParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",
+      year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const datePart=key=>dateParts.find(x=>x.type===key)?.value;
+    const nyDate=datePart("year")+"-"+datePart("month")+"-"+datePart("day");
     const completed=candleBars.filter(b=>b && typeof b.time==="string" &&
       b.time<nyDate);
     const analysis=globalThis.LeviTradingCoach.analyze(completed);
