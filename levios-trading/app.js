@@ -1414,6 +1414,8 @@
     renderValidationReview();
   }
   function runValidationReview() {
+    activeValidationReview = null;
+    renderValidationReview();
     const candidate = validationCandidate();
     const validator = globalThis.LeviStrategyValidation;
     if (!candidate || !validator) {
@@ -1781,6 +1783,12 @@
   $("strategy-load-iex").addEventListener("click", () => void loadStrategyIexHistory());
   $("strategy-save").addEventListener("click", saveStrategyVersion);
   $("strategy-export").addEventListener("click", exportStrategyVersions);
+  $("validation-candidate").addEventListener("change", () => {
+    activeValidationReview = null;
+    renderValidationReview();
+  });
+  $("validation-review").addEventListener("click", runValidationReview);
+  $("validation-approve").addEventListener("click", approveValidationReview);
   $("mode-alpaca").addEventListener("click", () => {
     if (!alpacaSnapshot || !alpacaSnapshot.connected) return;
     accountView = "alpaca";
@@ -1908,6 +1916,7 @@
   loadWatchSymbols();
   load();
   loadStrategyVersions();
+  loadValidationDecisions();
   updateStrategySource();
   render();showView("overview");
   renderWatchlist();
