@@ -16,6 +16,15 @@
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
+  const STRATEGY_LOG_STORAGE_KEY = "levios-strategy-log-v1";
+  const MAX_STRATEGY_VERSIONS = 25;
+  let strategyVersions = [];
+  let strategyNextVersion = 1;
+  let activeStrategyRun = null;
+  let iexStrategyRows = null;
+  let iexStrategyTicker = "";
+  let iexStrategyLoading = false;
+
   let tradingViewPnl = null;
   let tradingViewCandle = null;
   let candleSymbol = "SPY";
@@ -1134,33 +1143,221 @@
     render();
     return trade;
   }
-  function runBacktest(symbol,fast,slow) {
-    if (!Number.isInteger(fast) || !Number.isInteger(slow) || fast<2 || fast>=slow || slow>250) throw Error("Use whole numbers where 2 ≤ fast < slow ≤ 250.");
-    const rows=state.prices[symbol] || [];
-    if (rows.length<slow+2) throw Error("Import at least " + (slow+2) + " daily closes for this test.");
-    const closes=rows.map(r=>r.close);
-    let cash=INITIAL_CASH, shares=0, pending="", trades=0;
-    const curve=[];
-    const sumFast=closes.slice(0,fast).reduce((a,b)=>a+b,0); // input sanity via initial window
-    if (!Number.isFinite(sumFast)) throw Error("Invalid historical data.");
-    for(let i=0;i<rows.length;i++) {
-      const price=closes[i];
-      if(pending==="BUY" && cash>0) {shares=cash/(price*1.001);cash=0;trades++;}
-      else if(pending==="SELL" && shares>0) {cash=shares*price*(1-0.001);shares=0;trades++;}
-      pending="";
-      if(i>=slow-1) {
-        let f=0,s=0;
-        for(let j=i-fast+1;j<=i;j++) f+=closes[j];
-        for(let j=i-slow+1;j<=i;j++) s+=closes[j];
-        if(f/fast>s/slow && shares===0) pending="BUY";
-        else if(f/fast<=s/slow && shares>0) pending="SELL";
-      }
-      curve.push({date:rows[i].date,equity:cash+shares*price});
-    }
-    let peak=curve[0].equity, maxDD=0;
-    for(const row of curve){peak=Math.max(peak,row.equity);maxDD=Math.min(maxDD,(row.equity/peak-1)*100);}
-    return {returnPct:(curve[curve.length-1].equity/INITIAL_CASH-1)*100,holdPct:(closes[closes.length-1]/closes[0]-1)*100,maxDD,trades,curve};
+  function strategyLabelPercent(value) {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    return (value > 0 ? "+" : "") + value.toFixed(2) + "%";
   }
+  function strategySettings() {
+    return {
+      fast: Number($("fast").value),
+      slow: Number($("slow").value),
+      feeBps: Number($("strategy-fee").value),
+      slippageBps: Number($("strategy-slippage").value),
+      splitPct: Number($("strategy-split").value)
+    };
+  }
+  function strategySourceInfo() {
+    const source = $("strategy-source").value;
+    if (source === "iex") {
+      const symbol = validWatchSymbol($("strategy-iex-symbol").value);
+      if (!iexStrategyRows || iexStrategyTicker !== symbol) {
+        throw Error("Load historical Alpaca IEX bars for " + symbol + " first.");
+      }
+      return {source: "IEX-only Alpaca daily close", symbol, rows: iexStrategyRows};
+    }
+    const symbol = $("strategy-symbol").value;
+    const rows = state.prices[symbol];
+    if (!symbol || !Array.isArray(rows)) {
+      throw Error("Import a dated CSV in Market Data or choose the fictional DEMO series first.");
+    }
+    return {
+      source: symbol === "DEMO" ? "FICTIONAL DEMO daily close" : "Browser-imported CSV daily close",
+      symbol, rows
+    };
+  }
+  function updateStrategySource() {
+    const iex = $("strategy-source").value === "iex";
+    $("strategy-csv-options").hidden = iex;
+    $("strategy-iex-options").hidden = !iex;
+    $("strategy-load-iex").disabled = !iex || iexStrategyLoading ||
+      !window.location.hostname.endsWith(".workers.dev");
+    $("strategy-split-label").textContent = $("strategy-split").value + "%";
+    $("strategy-holdout-label").textContent = (100 - Number($("strategy-split").value)) + "%";
+    if (iex && !window.location.hostname.endsWith(".workers.dev")) {
+      $("strategy-iex-status").textContent = "Historical Alpaca IEX bars require the protected Cloudflare dashboard. The public GitHub Pages edition supports CSV backtests.";
+    }
+  }
+  async function loadStrategyIexHistory() {
+    const worker = window.location.hostname.endsWith(".workers.dev");
+    if (!worker || iexStrategyLoading) return;
+    let symbol;
+    try { symbol = validWatchSymbol($("strategy-iex-symbol").value); }
+    catch (error) { feedback("backtest-feedback", error.message, true); return; }
+    iexStrategyLoading = true;
+    updateStrategySource();
+    $("strategy-iex-status").textContent = "Loading IEX daily closes for " + symbol + "…";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch("/api/market/bars?symbol=" +
+        encodeURIComponent(symbol) + "&range=1Y", {
+          method: "GET", credentials: "same-origin", cache: "no-store",
+          redirect: "error", signal: controller.signal
+        });
+      if (!response.ok) throw Error("IEX history endpoint returned HTTP " + response.status);
+      const data = await response.json();
+      if (data?.connected !== true || data?.feed !== "iex" ||
+          data?.symbol !== symbol || !Array.isArray(data?.bars)) {
+        throw Error(data?.reason || "Alpaca historical data unavailable.");
+      }
+      if (data.truncated) throw Error("The requested period is incomplete because Alpaca paginated the result. Do not use a partial research dataset.");
+      // Exclude today's (possibly unfinished) daily candle using market-local time.
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
+      }).formatToParts(new Date());
+      const part = type => parts.find(item => item.type === type)?.value;
+      const todayNY = part("year") + "-" + part("month") + "-" + part("day");
+      const rows = data.bars
+        .filter(bar => bar && validDate(String(bar.time)) &&
+          String(bar.time) < todayNY && typeof bar.close === "number" &&
+          Number.isFinite(bar.close) && bar.close > 0)
+        .map(bar => ({date: bar.time, close: bar.close}))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      if (rows.length < 30) throw Error("Too few completed IEX daily bars returned for a meaningful split.");
+      // Detect duplicates. The strategy engine also checks for them.
+      if (new Set(rows.map(row => row.date)).size !== rows.length) {
+        throw Error("Alpaca IEX history contained duplicate dates.");
+      }
+      iexStrategyRows = rows;
+      iexStrategyTicker = symbol;
+      $("strategy-iex-status").textContent = "Loaded " + rows.length +
+        " complete IEX-only closes (" + rows[0].date + " to " +
+        rows[rows.length - 1].date + "). No consolidated SIP or dividend adjustment.";
+      feedback("backtest-feedback", "IEX research dataset loaded. Adjust parameters, then run a reproducible backtest.");
+    } catch (error) {
+      iexStrategyRows = null;
+      iexStrategyTicker = "";
+      const message = error?.name === "AbortError" ? "IEX history request timed out." :
+        String(error?.message || "Could not load Alpaca daily history.");
+      $("strategy-iex-status").textContent = message;
+      feedback("backtest-feedback", message, true);
+    } finally {
+      clearTimeout(timer);
+      iexStrategyLoading = false;
+      updateStrategySource();
+    }
+  }
+  function renderStrategyVersions() {
+    const tbody = $("strategy-versions");
+    if (!strategyVersions.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">No saved strategy versions yet.</td></tr>';
+    } else {
+      tbody.innerHTML = [...strategyVersions].reverse().map(run => {
+        const settings = run.settings;
+        const config = settings.fast + "/" + settings.slow + " MA · " +
+          settings.splitPct + "% train · fee " + settings.feeBps +
+          "bp / slip " + settings.slippageBps + "bp";
+        return '<tr><td><strong>v' + run.version + '</strong></td><td>' +
+          escapeHTML(run.savedAt.slice(0,10)) + '</td><td>' +
+          escapeHTML(run.symbol + " · " + run.source) + '</td><td>' +
+          escapeHTML(config) + '</td><td>' +
+          strategyLabelPercent(run.trainReturnPct) + '</td><td>' +
+          strategyLabelPercent(run.testReturnPct) + '</td><td>' +
+          strategyLabelPercent(run.testHoldPct) + '</td><td><code>' +
+          escapeHTML(run.dataHash) + '</code></td></tr>';
+      }).join("");
+    }
+    $("strategy-version-status").textContent = strategyVersions.length +
+      " saved version(s) in this browser · next v" + strategyNextVersion +
+      " · no connection to broker orders.";
+  }
+  function loadStrategyVersions() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STRATEGY_LOG_STORAGE_KEY) || "[]");
+      if (!Array.isArray(parsed)) return;
+      strategyVersions = parsed.slice(-MAX_STRATEGY_VERSIONS).filter(row =>
+        row && Number.isInteger(row.version) && row.version > 0 &&
+        typeof row.savedAt === "string" && typeof row.symbol === "string" &&
+        typeof row.source === "string" && /^[a-f0-9]{8}$/.test(String(row.dataHash)) &&
+        row.settings && Number.isFinite(row.trainReturnPct) &&
+        Number.isFinite(row.testReturnPct) && Number.isFinite(row.testHoldPct));
+      strategyNextVersion = Math.max(0, ...strategyVersions.map(v => v.version)) + 1;
+    } catch { strategyVersions = []; strategyNextVersion = 1; }
+    renderStrategyVersions();
+  }
+  function runStrategyWorkbench() {
+    if (!globalThis.LeviStrategyEngine) throw Error("Strategy engine is unavailable. Refresh the page.");
+    const {source, symbol, rows} = strategySourceInfo();
+    const config = strategySettings();
+    const result = globalThis.LeviStrategyEngine.run(rows, config);
+    activeStrategyRun = { ...result, source, symbol };
+    $("strategy-run-badge").textContent = result.version.toUpperCase();
+    $("strategy-train-return").textContent = strategyLabelPercent(result.train.returnPct);
+    $("strategy-test-return").textContent = strategyLabelPercent(result.test.returnPct);
+    $("strategy-test-benchmark").textContent = strategyLabelPercent(result.test.holdPct);
+    $("strategy-test-drawdown").textContent = strategyLabelPercent(result.test.maxDrawdownPct);
+    $("strategy-train-window").textContent = result.train.startDate +
+      " to " + result.train.endDate;
+    $("strategy-test-window").textContent = result.test.startDate +
+      " to " + result.test.endDate;
+    $("result-return").textContent = strategyLabelPercent(result.full.returnPct);
+    $("result-hold").textContent = strategyLabelPercent(result.full.holdPct);
+    $("result-dd").textContent = strategyLabelPercent(result.full.maxDrawdownPct);
+    $("result-trades").textContent = String(result.executions.length);
+    chart("equity-chart", result.curve, "equity");
+    $("strategy-data-proof").textContent = result.version + " · " +
+      symbol + " · " + source + " · " + result.curve.length +
+      " observations · training ends " + result.train.endDate +
+      " · evaluation begins " + result.splitDate +
+      " · data fingerprint " + result.dataHash + ".";
+    $("strategy-save").disabled = false;
+    feedback("backtest-feedback", "Research run complete. Evaluation is later in time than training; do not tune repeatedly against it and call it unseen.");
+    return result;
+  }
+  function saveStrategyVersion() {
+    if (!activeStrategyRun) {
+      feedback("backtest-feedback", "Run a backtest before saving a research version.", true);
+      return;
+    }
+    const r = activeStrategyRun;
+    const entry = {
+      version: strategyNextVersion,
+      savedAt: new Date().toISOString(),
+      engine: r.version, symbol: r.symbol, source: r.source,
+      dataHash: r.dataHash, dataStart: r.dataStart, dataEnd: r.dataEnd,
+      splitDate: r.splitDate, settings: {...r.settings},
+      trainReturnPct: r.train.returnPct, testReturnPct: r.test.returnPct,
+      testHoldPct: r.test.holdPct, testDrawdownPct: r.test.maxDrawdownPct,
+      executions: r.executions.length
+    };
+    const next = [...strategyVersions, entry].slice(-MAX_STRATEGY_VERSIONS);
+    try {
+      localStorage.setItem(STRATEGY_LOG_STORAGE_KEY, JSON.stringify(next));
+      strategyVersions = next;
+      strategyNextVersion++;
+      renderStrategyVersions();
+      showToast("Saved reproducible research version v" + entry.version);
+    } catch {
+      feedback("backtest-feedback", "Browser storage unavailable; export results instead.", true);
+    }
+  }
+  function exportStrategyVersions() {
+    const data = JSON.stringify({
+      format: "levios-strategy-experiments-v1",
+      generated_at: new Date().toISOString(),
+      caveat: "Research experiments; neither brokerage orders nor verified profit.",
+      versions: strategyVersions
+    }, null, 2);
+    const url = URL.createObjectURL(new Blob([data], {type:"application/json"}));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "levios-strategy-experiments.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function addDemoData() {
     if (state.prices.DEMO && !window.confirm("Replace the current fictional DEMO price history?")) return;
     const rows = [];
