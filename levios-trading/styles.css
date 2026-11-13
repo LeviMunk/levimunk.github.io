@@ -91,3 +91,28 @@
 @media(max-width:720px){
  .private-dash-link{width:max-content;white-space:normal}
 }
+
+
+/* Broker trade history: distinct from browser-simulated paper trades. */
+.fills-panel{margin-bottom:20px}
+.fills-heading{gap:15px;align-items:flex-start}
+.fills-description{font-size:12px;max-width:700px;margin:8px 0 0}
+.fills-kpi{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin:11px 0 17px;padding:12px 15px;border:1px solid #2b484c;border-radius:10px;background:#132a2e;color:#bfddd5;font-size:12px;font-weight:650}
+.fills-kpi a{color:#83dfbb;text-decoration:none;border-bottom:1px solid #4b8976}
+.fills-kpi a[hidden]{display:none!important}
+.fills-table{min-width:770px}
+.fills-table td{font-variant-numeric:tabular-nums}
+.fills-symbol{color:#def7ea;font-weight:800;letter-spacing:.2px}
+.fills-side{border-radius:6px;padding:4px 8px;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px}
+.fills-side.buy{background:#173e32;color:#8bf4c5}
+.fills-side.sell{background:#412c32;color:#ffb2b6}
+.fills-type{font-size:11px;color:#a9c5c2}
+.fills-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:13px;margin:15px 0 8px}
+.fills-footer p{color:#adc3c2;font-size:12px;margin:0}
+.fills-footer button[hidden]{display:none!important}
+@media(max-width:720px){
+ .fills-heading{align-items:stretch}
+ .fills-heading button{width:100%}
+ .fills-kpi{align-items:flex-start}
+ .fills-footer button{width:100%}
+}
