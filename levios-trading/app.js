@@ -1876,7 +1876,7 @@
         payload.truncated===true||!Array.isArray(payload.bars))
         throw Error("Completed IEX candle history unavailable.");
       const bars=payload.bars.filter(b=>typeof b?.time==="string"&&
-        /^\\d{4}-\\d{2}-\\d{2}$/.test(b.time)&&b.time<today&&
+        /^\d{4}-\d{2}-\d{2}$/.test(b.time)&&b.time<today&&
         ["open","high","low","close"].every(k=>typeof b[k]==="number"&&
           Number.isFinite(b[k])&&b[k]>0)&&
         b.high>=Math.max(b.open,b.close)&&b.low<=Math.min(b.open,b.close))
