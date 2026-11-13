@@ -139,5 +139,56 @@
       caveat: "Close-only, next-close fill approximation. Unadjusted series may omit dividends/splits; future data and repeated holdout review can bias interpretation."
     };
   }
-  scope.LeviStrategyEngine = Object.freeze({version: VERSION, run, checksum});
+  // Diagnostic only: three consecutive, non-overlapping segments inside the
+  // existing evaluation window. Fixed parameters and the same historical
+  // simulation are used throughout. These are NOT three blind tests.
+  function evaluationWindows(result) {
+    if (!result || !Array.isArray(result.curve) ||
+        !Array.isArray(result.benchmark) ||
+        result.curve.length !== result.benchmark.length ||
+        !Number.isInteger(result.splitAt) ||
+        result.splitAt < 1 || result.splitAt >= result.curve.length) {
+      throw Error("Run a complete strategy backtest before analyzing windows.");
+    }
+    const n = result.curve.length - result.splitAt;
+    if (n < 30) throw Error("At least 30 evaluation observations are needed for three windows.");
+    const boundaries = [0, Math.floor(n / 3), Math.floor(2 * n / 3), n];
+    const executions = Array.isArray(result.executions) ? result.executions : [];
+    return [0, 1, 2].map(index => {
+      const from = result.splitAt + boundaries[index];
+      const to = result.splitAt + boundaries[index + 1] - 1;
+      const baseline = from - 1;
+      const startEquity = result.curve[baseline].equity;
+      const endEquity = result.curve[to].equity;
+      const startHold = result.benchmark[baseline];
+      const endHold = result.benchmark[to];
+      if (![startEquity, endEquity, startHold, endHold].every(
+        value => Number.isFinite(value) && value > 0)) {
+        throw Error("Invalid equity or benchmark observations.");
+      }
+      let peak = startEquity, dd = 0;
+      for (let k = from; k <= to; k++) {
+        const equity = result.curve[k].equity;
+        if (!Number.isFinite(equity) || equity <= 0) {
+          throw Error("Invalid evaluation equity observation.");
+        }
+        peak = Math.max(peak, equity);
+        dd = Math.min(dd, (equity / peak - 1) * 100);
+      }
+      const returnPct = (endEquity / startEquity - 1) * 100;
+      const holdPct = (endHold / startHold - 1) * 100;
+      return {
+        window: index + 1,
+        startDate: result.curve[from].date,
+        endDate: result.curve[to].date,
+        observations: to - from + 1,
+        returnPct, holdPct,
+        excessPctPoints: returnPct - holdPct,
+        maxDrawdownPct: dd,
+        executions: executions.filter(x =>
+          x.date >= result.curve[from].date && x.date <= result.curve[to].date).length
+      };
+    });
+  }
+  scope.LeviStrategyEngine = Object.freeze({version: VERSION, run, checksum, evaluationWindows});
 })(globalThis);
