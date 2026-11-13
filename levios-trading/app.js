@@ -1804,7 +1804,7 @@
     view.classList.toggle("show-advanced",next);
     button.setAttribute("aria-pressed",String(next));
     button.textContent=next?"Hide advanced analytics":"Show advanced analytics";
-    if(next){renderAccountSummary();renderRiskSummary();}
+    if(next){renderAccountSummary();}
   }
   let briefingRunning=false,briefingRecords=null,briefingSymbols="";
   function renderDailyBrief(){
