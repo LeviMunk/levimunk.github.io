@@ -9,6 +9,7 @@
   <title>LeviOS Trading Lab | Levi Munk</title>
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./strategy-engine.js"></script>
+  <script defer src="./validation-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -334,6 +335,52 @@
             </table>
           </div>
           <p id="strategy-version-status" class="muted footnote" aria-live="polite"></p>
+        </article>
+        <article class="panel validation-panel" aria-labelledby="validation-heading">
+          <div class="panel-head validation-head">
+            <div>
+              <p class="eyebrow">STRATEGY VALIDATION / RESEARCH ONLY</p>
+              <h2 id="validation-heading">Validation &amp; promotion gates</h2>
+              <p class="muted">Evaluate a saved experiment against fixed risk and performance rules. Designate a research champion only after the checks pass and you approve it.</p>
+            </div>
+            <span id="validation-status-badge" class="validation-status">NOT EVALUATED</span>
+          </div>
+          <div class="validation-controls">
+            <div>
+              <label for="validation-candidate">Saved candidate version</label>
+              <select id="validation-candidate" aria-label="Experiment to evaluate">
+                <option value="">Save a research run first</option>
+              </select>
+            </div>
+            <button id="validation-review" class="button secondary" type="button" disabled>Run validation gates</button>
+            <button id="validation-approve" class="button primary" type="button" disabled>Approve research champion</button>
+          </div>
+          <div class="validation-policy">
+            <span>≥30 evaluation bars</span>
+            <span>≥2 evaluation executions</span>
+            <span>≥+1.0 pp vs buy &amp; hold</span>
+            <span>Drawdown ≤15%</span>
+            <span>Higher-cost stress survives</span>
+            <span>Beats existing champion, if any</span>
+          </div>
+          <p id="validation-champion" class="muted validation-champion">No saved research champion has been selected for this dataset.</p>
+          <p id="validation-summary" class="muted validation-summary" role="status" aria-live="polite">Select an experiment and run the validation gates. Results are research checks, not proof of future profitability.</p>
+          <ul id="validation-checks" class="validation-checks">
+            <li>Validation results and rejection reasons will appear here.</li>
+          </ul>
+          <p class="muted footnote">Approval only updates the browser-local research log. It does not deploy a strategy, change Alpaca settings, place orders, or authorize an AI to execute trades. The later period stops being blind once repeatedly inspected; independent forward testing would still be necessary.</p>
+        </article>
+        <article class="panel validation-audit-panel">
+          <div class="panel-head"><div><p class="eyebrow">REPRODUCIBLE REVIEW HISTORY</p><h2>Validation decisions</h2></div></div>
+          <div class="scroll-table">
+            <table class="validation-audit-table">
+              <thead><tr><th>Time</th><th>Candidate</th><th>Decision</th><th>Baseline</th><th>Reason / evidence</th></tr></thead>
+              <tbody id="validation-decisions">
+                <tr><td colspan="5" class="empty">No validations or approvals saved in this browser yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="validation-audit-status" class="muted footnote">Evaluations and explicit approvals are saved in this browser and included in your research-log JSON export.</p>
         </article>
       </section>
       <section id="view-fills" class="view" aria-label="Alpaca paper execution history" hidden>
