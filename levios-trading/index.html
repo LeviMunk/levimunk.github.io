@@ -323,6 +323,22 @@
             <p class="muted footnote">Close-only model, no next-day opening quotes, bid/ask execution, taxes, dividends, split adjustments or intraday fills. This is <strong>not</strong> Alpaca paper-account performance.</p>
           </article>
         </div>
+        <article class="panel strategy-versions" aria-labelledby="walkforward-heading">
+          <div class="panel-head">
+            <div><p class="eyebrow">CHRONOLOGICAL RESEARCH / PAST-ONLY SELECTION</p><h2 id="walkforward-heading">Walk-forward testing</h2></div>
+            <span class="scorecard-period">NO BROKER ORDERS</span>
+          </div>
+          <p class="muted">Use the current price source and execution-cost settings. Three expanding training periods each select the best training excess return from a fixed 5/20, 10/30, or 20/50-day moving-average grid. Each selected rule is evaluated only on the next, non-overlapping period.</p>
+          <div class="button-row">
+            <button id="walkforward-run" class="button secondary" type="button">Run walk-forward test</button>
+          </div>
+          <p id="walkforward-status" class="muted footnote" role="status" aria-live="polite">Requires at least 150 historical closes. This is historical simulation, not fresh forward-paper results.</p>
+          <div class="scroll-table"><table class="strategy-version-table">
+            <thead><tr><th>Fold</th><th>Training through</th><th>Evaluation dates</th><th>Selected MA</th><th>Training excess</th><th>Eval return</th><th>Buy &amp; hold</th><th>Eval excess</th><th>Drawdown</th><th>Executions</th></tr></thead>
+            <tbody id="walkforward-rows"><tr><td class="empty" colspan="10">Run a walk-forward test to inspect the chronological folds.</td></tr></tbody>
+          </table></div>
+          <p class="muted footnote">The training winner is selected without seeing its next evaluation window, but the same historical dataset can still be overfit through repeated experimentation. Each fold is an independent simulation with carried-in position state, not a stitched live-trading portfolio. No orders or future predictions are generated.</p>
+        </article>
         <article class="panel strategy-versions" aria-labelledby="robustness-heading">
           <div class="panel-head"><div><p class="eyebrow">EVALUATION CONSISTENCY / FIXED PARAMETERS</p><h2 id="robustness-heading">Three-window robustness</h2></div><span class="scorecard-period">DIAGNOSTIC ONLY</span></div>
           <p class="muted">Divides the existing evaluation period into three consecutive, non-overlapping windows. Each window compares strategy performance with buy-and-hold over those same dates. No retraining or independent blind test occurs.</p>
