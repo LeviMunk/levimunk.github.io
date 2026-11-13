@@ -106,6 +106,25 @@ OpenBB Python V5 supports **modular provider packages**, a Python interface, Fas
 
 References: [OpenBB V5 architecture](https://docs.openbb.co/odp/python/concepts/architecture), [Cloudflare Python Workers packages](https://developers.cloudflare.com/workers/languages/python/packages/).
 
+## Risk Dashboard (fourth incremental upgrade)
+
+The authenticated Overview now includes **Exposure & Concentration** for the actual Alpaca PAPER positions:
+
+- Gross open-position exposure (sum of absolute reported position values) and exposure as a percentage of current account equity.
+- Long exposure versus short exposure, with a visual proportional bar.
+- Largest open holding, its share of gross exposure, and top-three concentration.
+- Open-position **unrealized** P/L; it is not realized trading profit or a statement of cash gain.
+- No positions → zero exposure and no largest holding. Missing values → a warning and unavailable results, never an understated total. Positions from the broker response are analyzed in full, even if the holdings table displays a capped list.
+- **Not computed:** broker margin debt, options Greeks, liquidity, correlation, Value at Risk, risk-adjusted performance, or externally held positions. Gross exposure divided by equity is not a margin-account risk calculation.
+
+### Actual open-source component integrated
+
+This upgrade **vendors the Kahan–Babuška compensated-summation implementation** from [simple-statistics](https://github.com/simple-statistics/simple-statistics) at `levios-trading/worker/src/vendor/simple-statistics/sum.mjs` with its original **ISC license** in the adjacent `LICENSE` file. The risk module imports and uses the actual implementation for exposure and P/L aggregation; this is not merely inspiration from another repo.
+
+- Runtime: pure JavaScript within our existing Cloudflare Worker, no new Python server.
+- Other modules still borrow *methods* from QuantStats and design concepts from OpenBB/Freqtrade rather than running those programs.
+- The vendor boundary keeps provenance and copyright explicit, and lets us review and replace the utility independently.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
