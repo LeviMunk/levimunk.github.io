@@ -203,6 +203,14 @@ The Strategy Testing Workbench now reports three sequential, non-overlapping sub
 
 The view is deliberately **diagnostic, not walk-forward retraining**: the same parameter set was chosen for the original backtest and no independent future observations are introduced. Three windows do not constitute three blind tests. The component reads in-memory backtest results and makes no additional network or Alpaca requests. If fewer than 30 evaluation bars exist, it displays an insufficient-history state rather than inventing results. Regression coverage lives in `levios-trading/worker/test/strategy.test.mjs`.
 
+## Expanding walk-forward research (ninth incremental upgrade)
+
+The Strategy Testing Workbench contains **Run walk-forward test**. It reuses the currently selected historical CSV or authenticated Alpaca IEX daily closes and existing fee/slippage assumptions. The deterministic research-only evaluator requires at least 150 completed daily observations and reports three consecutive evaluation folds, following an initial 50% training period.
+
+For each fold, the engine independently runs three long-only moving-average parameter pairs (5/20, 10/30, 20/50) **using only the expanding training prefix**, selects the best training-period strategy excess return over the same-cost buy-and-hold baseline, then evaluates that selected parameter pair on the immediately following held-out dates. Training selection never reads future data. The fold reports selected moving averages, training cutoff, evaluation dates, strategy and buy-and-hold returns, percentage-point excess, maximum drawdown and hypothetical executions. The three evaluation windows never overlap.
+
+**Not continuous execution:** each fold's calculation uses its own simulated equity path from dataset inception to establish indicators and the position held at that fold boundary. Fold returns must not be added or interpreted as a stitched, executable account equity curve. The backtest uses hypothetical next-close fills and excludes important execution friction, splits, dividends and survivorship biases. Repeatedly altering research choices after seeing these same dates contaminates any out-of-sample claim; true prospective paper validation is still required. No broker orders, new credentials, extra network requests or paid services.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
