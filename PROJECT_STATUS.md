@@ -26,6 +26,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 - Three-window robustness and expanding-window walk-forward research
 - Trading Coach educational interpretations from completed IEX candles
 - On-demand watchlist Market Radar for unusual IEX-only price, volume and range movements
+- Official-source Market Events Intelligence snapshot with dated provenance and educational questions
 - Previous reference good build: `45f816c` (frontend, Worker tests, mobile and Pages all passed). This does not independently prove the private Cloudflare deployment.
 
 ## Security invariants
@@ -36,7 +37,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 5. No fabricated prices or silently inferred unavailable financial data. Show source, coverage, timestamps and caveats.
 
 ## Current work / roadmap
-1. **Market Events Intelligence v1**: official-source economic policy/data calendar; educational explanations; visible verification dates and links. Do not invent earnings dates or claim a live, exhaustive calendar. Prefer zero-cost data and no new credential service.
+1. **Market Events Intelligence v1**: implemented as an official-source *schedule snapshot* (verified 2026-11-12), with educational explanations, verified source links, age warnings and category filters. It is **not** a live calendar or earnings feed.
 2. Further research: verified company earnings dates (requires reliable provider and entitlement review), news context with attribution, then a structured hypothesis/trading journal.
 3. Optional recurring checks/notifications only after a separately approved operational design; the browser's on-demand radar is NOT always-on.
 
@@ -51,7 +52,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 ## Known limitations
 - IEX coverage is limited to one exchange. Historical raw bars may not reflect dividends/splits or consolidated volume.
 - Backtests simulate next-close fills and have multiple modeling/bias limitations; repeated holdout inspection compromises rigor.
-- Market Radar runs manually, not continuously. No general news/earnings calendar or push alerting yet.
+- Market Radar runs manually, not continuously. Market Events has a manually curated government schedule snapshot, not a live/updating calendar. No company earnings feed, general news feed or push alerting yet.
 - Browser research logs are local-only. Cloudflare deployment status must be checked separately from GitHub Pages.
 
 ## Fast checks

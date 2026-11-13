@@ -1182,8 +1182,55 @@
       $("radar-scan").disabled=false;
     }
   }
+  function marketDateET(){
+    const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const get=x=>parts.find(p=>p.type===x)?.value;
+    return get("year")+"-"+get("month")+"-"+get("day");
+  }
+  function renderMarketEvents(){
+    const engine=globalThis.LeviMarketEvents;
+    const list=$("events-list"),status=$("events-summary");
+    list.replaceChildren();
+    $("events-sources").replaceChildren();
+    if(!engine){status.textContent="Market events schedule module unavailable. Refresh the page.";return;}
+    const today=marketDateET();
+    const age=engine.snapshotAge(today);
+    $("events-freshness").textContent="Schedule snapshot verified "+engine.verifiedOn+
+      " against official agency calendars. "+(age.expired?
+      "This snapshot is more than 60 days old and must be rechecked against the agencies.":
+      age.possiblyStale?"This snapshot is more than 14 days old: verify official schedules before relying on event dates.":
+      "Always verify official schedules for late changes.")+
+      " This is not a live calendar feed.";
+    const type=$("events-category").value;
+    const upcoming=engine.upcoming(today,type,120);
+    status.textContent=upcoming.length+" scheduled events in the next 120 days · "+(type==="all"?"all categories":type)+
+      " · published snapshot, not real-time updates.";
+    if(!upcoming.length){
+      const empty=document.createElement("p");empty.className="muted";
+      empty.textContent="No events available for this filter in the dated snapshot. That does not mean no market events are scheduled; consult the official calendars.";
+      list.append(empty);
+    }
+    for(const event of upcoming){
+      const card=document.createElement("div");
+      const eyebrow=document.createElement("span");
+      const readable=new Intl.DateTimeFormat("en-US",{timeZone:"UTC",month:"short",day:"numeric",year:"numeric"}).format(new Date(event.date+"T12:00:00Z"));
+      eyebrow.textContent=event.agency+" · "+event.type.toUpperCase()+" · "+readable+
+        (event.time?" · "+event.time+" ET":" · exact time not listed");
+      const title=document.createElement("strong");title.textContent=event.name;
+      const explain=document.createElement("small");explain.textContent=event.explain;
+      const question=document.createElement("small");question.textContent="Investigate: "+event.question;
+      const a=document.createElement("a");a.href=event.url;a.target="_blank";a.rel="noopener noreferrer";
+      a.textContent="Verify on "+event.agency+" official calendar ↗";
+      card.append(eyebrow,title,explain,question,a);list.append(card);
+    }
+    for(const source of engine.sourceLinks){
+      const a=document.createElement("a");a.href=source.url;a.target="_blank";
+      a.rel="noopener noreferrer";a.className="text-link";a.textContent=source.name+" ↗";
+      $("events-sources").append(a);
+    }
+  }
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -1200,6 +1247,7 @@
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
+    if (name==="events") renderMarketEvents();
     if (name === "watchlist") {
       renderWatchlist();
       renderCandleChart();
@@ -2070,6 +2118,8 @@
     if ($("view-watchlist").classList.contains("active")) void loadCandleBars();
     else candleBars = null;
   });
+  $("events-category").addEventListener("change", renderMarketEvents);
+  $("events-refresh").addEventListener("click", renderMarketEvents);
   $("radar-scan").addEventListener("click", () => void scanMarketRadar());
   $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
   $("watch-chart-symbol").addEventListener("change", () => {

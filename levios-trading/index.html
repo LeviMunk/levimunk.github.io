@@ -12,6 +12,7 @@
   <script defer src="./validation-engine.js"></script>
   <script defer src="./coach-engine.js"></script>
   <script defer src="./radar-engine.js"></script>
+  <script defer src="./events-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -23,6 +24,7 @@
       <nav id="nav" class="nav">
         <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Overview</button>
         <button class="nav-item" type="button" data-view="watchlist"><span class="nav-symbol">◉</span> IEX Watchlist</button>
+        <button class="nav-item" type="button" data-view="events"><span class="nav-symbol">◷</span> Market Events</button>
         <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
         <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
         <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
@@ -265,6 +267,33 @@
           </div>
           <p class="muted footnote">* Change compares the latest IEX trade with Alpaca's prior daily closing bar, when available. Quote timestamps are shown because prices can be stale outside market hours or for less-active stocks. This view uses REST snapshots, not a continuous streaming feed. It does not submit trades.</p>
           <a id="watch-private-link" class="text-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open protected live-data watchlist ↗</a>
+        </article>
+      </section>
+      <section id="view-events" class="view" aria-label="Officially sourced economic events research" hidden>
+        <article class="panel" aria-labelledby="events-heading">
+          <div class="panel-head"><div>
+            <p class="eyebrow">MACROECONOMICS / LEARN THE CATALYSTS</p>
+            <h2 id="events-heading">Market Events Intelligence</h2>
+            <p class="muted">Upcoming economic releases and Federal Reserve decisions from a dated snapshot of official U.S. agency schedules. Explore what the announcements measure, and what questions to ask before reacting to market moves.</p>
+          </div><span class="scorecard-period">OFFICIAL SCHEDULE SNAPSHOT</span></div>
+          <p id="events-freshness" class="muted footnote" role="status">Checking schedule snapshot age…</p>
+          <div class="watch-toolbar">
+            <div class="watch-add-form"><label for="events-category">Event category</label>
+              <select id="events-category" class="select">
+                <option value="all">All macro events</option><option value="inflation">Inflation</option>
+                <option value="labor">Jobs &amp; labor</option><option value="growth">Growth</option>
+                <option value="policy">Federal Reserve</option>
+              </select></div>
+            <button type="button" id="events-refresh" class="button secondary">Update date filter</button>
+          </div>
+          <p id="events-summary" class="muted footnote" aria-live="polite">Showing verified scheduled events; not a live data feed.</p>
+          <div id="events-list" class="strategy-evaluation"><div><span>CALENDAR</span><small>Open this tab to view scheduled macroeconomic releases and learning notes.</small></div></div>
+          <p class="muted footnote">All listed times are U.S. Eastern Time. Federal Reserve meeting days do not imply a fixed release hour. Schedules may change: always verify on the official source before relying on a date. An event can influence prices, but a market reaction is not guaranteed.</p>
+        </article>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">VERIFY BEFORE YOU TRADE</p><h2>Official sources &amp; earnings research</h2></div></div>
+          <p class="muted">Economic releases, policy meetings, and individual-company earnings are different types of catalysts. For now, this dashboard lists verified government schedule snapshots. Company earnings dates are <strong>not populated</strong> until a reliable source and update process are implemented.</p>
+          <div id="events-sources" class="button-row"></div>
+          <p class="muted footnote">For company-specific earnings, check the issuer's investor-relations calendar or SEC filings; a date from a third-party calendar should be cross-checked. These links are references, not automatic imports.</p>
         </article>
       </section>
       <section id="view-market" class="view" aria-label="Market data" hidden>

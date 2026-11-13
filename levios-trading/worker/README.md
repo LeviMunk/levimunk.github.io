@@ -227,6 +227,11 @@ The deterministic `radar-engine.js` examines: (1) a completed-session price chan
 
 This is **manual on-demand scanning, not 24/7 monitoring, automatic alerting, exchange-wide scanning, or a news/earnings calendar**. Alpaca's free IEX feed reflects one venue and raw historical bars; corporate actions, market-wide volume, and consolidated SIP are not available from these observations. No background automation, order routes, write operations, external telemetry, or AI price predictions are added.
 
+## Market Events Intelligence v1 (official schedule snapshot)
+The separate **Market Events** tab uses `events-engine.js`, an offline, date-stamped snapshot verified against official BLS, BEA and Federal Reserve schedules as of **2026-11-12**. Dates/times are scheduled US Eastern releases; Fed policy meeting date does not imply a specific policy release hour. Each item includes an official source, explanation and a critical research question. Expired/potentially stale schedule warnings display automatically after 14/60 days. Filters by category and upcoming 120-day window; no brokerage API calls, paid event provider or private credentials.
+
+**Important:** This is not a live/updating economic calendar. The source can revise publication schedules or add releases after the snapshot date. No earnings calendar, automatically linked breaking news, stock-specific corporate actions, alerts, continuously monitored catalysts or demonstrated news-to-price causal linkage. Use the official calendar links before relying on any dates. Events are not predictions. Static snapshot tests are in `worker/test/events.test.mjs`.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
