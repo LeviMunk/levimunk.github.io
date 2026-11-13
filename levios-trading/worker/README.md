@@ -278,6 +278,11 @@ The SEC adapter now includes annual net income and annual diluted **weighted-ave
 
 No provider secret appears in the browser; market-data access remains Cloudflare Access-protected. All requests must originate in the private Worker; no user-specified external URLs. Tests cover invalid/missing inputs, stale prices, fiscal mismatch and failure to rank securities. No broker order capability was added.
 
+## Peer candidate selection and evidence-based bull/bear thesis (Upgrade 21)
+The `peer-thesis-engine.js` is a minimal standalone deterministic rules engine, using design principles from open-source peer comparison dashboards such as Sellside Research Engine and Equity Research Lab. A small built-in set of **editorial peer candidates** helps the user choose a second ticker while explicitly stating different business models. These peer suggestions are NOT live provider rankings, SEC-SIC-certified same-industry matches, or a comprehensive peer universe; an unsupported ticker gets no invented peers.
+
+After the user runs an existing authenticated SEC and completed IEX two-ticker comparison, the same validated valuation data produces a separately labeled conditional **bull case**, **bear case**, **unknown evidence**, and **due diligence checklist**. The generated statements name their SEC-derived annual or IEX-proxy metrics and use explicit comparator values. Without comparable data the engine gives questions and unknowns, not invented evidence, targets, conviction scores, execution instructions or a buy/sell winner. No new network services, paid provider or secrets are added. Tests cover business-model distinctions, absent evidence and provenance guards.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
