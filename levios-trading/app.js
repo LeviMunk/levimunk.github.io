@@ -17,6 +17,10 @@
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
   const STRATEGY_LOG_STORAGE_KEY = "levios-strategy-log-v1";
+  const VALIDATION_LOG_STORAGE_KEY = "levios-validation-history-v1";
+  const MAX_VALIDATION_DECISIONS = 100;
+  let validationDecisions = [];
+  let activeValidationReview = null;
   const MAX_STRATEGY_VERSIONS = 25;
   let strategyVersions = [];
   let strategyNextVersion = 1;
@@ -1290,7 +1294,19 @@
     const {source, symbol, rows} = strategySourceInfo();
     const config = strategySettings();
     const result = globalThis.LeviStrategyEngine.run(rows, config);
-    activeStrategyRun = { ...result, source, symbol };
+    // Re-run the identical dataset under increased modeled execution costs.
+    // Minimum 5 bps per cost category ensures a meaningful stress when the
+    // ordinary research setting uses 0 bps. Settings above 100 bps cannot be
+    // doubled within the engine's validated range; these runs fail closed.
+    const stressSettings = {
+      ...config,
+      feeBps: Math.max(5, config.feeBps * 2),
+      slippageBps: Math.max(5, config.slippageBps * 2)
+    };
+    const stress = stressSettings.feeBps <= 200 &&
+      stressSettings.slippageBps <= 200
+      ? globalThis.LeviStrategyEngine.run(rows, stressSettings) : null;
+    activeStrategyRun = { ...result, source, symbol, stress, stressSettings };
     $("strategy-run-badge").textContent = result.version.toUpperCase();
     $("strategy-train-return").textContent = strategyLabelPercent(result.train.returnPct);
     $("strategy-test-return").textContent = strategyLabelPercent(result.test.returnPct);
@@ -1328,6 +1344,11 @@
       splitDate: r.splitDate, settings: {...r.settings},
       trainReturnPct: r.train.returnPct, testReturnPct: r.test.returnPct,
       testHoldPct: r.test.holdPct, testDrawdownPct: r.test.maxDrawdownPct,
+      testObservations: r.test.observations, testExecutions: r.test.executions,
+      stressTestReturnPct: r.stress?.test?.returnPct ?? null,
+      stressTestHoldPct: r.stress?.test?.holdPct ?? null,
+      stressFeeBps: r.stress?.settings?.feeBps ?? null,
+      stressSlippageBps: r.stress?.settings?.slippageBps ?? null,
       executions: r.executions.length
     };
     const next = [...strategyVersions, entry].slice(-MAX_STRATEGY_VERSIONS);
@@ -1336,6 +1357,9 @@
       strategyVersions = next;
       strategyNextVersion++;
       renderStrategyVersions();
+      renderValidationOptions(entry.version);
+      activeValidationReview = null;
+      renderValidationReview();
       showToast("Saved reproducible research version v" + entry.version);
     } catch {
       feedback("backtest-feedback", "Browser storage unavailable; export results instead.", true);
@@ -1343,10 +1367,12 @@
   }
   function exportStrategyVersions() {
     const data = JSON.stringify({
-      format: "levios-strategy-experiments-v1",
+      format: "levios-strategy-research-v2",
       generated_at: new Date().toISOString(),
-      caveat: "Research experiments; neither brokerage orders nor verified profit.",
-      versions: strategyVersions
+      caveat: "Browser-local self-reported research decisions only. No trading execution, proof of profitability, or audited forward testing.",
+      strategy_versions: strategyVersions,
+      validation_decisions: validationDecisions,
+      validation_policy: globalThis.LeviStrategyValidation?.policy ?? null
     }, null, 2);
     const url = URL.createObjectURL(new Blob([data], {type:"application/json"}));
     const a = document.createElement("a");
