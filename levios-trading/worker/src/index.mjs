@@ -14,6 +14,8 @@ import { assets } from "../generated-assets.mjs";
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const SOURCE_ORIGIN = "https://levimunk.com";
 const MAX_POSITIONS = 100;
+const HISTORY_RANGE_PERIODS = Object.freeze({ "1W": "1W", "1M": "1M", "3M": "3M", "1Y": "1A" });
+const MAX_HISTORY_POINTS = 400;
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -73,7 +75,8 @@ function alpacaFailure(code, endpoint, httpStatus) {
 }
 
 async function fetchPaperData(env, pathname) {
-  const endpoint = pathname === "/v2/account" ? "account" : "positions";
+  const endpoint = pathname.startsWith("/v2/account/portfolio/history?")
+    ? "history" : pathname === "/v2/account" ? "account" : "positions";
   const headers = {
     "APCA-API-KEY-ID": env.ALPACA_PAPER_KEY_ID,
     "APCA-API-SECRET-KEY": env.ALPACA_PAPER_SECRET_KEY,
@@ -164,6 +167,69 @@ async function accountSnapshot(env) {
   }
 }
 
+// Alpaca computes this history relative to a period baseline. It is neither
+// an execution log nor a claim about realized P/L or lifetime performance.
+async function portfolioHistory(env, range) {
+  if (!env.ALPACA_PAPER_KEY_ID || !env.ALPACA_PAPER_SECRET_KEY) {
+    return {
+      connected: false, mode: "paper", range, reason: "alpaca_paper_secrets_missing",
+      message: "Alpaca PAPER credentials are not configured."
+    };
+  }
+  try {
+    const period = HISTORY_RANGE_PERIODS[range];
+    const history = await fetchPaperData(env,
+      "/v2/account/portfolio/history?period=" + period + "&timeframe=1D");
+    if (!history || !Array.isArray(history.timestamp) ||
+        !Array.isArray(history.equity) || !Array.isArray(history.profit_loss) ||
+        !Array.isArray(history.profit_loss_pct)) {
+      throw alpacaFailure("alpaca_invalid_response", "history");
+    }
+    const length = Math.min(
+      history.timestamp.length, history.equity.length,
+      history.profit_loss.length, history.profit_loss_pct.length
+    );
+    // Missing values must not be silently reinterpreted as zero P/L.
+    const points = [];
+    for (let i = Math.max(0, length - MAX_HISTORY_POINTS); i < length; i++) {
+      const ts = Number(history.timestamp[i]);
+      const rawEquity = history.equity[i];
+      const rawPL = history.profit_loss[i];
+      if (rawEquity == null || rawPL == null) continue;
+      const equity = Number(rawEquity), pl = Number(rawPL);
+      const pct = history.profit_loss_pct[i] == null
+        ? null : Number(history.profit_loss_pct[i]);
+      if (!Number.isSafeInteger(ts) || ts < 946684800 || ts > 4102444800 ||
+          !Number.isFinite(equity) || !Number.isFinite(pl) ||
+          (pct !== null && !Number.isFinite(pct))) continue;
+      points.push({ timestamp: ts, equity, profit_loss: pl, profit_loss_pct: pct });
+    }
+    const base = history.base_value == null ? null : Number(history.base_value);
+    return {
+      connected: true,
+      mode: "paper",
+      range,
+      timeframe: "1D",
+      base_value: Number.isFinite(base) ? base : null,
+      points
+    };
+  } catch (error) {
+    const allowed = new Set([
+      "alpaca_credentials_rejected", "alpaca_rate_limited", "alpaca_service_error",
+      "alpaca_http_error", "alpaca_timeout", "alpaca_network_error", "alpaca_invalid_response"
+    ]);
+    const reason = allowed.has(error?.safeCode) ? error.safeCode : "alpaca_unexpected_error";
+    const result = {
+      connected: false, mode: "paper", range, reason,
+      message: reason === "alpaca_credentials_rejected"
+        ? "Alpaca rejected the paper credentials for portfolio history."
+        : "Alpaca portfolio history is temporarily unavailable."
+    };
+    if (Number.isInteger(error?.safeHttpStatus)) result.http_status = error.safeHttpStatus;
+    return result;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -182,6 +248,17 @@ export default {
     if (url.pathname === "/api/alpaca/status") {
       if (request.method === "HEAD") return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       return json(await accountSnapshot(env));
+    }
+    if (url.pathname === "/api/alpaca/history") {
+      const range = url.searchParams.get("range") || "1M";
+      if (!Object.hasOwn(HISTORY_RANGE_PERIODS, range) ||
+          [...url.searchParams.keys()].some(key => key !== "range")) {
+        return json({ error: "Choose a supported history range: 1W, 1M, 3M, or 1Y." }, 400);
+      }
+      if (request.method === "HEAD") {
+        return new Response(null, { status: 200, headers: commonHeaders("application/json") });
+      }
+      return json(await portfolioHistory(env, range));
     }
     if (url.pathname === "/api/health") {
       return json({ ok: true, mode: "paper", access: "authenticated" });
