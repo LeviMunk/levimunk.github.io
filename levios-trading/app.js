@@ -379,12 +379,12 @@
     catch { throw Error("Enter a valid private bridge address."); }
     const local = url.protocol === "http:" &&
       (url.hostname === "127.0.0.1" || url.hostname === "localhost") && url.port === "8767";
-    const worker = url.protocol === "https:" && /^levios-alpaca\.[a-z0-9-]+\.workers\.dev$/i.test(url.hostname) && !url.port;
+    const worker = url.protocol === "https:" && (url.hostname === "levimunk-github-io.levivanstap.workers.dev" || /^levios-alpaca\.[a-z0-9-]+\.workers\.dev$/i.test(url.hostname)) && !url.port;
     const cloudflare = url.protocol === "https:" && url.hostname === "trading-api.levimunk.com" && !url.port;
     const tailnet = url.protocol === "https:" &&
       /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\.ts\.net$/i.test(url.hostname) && url.port === "8443";
     if ((!local && !tailnet && !cloudflare && !worker) || url.username || url.password || (url.pathname !== "/" && url.pathname !== "") || url.search || url.hash) {
-      throw Error("Enter your protected levios-alpaca.<account>.workers.dev address (or a previously configured private bridge).");
+      throw Error("Use your protected https://levimunk-github-io.levivanstap.workers.dev dashboard (or a previously configured private bridge).");
     }
     return url.origin;
   }
