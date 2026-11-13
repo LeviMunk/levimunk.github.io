@@ -34,13 +34,14 @@
         <div class="topline"><span class="eyebrow">LEVIOS / RESEARCH WORKSPACE</span><span id="save-state" class="saved-state" aria-live="polite">Saved in this browser</span></div>
         <div class="hero-row">
           <div><h1 id="view-heading">Trading overview</h1><p id="view-description" class="lede">Explore a simulated portfolio and test ideas against your own historical data.</p></div>
-          <div class="hero-actions"><a id="private-trading-link" class="button secondary" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Private Alpaca dashboard ↗</a><button id="btn-export-top" class="button secondary" type="button">Export data ↗</button></div>
+          <div class="hero-actions"><button id="btn-export-top" class="button secondary" type="button">Export data ↗</button></div>
         </div>
       </header>
       <div class="notice" role="note"><strong>Research mode:</strong> Browser simulations remain separate from your Alpaca paper account. Simulated orders use imported historical closes, not current prices. <span>Alpaca balances appear only through your private bridge; never enter API keys here.</span></div>
       <section id="view-overview" class="view active" aria-label="Trading overview">
         <div class="account-view-toolbar" role="group" aria-label="Choose portfolio to display">
           <div class="account-view-label"><span class="eyebrow">ACCOUNT VIEW</span><small id="account-view-note">Alpaca paper account disconnected · sign in to view balances</small></div>
+          <a id="private-trading-link" class="private-dash-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open secure Alpaca dashboard ↗</a>
           <div class="account-view-buttons">
             <button id="mode-alpaca" class="mode-choice active" type="button" aria-pressed="true">Alpaca Paper</button>
             <button id="mode-simulator" class="mode-choice" type="button" aria-pressed="false">Browser Simulator</button>
