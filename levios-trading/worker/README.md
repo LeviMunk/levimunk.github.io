@@ -50,6 +50,22 @@ The signed-in Worker dashboard now displays an **Alpaca PAPER profit/loss chart*
 - **Interpretation**: Alpaca's P/L is relative to the selected period's portfolio-history baseline; it is not necessarily realized profit/loss, and deposits, withdrawals or changes in basis can affect interpretation.
 - If the chart says history is unavailable, make sure the new GitHub deployment finished, sign in to Cloudflare Access, and (privately) inspect `/api/alpaca/history?range=1M`. Never share keys, account numbers, or detailed private positions.
 
+## Alpaca PAPER trade history (first incremental upgrade)
+
+LeviOS now includes a separate **Trade History** tab in the protected trading dashboard, displaying *actual Alpaca PAPER execution fills* through the read-only trading API. It never sends orders and never mixes broker fills with the browser-only "Paper Trades" simulation.
+
+- Backend route: `GET /api/alpaca/fills` (up to 50 fills), optional `?page_token=...` for older pages. Authenticated Cloudflare Access + `ALLOWED_EMAIL` are mandatory.
+- Source: Alpaca's `GET /v2/account/activities/FILL?direction=desc&page_size=50` with cursor pagination.
+- The UI shows execution time (Eastern), symbol, buy/sell side, quantity, fill price, approximate execution notional, and whether an execution is a partial fill. Includes refresh and "Load older fills".
+- Backend forwards *only* sanitized fields; it does not return private account numbers, order IDs, or raw broker response objects. A pagination cursor is returned for account-authorized requests only. Maximum 500 fills in the browser to avoid excessive memory use.
+- No fabricated history. An empty response displays "No fills found" instead of showing simulated trades. The public GitHub Pages site shows a shortcut to the protected dashboard instead of attempting cross-site private API requests.
+- Executions are not the same as realized P/L, position-level cost basis, order status, or real-time market quotes; those require separate features and correct accounting.
+- Browser simulator remains separate and functional.
+
+**Next idea (not built yet):** Add a clearly labeled real-time IEX stock watchlist, using Alpaca's available market-data entitlement. The free IEX feed is not the consolidated US-market SIP feed. Do not infer full-market coverage or unlimited quote access from the existence of GitHub trading repositories.
+
+Reference examples: [OpenBB](https://github.com/openbq-org/OpenBB) for data exploration, [QuantStats](https://github.com/ranaroussi/quantstats) for risk analytics, and [Freqtrade](https://github.com/freqtrade/freqtrade) for trading-strategy evaluation. We borrow concepts rather than adding those projects as dependencies.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
