@@ -76,6 +76,7 @@
           </div>
           <div class="pnl-graph">
             <svg id="pnl-chart" viewBox="0 0 800 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Historical Alpaca paper profit and loss chart"></svg>
+            <div id="pnl-lwc" class="tradingview-chart pnl-tradingview-chart" hidden role="img" aria-label="Interactive Alpaca PAPER P/L time series chart"></div>
             <div id="pnl-empty" class="pnl-empty" role="status">Connect to your protected Alpaca PAPER dashboard to see profit and loss history.</div>
           </div>
           <div class="pnl-timeline" aria-hidden="true">
@@ -222,6 +223,23 @@
                 <tr><td colspan="8" class="empty">Open this watchlist in your protected LeviOS dashboard to load IEX quotes.</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="watch-price-panel">
+            <div class="panel-head watch-chart-header">
+              <div><p class="eyebrow">ACTUAL TRADINGVIEW LIGHTWEIGHT CHARTS</p><h3>Daily IEX candlesticks</h3></div>
+              <div class="watch-chart-controls">
+                <label for="watch-chart-symbol">Ticker</label>
+                <select id="watch-chart-symbol" aria-label="Stock for candlestick chart"></select>
+                <div class="pnl-range" role="group" aria-label="Historical price chart period">
+                  <button type="button" data-ohlc-range="1M" aria-pressed="false">1M</button>
+                  <button type="button" data-ohlc-range="3M" aria-pressed="true" class="active">3M</button>
+                  <button type="button" data-ohlc-range="1Y" aria-pressed="false">1Y</button>
+                </div>
+              </div>
+            </div>
+            <div id="watch-candle-chart" class="tradingview-chart candle-tradingview-chart" role="img" aria-label="Interactive daily IEX candlestick price chart"></div>
+            <p id="watch-candle-status" class="muted watch-candle-status" role="status" aria-live="polite">Open this tab in your protected dashboard to load IEX daily price bars.</p>
+            <p class="muted footnote">Candles represent IEX-only daily OHLC aggregates, not the consolidated market. Zoom and crosshair are interactive. Historical snapshots are not tick-by-tick prices. Chart library attribution: <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, © 2025 TradingView, Inc.</p>
           </div>
           <p class="muted footnote">* Change compares the latest IEX trade with Alpaca's prior daily closing bar, when available. Quote timestamps are shown because prices can be stale outside market hours or for less-active stocks. This view uses REST snapshots, not a continuous streaming feed. It does not submit trades.</p>
           <a id="watch-private-link" class="text-link" href="https://levimunk-alpaca.levivanstap.workers.dev/" target="_blank" rel="noopener noreferrer">Open protected live-data watchlist ↗</a>
