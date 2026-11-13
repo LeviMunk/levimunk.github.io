@@ -1668,6 +1668,7 @@
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
   const PAPER_PLANS_KEY="levios-paper-predictions-v1";
+  const PAPER_OUTCOMES_KEY="levios-paper-outcomes-v1";
   let paperPredictions=[],paperOutcomes={},checkingPredictions=false;
   function loadPaperPredictions(){
     try{
@@ -1679,6 +1680,17 @@
         p.stop<p.entry&&p.entry<p.target&&Number.isInteger(p.expiryDays)&&
         p.expiryDays>=1&&p.expiryDays<=60).slice(0,100):[];
     }catch{paperPredictions=[];}
+    try{
+      const outcomes=JSON.parse(localStorage.getItem(PAPER_OUTCOMES_KEY)||"{}");
+      if(outcomes&&typeof outcomes==="object"&&!Array.isArray(outcomes)){
+        paperOutcomes={};
+        for(const p of paperPredictions){
+          const x=outcomes[p.id];
+          if(x&&["win","loss","open","waiting","expired","ambiguous","awaiting_data","unverifiable"].includes(x.status)&&
+            x.symbol===p.symbol)paperOutcomes[p.id]=x;
+        }
+      }
+    }catch{paperOutcomes={};}
   }
   function savePaperPrediction(event){
     event.preventDefault();
@@ -1770,6 +1782,10 @@
               cache.set(p.symbol,payload.bars);
             }finally{clearTimeout(timer);}
           }
+          // Three-month history cannot settle older plans whose early trades are missing.
+          const age=(Date.parse(today+"T00:00:00Z")-Date.parse(p.createdAt.slice(0,10)+"T00:00:00Z"))/86400000;
+          if(age>75&&!["win","loss","ambiguous"].includes(next[p.id]?.status))
+            throw Error("Prediction older than available 3-month research window; insufficient full history.");
           // Never overwrite a resolved result with truncated history or a new incomplete feed.
           const result=globalThis.LeviPaperPredictions.replay(p,cache.get(p.symbol),today);
           if(!["win","loss","ambiguous"].includes(next[p.id]?.status)||
@@ -1779,7 +1795,10 @@
             reason:String(error?.message||error)};
         }
       }
-      paperOutcomes=next;renderPaperPredictions();
+      paperOutcomes=next;
+      try{localStorage.setItem(PAPER_OUTCOMES_KEY,JSON.stringify(next));}
+      catch{status.textContent="Result storage failed. Export your predictions now.";return;}
+      renderPaperPredictions();
       status.textContent="Checked "+checked+" plan(s). W/L excludes open, expired, untriggered and ambiguous cases. These are simulated, not Alpaca fills.";
     }finally{checkingPredictions=false;$("paper-prediction-check").disabled=false;}
   }
