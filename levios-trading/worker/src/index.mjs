@@ -11,6 +11,7 @@
  */
 import { assets } from "../generated-assets.mjs";
 import { equityScorecard } from "./performance.mjs";
+import { positionRiskSummary } from "./risk.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
@@ -154,7 +155,9 @@ async function accountSnapshot(env) {
         qty: p.qty,
         market_value: p.market_value,
         unrealized_pl: p.unrealized_pl
-      }))
+      })),
+      risk: positionRiskSummary(account, positions),
+      positions_display_limited: positions.length > MAX_POSITIONS
     };
   } catch (error) {
     // Do not echo exception messages or Alpaca response bodies to the browser.
