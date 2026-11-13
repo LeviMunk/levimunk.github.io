@@ -1549,8 +1549,126 @@
     }
     list.append(guide);
   }
+  const HYPOTHESIS_STORAGE_KEY="levios-hypothesis-journal-v1";
+  let hypothesisData={version:1,plans:[],reviews:[]};
+  function loadHypotheses(){
+    try{
+      const raw=localStorage.getItem(HYPOTHESIS_STORAGE_KEY);
+      hypothesisData=globalThis.LeviHypothesisJournal.sanitize(raw?JSON.parse(raw):null);
+    }catch{
+      hypothesisData={version:1,plans:[],reviews:[]};
+    }
+  }
+  function saveHypotheses(next){
+    try{
+      localStorage.setItem(HYPOTHESIS_STORAGE_KEY,JSON.stringify(next));
+      hypothesisData=next;
+      return true;
+    }catch{return false;}
+  }
+  function renderHypothesisJournal(){
+    const list=$("journal-entries"),sel=$("journal-review-id");
+    list.replaceChildren();sel.replaceChildren();
+    const reviews=new Map(hypothesisData.reviews.map(r=>[r.planId,r]));
+    const remaining=hypothesisData.plans.filter(p=>!reviews.has(p.id));
+    for(const plan of remaining){
+      const opt=document.createElement("option");opt.value=plan.id;
+      opt.textContent=plan.symbol+" · "+plan.createdAt.slice(0,10)+" · "+plan.direction;
+      sel.append(opt);
+    }
+    $("journal-review-form").querySelector("button[type=submit]").disabled=!remaining.length;
+    $("journal-summary").textContent=hypothesisData.plans.length+
+      " hypotheses · "+hypothesisData.reviews.length+" separate reviews · "+
+      remaining.length+" awaiting retrospective analysis. Browser-only; not an audit record.";
+    if(!hypothesisData.plans.length){
+      const empty=document.createElement("p");empty.className="muted";
+      empty.textContent="Write the thesis before seeing its outcome, then return to review it later.";
+      list.append(empty);
+    }
+    for(const plan of hypothesisData.plans){
+      const card=document.createElement("div"),title=document.createElement("span");
+      title.textContent=plan.symbol+" · "+plan.direction.toUpperCase()+" · "+
+        plan.createdAt.slice(0,16).replace("T"," ")+" UTC · ORIGINAL PLAN";
+      const thesis=document.createElement("strong");thesis.textContent=plan.thesis;
+      const details=document.createElement("small");
+      details.textContent="Evidence: "+plan.evidence+" | Counterpoint: "+plan.counterpoint+
+        " | Invalidation: "+plan.invalidation+" | Review horizon: "+plan.timeHorizon;
+      const sizing=document.createElement("small");
+      sizing.textContent="Manual reference "+money(plan.referencePrice)+
+        " | invalidation "+money(plan.invalidationPrice)+
+        " | hypothetical max loss budget "+money(plan.riskBudget)+
+        " | difference/share "+money(plan.riskPerShare)+
+        " | simplified shares "+(plan.theoreticalShares===null?"not applicable":plan.theoreticalShares)+
+        ". No gap, fee, spread or slippage coverage.";
+      card.append(title,thesis,details,sizing);
+      const outcome=reviews.get(plan.id);
+      if(outcome){
+        const r=document.createElement("small");
+        r.textContent="SEPARATE REVIEW ("+outcome.reviewedAt.slice(0,10)+") · "+
+          outcome.grade+" · manual observed price "+money(outcome.reviewPrice)+
+          " · hypothetical change "+(outcome.hypotheticalChangePct>=0?"+":"")+
+          outcome.hypotheticalChangePct.toFixed(2)+"% · Outcome: "+
+          outcome.observation+" · Lesson: "+outcome.lesson;
+        card.append(r);
+      }else{
+        const pending=document.createElement("small");
+        pending.textContent="Awaiting review. Original thesis is read-only in the UI.";
+        card.append(pending);
+      }
+      list.append(card);
+    }
+  }
+  function submitHypothesis(event){
+    event.preventDefault();
+    try{
+      const engine=globalThis.LeviHypothesisJournal;
+      const id="hyp-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,12);
+      const plan=engine.create({
+        symbol:$("journal-symbol").value,direction:$("journal-direction").value,
+        thesis:$("journal-thesis").value,evidence:$("journal-evidence").value,
+        counterpoint:$("journal-counterpoint").value,
+        invalidation:$("journal-invalidation").value,timeHorizon:$("journal-horizon").value,
+        referencePrice:$("journal-reference").value,invalidationPrice:$("journal-stop").value,
+        riskBudget:$("journal-budget").value
+      },{id,now:new Date().toISOString()});
+      const next=engine.addPlan(hypothesisData,plan);
+      if(!saveHypotheses(next))throw Error("Browser storage failed; hypothesis was not recorded.");
+      $("journal-form").reset();
+      feedback("journal-feedback","Original hypothesis saved. It cannot be edited from this dashboard.");
+      renderHypothesisJournal();
+    }catch(error){feedback("journal-feedback",String(error?.message||error),true);}
+  }
+  function submitHypothesisReview(event){
+    event.preventDefault();
+    try{
+      const id=$("journal-review-id").value;
+      const plan=hypothesisData.plans.find(p=>p.id===id);
+      if(!plan)throw Error("Choose a saved, unreviewed hypothesis.");
+      const engine=globalThis.LeviHypothesisJournal;
+      const review=engine.review(plan,{
+        grade:$("journal-grade").value,reviewPrice:$("journal-review-price").value,
+        observation:$("journal-observation").value,lesson:$("journal-lesson").value
+      },new Date().toISOString());
+      if(!saveHypotheses(engine.addReview(hypothesisData,review)))
+        throw Error("Browser storage failed; review was not recorded.");
+      $("journal-review-form").reset();
+      feedback("journal-review-feedback","Independent review saved; the original plan is unchanged.");
+      renderHypothesisJournal();
+    }catch(error){feedback("journal-review-feedback",String(error?.message||error),true);}
+  }
+  function exportHypothesisJournal(){
+    const data=JSON.stringify({
+      exportedAt:new Date().toISOString(),journal:globalThis.LeviHypothesisJournal.sanitize(hypothesisData)
+    },null,2);
+    const blob=new Blob([data],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;
+    a.download="levios-hypothesis-journal-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
   function showView(name) {
-    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
@@ -1565,6 +1683,7 @@
     $("view-heading").textContent = headings[name][0];
     $("view-description").textContent = headings[name][1];
     document.title = headings[name][0] + " | LeviOS Trading";
+    if (name==="journal") renderHypothesisJournal();
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
     if (name==="events"){renderMarketEvents();renderEarnings();void refreshMarketEvents(false);void refreshWatchlistEarnings(false);}
@@ -2438,6 +2557,9 @@
     if ($("view-watchlist").classList.contains("active")) void loadCandleBars();
     else candleBars = null;
   });
+  $("journal-form").addEventListener("submit",submitHypothesis);
+  $("journal-review-form").addEventListener("submit",submitHypothesisReview);
+  $("journal-export").addEventListener("click",exportHypothesisJournal);
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
   $("earnings-refresh").addEventListener("click",()=>void refreshWatchlistEarnings(true));
@@ -2495,6 +2617,7 @@
   load();
   loadStrategyVersions();
   loadValidationDecisions();
+  loadHypotheses();
   updateStrategySource();
   render();showView("overview");
   renderWatchlist();
