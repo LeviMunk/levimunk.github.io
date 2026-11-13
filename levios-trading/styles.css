@@ -209,3 +209,36 @@
  .pnl-tradingview-chart{height:215px}
  .pnl-graph>#pnl-chart{height:215px}
 }
+
+
+/* Strategy research workbench: chronological holdout and reproducibility. */
+#strategy-csv-options[hidden],#strategy-iex-options[hidden]{display:none!important}
+#strategy-csv-options,#strategy-iex-options{margin-top:4px}
+#strategy-csv-options>label,#strategy-iex-options>label{display:block;margin-bottom:7px}
+#strategy-csv-options>select{min-height:43px;width:100%;padding:8px 12px;border-radius:9px;color:var(--text);background:#10242a;border:1px solid #335058}
+.strategy-iex-controls{display:flex;flex-wrap:wrap;gap:9px}
+.strategy-iex-controls input{max-width:160px;min-height:42px;border:1px solid #335058;background:#0c1b22;color:var(--text);border-radius:9px;padding:8px 12px}
+#strategy-iex-status{line-height:1.55;margin:8px 0}
+#strategy-split{width:100%;accent-color:var(--accent);margin:8px 0 4px}
+#strategy-split-label{color:#92ebc8;font-variant-numeric:tabular-nums}
+.strategy-evaluation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}
+.strategy-evaluation>div{border:1px solid #2b474b;background:#11272d;border-radius:11px;padding:14px;display:flex;flex-direction:column;min-width:0;gap:7px}
+.strategy-evaluation span{color:#96b7b5;font-weight:800;letter-spacing:.7px;font-size:10px}
+.strategy-evaluation strong{font-size:23px;font-variant-numeric:tabular-nums;letter-spacing:-.6px;color:#e8faf5}
+.strategy-evaluation small{font-size:10px;color:#9fb9b6;line-height:1.4}
+.strategy-versions{margin-top:18px}
+.strategy-versions .panel-head{flex-wrap:wrap;gap:16px}
+.strategy-version-table{min-width:900px}
+.strategy-version-table td{font-size:12px;vertical-align:top}
+.strategy-version-table code{white-space:nowrap;color:#97eac9}
+#strategy-data-proof{line-height:1.6;overflow-wrap:anywhere}
+#strategy-version-status{margin-top:13px}
+@media(max-width:650px){
+ .strategy-evaluation{gap:8px}
+ .strategy-evaluation>div{padding:12px}
+ .strategy-evaluation strong{font-size:19px}
+ .strategy-iex-controls input{max-width:none;min-width:0;flex:1}
+ .strategy-iex-controls button{flex:1}
+ .strategy-versions .button-row{width:100%;flex-wrap:wrap}
+ .strategy-versions .button-row button{flex:1}
+}
