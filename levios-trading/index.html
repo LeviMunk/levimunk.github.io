@@ -22,6 +22,7 @@
   <script defer src="./peer-thesis-engine.js"></script>
   <script defer src="./decision-brief-engine.js"></script>
   <script defer src="./prediction-engine.js"></script>
+  <script defer src="./learning-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -40,6 +41,7 @@
         <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
         <button class="nav-item" type="button" data-view="journal"><span class="nav-symbol">✎</span> Journal</button>
         <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Simulator</button>
+        <button class="nav-item" type="button" data-view="learning"><span class="nav-symbol">✦</span> Level Up</button>
         <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Settings</button>
       </nav>
       <div class="sidebar-bottom">
@@ -675,6 +677,38 @@
           </article>
           <article class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORY</p><h2>Trade journal</h2></div></div>
             <div class="scroll-table"><table><thead><tr><th>Recorded</th><th>Symbol</th><th>Side</th><th>Shares</th><th>Price</th></tr></thead><tbody id="trade-rows"><tr><td class="empty" colspan="5">No simulated orders yet.</td></tr></tbody></table></div>
+          </article>
+        </div>
+      </section>
+            <section id="view-learning" class="view" aria-label="Stock market learning academy" hidden>
+        <article class="panel learning-intro">
+          <div class="panel-head"><div>
+            <p class="eyebrow">LEVIOS ACADEMY · SEPARATE FROM PAPER TRADING</p>
+            <h2>Level up your market knowledge</h2>
+            <p class="muted">Short lessons, practical examples, and a question to check what sticks. No trades or financial data change here.</p>
+          </div><span class="scorecard-period">LEARN AT YOUR PACE</span></div>
+          <div class="button-row learning-track-buttons" role="group" aria-label="Choose learning track">
+            <button type="button" id="learning-long" class="button primary" aria-pressed="true">Long-term investing</button>
+            <button type="button" id="learning-short" class="button secondary" aria-pressed="false">Short-term trading</button>
+          </div>
+          <p id="learning-progress" role="status" aria-live="polite" class="muted footnote">Your progress is saved in this browser.</p>
+        </article>
+        <div class="learning-layout">
+          <article class="panel">
+            <h2>Lessons</h2>
+            <div id="learning-lessons" class="learning-lesson-list"></div>
+          </article>
+          <article class="panel learning-content">
+            <p class="eyebrow" id="learning-level">BEGINNER</p>
+            <h2 id="learning-title">Choose a lesson</h2>
+            <p id="learning-explanation" class="learning-explanation"></p>
+            <div class="learning-example"><span>IN REAL LIFE</span><p id="learning-example"></p></div>
+            <form id="learning-quiz-form">
+              <p id="learning-question" class="learning-question"></p>
+              <div id="learning-answers" class="learning-answers"></div>
+              <button class="button primary" type="submit">Check my answer</button>
+            </form>
+            <p id="learning-result" role="status" aria-live="polite" class="learning-feedback"></p>
           </article>
         </div>
       </section>

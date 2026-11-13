@@ -295,6 +295,11 @@ Outcomes are **win, loss, open, waiting, expired, ambiguous, awaiting_data, or u
 
 No real-money trading integration, order endpoint or auto-execution exists. The Worker remains GET/HEAD-only behind Cloudflare Access and PAPER-only.
 
+## Level Up: two-track financial learning (Upgrade 24)
+A separate Level Up tab now offers concise, deterministic lessons and interactive checks for **long-term investing** (stocks, funds, compounding, valuation) and **short-term trading** (entry/stop/target, risk sizing, backtest vs forward test, win rate vs expectancy). Answers are graded locally and completed lesson IDs are stored only in browser localStorage. Quizzes never change PAPER trades, account settings or trading recommendations. The Learning Engine has no network access; it is delivered with both the protected Worker and public read-only GitHub Pages app. Mobile browser tests exercise both tracks.
+
+This feature intentionally does not claim that LeviOS can make money, nor does it schedule background trading. The independent research/strategy runtime, persistent server-side signal ledger, simulated execution, benchmark comparison and planned Cloudflare scheduler remain **unimplemented** and require separate architecture/deployment work. PAPER-only is an invariant; no real broker order endpoints are introduced.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
