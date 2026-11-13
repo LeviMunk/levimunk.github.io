@@ -125,6 +125,25 @@ This upgrade **vendors the Kahan–Babuška compensated-summation implementation
 - Other modules still borrow *methods* from QuantStats and design concepts from OpenBB/Freqtrade rather than running those programs.
 - The vendor boundary keeps provenance and copyright explicit, and lets us review and replace the utility independently.
 
+## Real TradingView Lightweight Charts integration (fifth incremental upgrade)
+
+LeviOS now **installs and bundles the actual open-source [TradingView Lightweight Charts](https://github.com/tradingview/lightweight-charts) library** (pinned to `lightweight-charts@5.2.1`) rather than only borrowing its design ideas.
+
+**Build/runtime architecture**
+- Repository root `package.json` pins the upstream package. Running the unchanged Cloudflare build command `node build.mjs` builds the UI and reads the installed standalone browser bundle; the build installs the pinned package only if node_modules is absent.
+- The build includes the standalone production browser library in the Worker-generated static assets. Private `GET /lightweight-charts.js` serves that bundle on the same origin as the dashboard, behind **Cloudflare Access** and the owner email allowlist. No CDN script, cross-origin brokerage response, or browser API key is required.
+- The public GitHub Pages edition remains the browser simulator and keeps its original static SVG graphs. The authenticated Cloudflare edition upgrades the **Alpaca PAPER P/L history** to a TradingView `AreaSeries`, with the existing SVG as a fallback.
+- The IEX Watchlist now offers a separate **TradingView `CandlestickSeries`** with ticker selection, 1M/3M/1Y ranges, crosshair, drag-to-pan and zoom. It retrieves real daily OHLC bars via `GET /api/market/bars?symbol=SPY&range=3M`; the Worker fetches `/v2/stocks/{symbol}/bars` from Alpaca with explicit `feed=iex` and `timeframe=1Day`. Maximum 400 bars; unexpected/invalid bars are discarded.
+- The chart shows missing-data and error states, never fabricated candles. IEX is **one exchange**, not consolidated SIP prices, and historical daily candles are **not tick-by-tick streaming quotes**. The existing IEX snapshots continue to refresh separately while the watchlist is visible.
+- This is a read-only dashboard; no automatic order placement or autonomous strategy rewriting has been added.
+
+**License and attribution**
+- TradingView Lightweight Charts is Apache-2.0 licensed. The upstream `NOTICE` and full Apache license are preserved as `levios-trading/worker/licenses/TRADINGVIEW_NOTICE.txt` and `TRADINGVIEW_APACHE_LICENSE.txt`.
+- Visible attribution and a link to [TradingView](https://www.tradingview.com/) are included in the dashboard footer and beneath the candlestick panel.
+- [Official v5 integration guide](https://tradingview.github.io/lightweight-charts/docs) documents `createChart`, `addSeries`, series updates and standalone builds.
+
+**Future research/bot concept:** The diagram shared in this conversation is an architectural *proposal*, not evidence of a profitable self-improving bot. Research, backtesting, out-of-sample testing and paper monitoring can be added as **separately audited modules**. Automated order submission remains disabled and is not required for data/charting improvements.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
