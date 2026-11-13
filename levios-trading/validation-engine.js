@@ -22,7 +22,7 @@
   function researchContext(version) {
     if (!version || !version.settings) return null;
     const {splitPct, feeBps, slippageBps} = version.settings;
-    if (!["string"].every(() => typeof version.symbol === "string") ||
+    if (typeof version.symbol !== "string" ||
         typeof version.source !== "string" ||
         typeof version.engine !== "string" ||
         !/^[a-f0-9]{8}$/.test(version.dataHash || "") ||
@@ -46,13 +46,20 @@
       Number.isInteger(candidate?.testObservations) &&
       Number.isInteger(candidate?.testExecutions) &&
       finite(candidate?.stressTestReturnPct) &&
-      finite(candidate?.stressTestHoldPct),
+      finite(candidate?.stressTestHoldPct) &&
+      finite(candidate?.stressFeeBps) &&
+      finite(candidate?.stressSlippageBps) &&
+      candidate.stressFeeBps >= Math.max(5,candidate.settings?.feeBps * 2) &&
+      candidate.stressSlippageBps >= Math.max(5,candidate.settings?.slippageBps * 2),
       "Requires a complete, saved, deterministic research run including a higher-cost stress test. Legacy runs must be rerun and saved.");
     if (!checks[0].pass) {
       return {version:VERSION, eligible:false, checks, contextKey:context,
         baselineType:champion ? "research_champion" : "buy_and_hold",
         baselineVersion:champion?.version ?? null};
     }
+    add("source", !String(candidate.source).toUpperCase().includes("FICTIONAL") &&
+      candidate.symbol !== "DEMO",
+      "Fictional DEMO data is for demonstrations only; research-champion approval requires a non-demo dataset.");
     add("history", candidate.testObservations >= policy.minEvaluationObservations,
       "At least " + policy.minEvaluationObservations + " later-period observations; candidate has " +
       candidate.testObservations + ".");
@@ -70,7 +77,7 @@
       policy.maxDrawdownPct.toFixed(2) + "%; observed " + percent(candidate.testDrawdownPct) + ".");
     const stressed = candidate.stressTestReturnPct - candidate.stressTestHoldPct;
     add("stress", stressed >= policy.minStressExcessVsHoldPctPoints,
-      "With fee and slippage doubled, evaluation return must still meet buy-and-hold; observed excess " +
+      "With at least double fee/slippage (minimum 5 bps each), evaluation return must still meet buy-and-hold; observed excess " +
       percent(stressed) + ".");
     if (champion) {
       const comparable = researchContext(champion) === context &&
