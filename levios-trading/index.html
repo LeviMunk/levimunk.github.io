@@ -15,6 +15,7 @@
   <script defer src="./events-engine.js"></script>
   <script defer src="./earnings-engine.js"></script>
   <script defer src="./catalyst-engine.js"></script>
+  <script defer src="./journal-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -30,6 +31,7 @@
         <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Market Data</button>
         <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategy Lab</button>
         <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
+        <button class="nav-item" type="button" data-view="journal"><span class="nav-symbol">✎</span> Hypothesis Journal</button>
         <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Paper Trades</button>
         <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Data & Settings</button>
       </nav>
@@ -496,6 +498,48 @@
             <button id="fills-more" type="button" class="button secondary" hidden>Load older fills</button>
           </div>
           <p class="muted footnote">Execution history records fills, including partial fills. These are not live market quotes, open orders, or realized P/L calculations. No orders can be placed from this page.</p>
+        </article>
+      </section>
+            <section id="view-journal" class="view" aria-label="Trading hypothesis journal" hidden>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">BEFORE THE OUTCOME / RESEARCH ONLY</p><h2>Record a trading hypothesis</h2></div><span class="scorecard-period">NO BROKER ORDER</span></div>
+            <p class="muted">Document your reasoning, opposing evidence and maximum acceptable hypothetical loss before reviewing the outcome. The original entry is locked after saving.</p>
+            <form id="journal-form" class="form-stack">
+              <label for="journal-symbol">Ticker</label><input id="journal-symbol" maxlength="10" value="SPY" required>
+              <label for="journal-direction">Hypothesis direction</label><select id="journal-direction"><option value="long">Bullish / long</option><option value="short">Bearish / short</option><option value="observation">Observation only</option></select>
+              <label for="journal-thesis">What do you expect, and why?</label><textarea id="journal-thesis" rows="3" maxlength="1400" required placeholder="A specific, testable hypothesis"></textarea>
+              <label for="journal-evidence">What evidence supports it?</label><textarea id="journal-evidence" rows="2" maxlength="1400" required></textarea>
+              <label for="journal-counterpoint">What could make your reasoning wrong?</label><textarea id="journal-counterpoint" rows="2" maxlength="1400" required></textarea>
+              <label for="journal-invalidation">What would invalidate this thesis?</label><textarea id="journal-invalidation" rows="2" maxlength="1400" required></textarea>
+              <label for="journal-horizon">When will you evaluate it?</label><input id="journal-horizon" maxlength="1400" placeholder="e.g. 10 completed sessions" required>
+              <label for="journal-reference">Reference price (manually verified, USD)</label><input id="journal-reference" type="number" min="0.000001" step="any" required>
+              <label for="journal-stop">Hypothetical invalidation price (USD)</label><input id="journal-stop" type="number" min="0.000001" step="any" required>
+              <label for="journal-budget">Maximum hypothetical loss budget (USD)</label><input id="journal-budget" type="number" min="0.01" step="any" value="50" required>
+              <button type="submit" class="button primary">Save original hypothesis</button>
+              <p id="journal-feedback" class="form-feedback" role="status"></p>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">AFTER THE OUTCOME</p><h2>Review without rewriting history</h2></div></div>
+            <form id="journal-review-form" class="form-stack">
+              <label for="journal-review-id">Original hypothesis</label><select id="journal-review-id" required></select>
+              <label for="journal-grade">Did the evidence support your reasoning?</label><select id="journal-grade"><option value="supported">Supported</option><option value="mixed">Mixed evidence</option><option value="disproved">Disproved</option><option value="inconclusive">Inconclusive</option></select>
+              <label for="journal-review-price">Observed review price (manually verified, USD)</label><input id="journal-review-price" type="number" min="0.000001" step="any" required>
+              <label for="journal-observation">What actually happened?</label><textarea id="journal-observation" rows="3" maxlength="1400" required></textarea>
+              <label for="journal-lesson">What will you do differently next time?</label><textarea id="journal-lesson" rows="3" maxlength="1400" required></textarea>
+              <button type="submit" class="button primary">Save separate review</button>
+              <p id="journal-review-feedback" class="form-feedback" role="status"></p>
+            </form>
+            <p class="muted footnote">Reference-to-review price changes are hypothetical comparisons, not realized brokerage P/L. No automated quotes or orders are used here.</p>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">RESEARCH LIBRARY</p><h2>Hypotheses and lessons</h2></div><span class="scorecard-period">BROWSER-ONLY</span></div>
+          <div class="button-row"><button type="button" class="button secondary" id="journal-export">Export journal JSON</button></div>
+          <p id="journal-summary" class="muted footnote" role="status">No hypotheses saved yet.</p>
+          <div id="journal-entries" class="strategy-evaluation"></div>
+          <p class="muted footnote">Journal records are stored only in this browser, not automatically synced or tamper-proof. Export regular backups; clearing browser storage deletes them. This is distinct from Alpaca PAPER executions.</p>
         </article>
       </section>
       <section id="view-trades" class="view" aria-label="Paper trade journal" hidden>

@@ -249,6 +249,11 @@ Market Radar now cross-references its last **completed IEX daily candle date** w
 
 The existing six-hour agency-feed and optional earnings lookup caches are reused on radar scans to limit requests; the results appear alongside each radar ticker. The issuer snapshot is dated and Alpha Vantage entries remain estimates. No persistent news archive, issuer results matching, economic surprise data, model prediction, new data provider, broker write API or 24/7 process was added. Unit tests cover temporal boundaries, symbol matching and attribution safeguards.
 
+## Hypothesis Journal (Upgrade 16)
+Standalone `journal-engine.js` adapted to LeviOS using design ideas from [LuxAlgo/trade-journal](https://github.com/LuxAlgo/trade-journal) and Freqtrade's reproducibility safeguards. Users record a pre-outcome thesis, supporting and opposing evidence, invalidation conditions, time horizon, manual reference/invalidation prices, and hypothetical maximum loss budget. The original entry is not editable in the UI; later reviews are separate immutable objects with observed review price, evidence assessment and lesson. The hypothetical size calculation excludes fees, slippage, overnight gaps, and buying-power constraints; it does not submit orders or measure realized Alpaca P/L.
+
+Saved locally in the browser under `levios-hypothesis-journal-v1` with a 100-entry bound, input validation, exported JSON backup, and explicit local-only warnings. Browser storage isn't cryptographically tamper-proof and doesn't sync between machines. The standalone journal engine is bundled into the protected Cloudflare Worker and tested in `worker/test/journal.test.mjs`. Other existing portfolio exports do not automatically include these entries; use the journal's dedicated Export button.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
