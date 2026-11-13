@@ -9,6 +9,7 @@ const authorizedEnv = { ALLOWED_EMAIL: "owner@example.test" };
 test("denies requests without Cloudflare Access context", async () => {
   const response = await handler.fetch(new Request(url), authorizedEnv, {});
   assert.equal(response.status, 403);
+  assert.equal((await response.json()).reason, "access_not_authenticated");
 });
 
 test("denies a different identity even with Access context", async () => {
@@ -16,11 +17,13 @@ test("denies a different identity even with Access context", async () => {
     access: { getIdentity: async () => ({ email: "someoneelse@example.test" }) }
   });
   assert.equal(response.status, 403);
+  assert.equal((await response.json()).reason, "allowed_email_mismatch");
 });
 
 test("requires explicit configured owner email", async () => {
   const response = await handler.fetch(new Request(url), {}, authenticated);
   assert.equal(response.status, 403);
+  assert.equal((await response.json()).reason, "allowed_email_not_configured");
 });
 
 test("protected dashboard and assets are served after login", async () => {
@@ -75,4 +78,14 @@ test("authenticated account snapshot only reads Alpaca PAPER endpoints and strip
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("fails closed if Cloudflare identity lookup throws", async () => {
+  const response = await handler.fetch(new Request(url), authorizedEnv, {
+    access: { getIdentity: async () => { throw Error("identity service not available"); } }
+  });
+  assert.equal(response.status, 403);
+  const payload = await response.json();
+  assert.equal(payload.reason, "access_identity_unavailable");
+  assert.ok(!JSON.stringify(payload).includes("owner@example.test"));
 });
