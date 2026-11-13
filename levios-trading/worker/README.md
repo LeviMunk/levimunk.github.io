@@ -232,6 +232,13 @@ The separate **Market Events** tab uses `events-engine.js`, an offline, date-sta
 
 **Important:** This is not a live/updating economic calendar. The source can revise publication schedules or add releases after the snapshot date. No earnings calendar, automatically linked breaking news, stock-specific corporate actions, alerts, continuously monitored catalysts or demonstrated news-to-price causal linkage. Use the official calendar links before relying on any dates. Events are not predictions. Static snapshot tests are in `worker/test/events.test.mjs`.
 
+## Market Events Intelligence v2: official feed auto-refresh
+When the signed-in user opens **Market Events**, LeviOS automatically fetches `GET /api/market/events` from the same protected Cloudflare Worker. The read-only endpoint retrieves **only** the official BLS ICS feed (`https://www.bls.gov/schedule/news_release/bls.ics`) and BEA JSON (`https://apps.bea.gov/API/signup/release_dates.json`) in parallel. It uses strict allowlisted event families, source-size/timeout limits, no redirects, no user URL input, no new secrets, and independently reports each agency's availability. No public CORS or broker writes. Results are cached in browser *sessionStorage* for 6 hours, so successive page visits don't constantly request agency feeds. The Refresh button bypasses that browser cache.
+
+**Per-agency fallback:** A successful BLS or BEA fetch replaces only that agency's stored snapshot entries in the upcoming 120-day view. If an agency fetch is unavailable or fails format validation, only that agency falls back to the original dated static schedule, explicitly labeled as snapshot. Federal Reserve dates remain snapshot-only; no live FOMC feed. BEA JSON provides the broad series name rather than the release quarter or data month, so no quarter/month is fabricated.
+
+Cloudflare Access-protected `workers.dev` does not support the Workers Cache API; this upgrade deliberately avoids Cache API and KV/D1 binding changes. Source fetches happen when the calendar is opened (and when manually refreshed), **not when the browser is closed**. This is *not* unattended periodic monitoring or push alerts. Only upcoming BLS Employment Situation, JOLTS, CPI, PPI, BEA GDP and Personal Income/Outlays are supported. Both upstream schedules can change and must be verified at the agencies. Regression coverage: `worker/test/event-feeds.test.mjs` plus Worker safety tests.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.

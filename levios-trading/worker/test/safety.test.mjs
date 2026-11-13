@@ -74,6 +74,18 @@ test("read-only broker endpoint requires paper keys and never accepts POST", asy
   assert.equal(post.status, 405);
 });
 
+test("market calendar requires authentication, rejects POST and query params", async()=>{
+  const endpoint=url+"/api/market/events";
+  const denied=await handler.fetch(new Request(endpoint),authorizedEnv,{});
+  assert.equal(denied.status,403);
+  const post=await handler.fetch(new Request(endpoint,{method:"POST"}),authorizedEnv,authenticated);
+  assert.equal(post.status,405);
+  const bad=await handler.fetch(new Request(endpoint+"?url=https://evil.example/"),authorizedEnv,authenticated);
+  assert.equal(bad.status,400);
+  const head=await handler.fetch(new Request(endpoint,{method:"HEAD"}),authorizedEnv,authenticated);
+  assert.equal(head.status,200);
+});
+
 test("unknown paths fail with 404", async () => {
   const res = await handler.fetch(new Request(url + "/api/orders"), authorizedEnv, authenticated);
   assert.equal(res.status, 404);

@@ -12,6 +12,7 @@
 import { assets } from "../generated-assets.mjs";
 import { equityScorecard } from "./performance.mjs";
 import { positionRiskSummary } from "./risk.mjs";
+import { fetchOfficialEvents } from "./event-feeds.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
@@ -489,6 +490,14 @@ export default {
         return new Response(null, { status: 200, headers: commonHeaders("application/json") });
       }
       return json(await recentTradeFills(env, cursor));
+    }
+    if (url.pathname === "/api/market/events") {
+      if (url.search) return json({error:"No query parameters permitted."},400);
+      if (request.method === "HEAD")
+        return new Response(null,{status:200,headers:commonHeaders("application/json")});
+      // No user-defined upstream URL and no downstream public cache: this
+      // endpoint is accessible only following Cloudflare Access verification.
+      return json(await fetchOfficialEvents());
     }
     if (url.pathname === "/api/market/bars") {
       const keys = [...url.searchParams.keys()];

@@ -274,9 +274,10 @@
           <div class="panel-head"><div>
             <p class="eyebrow">MACROECONOMICS / LEARN THE CATALYSTS</p>
             <h2 id="events-heading">Market Events Intelligence</h2>
-            <p class="muted">Upcoming economic releases and Federal Reserve decisions from a dated snapshot of official U.S. agency schedules. Explore what the announcements measure, and what questions to ask before reacting to market moves.</p>
+            <p class="muted">Automatically checks official BLS and BEA release feeds when this view opens, with a six-hour browser refresh interval. Federal Reserve dates remain a sourced snapshot. Explore what each announcement measures and investigate market reactions critically.</p>
           </div><span class="scorecard-period">OFFICIAL SCHEDULE SNAPSHOT</span></div>
-          <p id="events-freshness" class="muted footnote" role="status">Checking schedule snapshot age…</p>
+          <p id="events-freshness" class="muted footnote" role="status">Checking agency calendar status…</p>
+          <p id="events-source-status" class="muted footnote" role="status">Official feeds load in the protected dashboard; source-by-source status will appear here.</p>
           <div class="watch-toolbar">
             <div class="watch-add-form"><label for="events-category">Event category</label>
               <select id="events-category" class="select">
@@ -284,11 +285,11 @@
                 <option value="labor">Jobs &amp; labor</option><option value="growth">Growth</option>
                 <option value="policy">Federal Reserve</option>
               </select></div>
-            <button type="button" id="events-refresh" class="button secondary">Update date filter</button>
+            <button type="button" id="events-refresh" class="button secondary">Refresh official calendars</button>
           </div>
-          <p id="events-summary" class="muted footnote" aria-live="polite">Showing verified scheduled events; not a live data feed.</p>
+          <p id="events-summary" class="muted footnote" aria-live="polite">Displaying source-labeled scheduled events. Official feeds can fail or revise dates.</p>
           <div id="events-list" class="strategy-evaluation"><div><span>CALENDAR</span><small>Open this tab to view scheduled macroeconomic releases and learning notes.</small></div></div>
-          <p class="muted footnote">All listed times are U.S. Eastern Time. Federal Reserve meeting days do not imply a fixed release hour. Schedules may change: always verify on the official source before relying on a date. An event can influence prices, but a market reaction is not guaranteed.</p>
+          <p class="muted footnote">All times are U.S. Eastern. BLS/BEA automatic checks run when you open the private calendar and at most once per six hours per browser unless refreshed manually. These are not unattended background checks. Fed meeting days use the dated snapshot. Agency schedules can change; verify before relying on a date.</p>
         </article>
         <article class="panel"><div class="panel-head"><div><p class="eyebrow">VERIFY BEFORE YOU TRADE</p><h2>Official sources &amp; earnings research</h2></div></div>
           <p class="muted">Economic releases, policy meetings, and individual-company earnings are different types of catalysts. For now, this dashboard lists verified government schedule snapshots. Company earnings dates are <strong>not populated</strong> until a reliable source and update process are implemented.</p>

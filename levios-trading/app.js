@@ -1187,6 +1187,72 @@
     const get=x=>parts.find(p=>p.type===x)?.value;
     return get("year")+"-"+get("month")+"-"+get("day");
   }
+  const EVENTS_CACHE_KEY="levios-official-events-cache-v1";
+  const EVENTS_REFRESH_MS=6*60*60*1000;
+  let officialEvents=null,officialEventsLoading=false,officialEventsError="";
+  let officialEventsToken=0;
+  function validatedOfficialCache(value){
+    if(!value||value.version!=="levios-agency-events-v1"||
+      !Array.isArray(value.sources)||value.sources.length!==2)return null;
+    const names=["BLS","BEA"];
+    for(let i=0;i<2;i++){
+      const s=value.sources[i];
+      if(!s||s.agency!==names[i]||!["fresh","unavailable"].includes(s.status)||
+        !Array.isArray(s.events)||s.events.length>80)return null;
+      for(const e of s.events){
+        if(typeof e?.id!=="string"||typeof e?.name!=="string"||
+          typeof e?.agency!=="string"||e.agency!==s.agency||
+          typeof e?.date!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(e.date)||
+          !["growth","inflation","labor"].includes(e.type)||
+          !["BLS","BEA"].includes(e.agency)||
+          typeof e.explain!=="string"||typeof e.question!=="string"||
+          typeof e.url!=="string"||!["https://www.bls.gov/","https://www.bea.gov/"].some(base=>e.url.startsWith(base)))return null;
+      }
+    }
+    return value;
+  }
+  function readOfficialCache(){
+    try{
+      const cache=JSON.parse(sessionStorage.getItem(EVENTS_CACHE_KEY)||"null");
+      if(!cache||!Number.isFinite(cache.savedAt)||cache.savedAt>Date.now()+60000 ||
+        Date.now()-cache.savedAt>EVENTS_REFRESH_MS)return null;
+      const data=validatedOfficialCache(cache.data);
+      return data?{data,savedAt:cache.savedAt}:null;
+    }catch{return null;}
+  }
+  async function refreshMarketEvents(force=false){
+    if(officialEventsLoading)return;
+    const privateWorker=window.location.hostname.endsWith(".workers.dev");
+    if(!privateWorker){renderMarketEvents();return;}
+    const cache=force?null:readOfficialCache();
+    if(cache){officialEvents=cache.data;renderMarketEvents();return;}
+    const token=++officialEventsToken;
+    officialEventsLoading=true;officialEventsError="";
+    renderMarketEvents();
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),14000);
+    try{
+      const response=await fetch("/api/market/events",{
+        method:"GET",credentials:"same-origin",cache:"no-store",
+        redirect:"error",signal:controller.signal
+      });
+      if(!response.ok)throw Error("Official calendar endpoint HTTP "+response.status);
+      const result=validatedOfficialCache(await response.json());
+      if(!result)throw Error("Calendar response did not pass validation.");
+      if(token!==officialEventsToken)return;
+      officialEvents=result;
+      try{sessionStorage.setItem(EVENTS_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data:result}));}catch{}
+    }catch(error){
+      if(token!==officialEventsToken)return;
+      officialEventsError=error?.name==="AbortError"?"Calendar request timed out.":
+        String(error?.message||"Calendar request failed.");
+      // Never present stale source data as successful current retrieval.
+      officialEvents=null;
+    }finally{
+      clearTimeout(timeout);
+      if(token===officialEventsToken){officialEventsLoading=false;renderMarketEvents();}
+    }
+  }
   function renderMarketEvents(){
     const engine=globalThis.LeviMarketEvents;
     const list=$("events-list"),status=$("events-summary");
@@ -1195,16 +1261,43 @@
     if(!engine){status.textContent="Market events schedule module unavailable. Refresh the page.";return;}
     const today=marketDateET();
     const age=engine.snapshotAge(today);
-    $("events-freshness").textContent="Schedule snapshot verified "+engine.verifiedOn+
-      " against official agency calendars. "+(age.expired?
-      "This snapshot is more than 60 days old and must be rechecked against the agencies.":
-      age.possiblyStale?"This snapshot is more than 14 days old: verify official schedules before relying on event dates.":
-      "Always verify official schedules for late changes.")+
-      " This is not a live calendar feed.";
+    $("events-freshness").textContent="Federal Reserve schedule: dated snapshot verified "+engine.verifiedOn+
+      (age.expired?" (over 60 days old; recheck urgently).":
+       age.possiblyStale?" (over 14 days old; verify before relying on it).":
+       " (still verify last-minute changes).")+
+      " BLS and BEA are retrieved independently through official feeds.";
+    const sourceState=$("events-source-status");
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      sourceState.textContent="Public static copy: stored schedule only. Open your protected Worker for automatic BLS/BEA checks.";
+    }else if(officialEventsLoading){
+      sourceState.textContent="Contacting BLS and BEA official schedules…";
+    }else if(officialEvents){
+      const summary=officialEvents.sources.map(s=>s.agency+": "+
+        (s.status==="fresh"?"official feed fetched":"feed unavailable; using snapshot"));
+      sourceState.textContent=summary.join(" · ")+" · Retrieved "+officialEvents.retrieved_at+
+        " · Browser refresh interval 6 hours. Fed remains dated snapshot.";
+    }else{
+      sourceState.textContent="Live agency feeds have not been verified"+
+        (officialEventsError?": "+officialEventsError:" yet.")+
+        " Showing stored snapshot dates. No feeds are running in the background.";
+    }
     const type=$("events-category").value;
-    const upcoming=engine.upcoming(today,type,120);
-    status.textContent=upcoming.length+" scheduled events in the next 120 days · "+(type==="all"?"all categories":type)+
-      " · published snapshot, not real-time updates.";
+    const fallback=engine.upcoming(today,"all",120);
+    const liveSources=new Map(officialEvents?.sources?.map(s=>[s.agency,s])||[]);
+    let all=fallback.filter(e=>!["BLS","BEA"].includes(e.agency)||
+      liveSources.get(e.agency)?.status!=="fresh");
+    for(const s of liveSources.values()){
+      if(s.status==="fresh")all=all.concat(s.events);
+    }
+    const seen=new Set();
+    const upcoming=all.filter(e=>{
+      if(seen.has(e.id)||e.date<today||
+        Date.parse(e.date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z")>120*86400000)return false;
+      seen.add(e.id);return type==="all"||e.type===type;
+    }).sort((a,b)=>a.date.localeCompare(b.date)||
+      String(a.time||"99:99").localeCompare(String(b.time||"99:99")));
+    status.textContent=upcoming.length+" scheduled events in the next 120 days · "+
+      (type==="all"?"all categories":type)+" · agency-specific provenance and fallback are shown.";
     if(!upcoming.length){
       const empty=document.createElement("p");empty.className="muted";
       empty.textContent="No events available for this filter in the dated snapshot. That does not mean no market events are scheduled; consult the official calendars.";
@@ -1214,7 +1307,8 @@
       const card=document.createElement("div");
       const eyebrow=document.createElement("span");
       const readable=new Intl.DateTimeFormat("en-US",{timeZone:"UTC",month:"short",day:"numeric",year:"numeric"}).format(new Date(event.date+"T12:00:00Z"));
-      eyebrow.textContent=event.agency+" · "+event.type.toUpperCase()+" · "+readable+
+      eyebrow.textContent=event.agency+" · "+(event.source==="live"?"OFFICIAL FEED":"DATED SNAPSHOT")+
+        " · "+event.type.toUpperCase()+" · "+readable+
         (event.time?" · "+event.time+" ET":" · exact time not listed");
       const title=document.createElement("strong");title.textContent=event.name;
       const explain=document.createElement("small");explain.textContent=event.explain;
@@ -1247,7 +1341,7 @@
     document.title = headings[name][0] + " | LeviOS Trading";
     if (name==="overview") renderAccountSummary();
     if (name==="market") plotHistory();
-    if (name==="events") renderMarketEvents();
+    if (name==="events"){renderMarketEvents();void refreshMarketEvents(false);}
     if (name === "watchlist") {
       renderWatchlist();
       renderCandleChart();
@@ -2119,7 +2213,7 @@
     else candleBars = null;
   });
   $("events-category").addEventListener("change", renderMarketEvents);
-  $("events-refresh").addEventListener("click", renderMarketEvents);
+  $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
   $("radar-scan").addEventListener("click", () => void scanMarketRadar());
   $("watch-refresh").addEventListener("click", () => void loadWatchlist(true));
   $("watch-chart-symbol").addEventListener("change", () => {
