@@ -89,3 +89,75 @@ test("fails closed if Cloudflare identity lookup throws", async () => {
   assert.equal(payload.reason, "access_identity_unavailable");
   assert.ok(!JSON.stringify(payload).includes("owner@example.test"));
 });
+
+
+test("distinguishes Alpaca paper HTTP error statuses without exposing keys", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    const examples = [
+      [401, "alpaca_credentials_rejected"],
+      [403, "alpaca_credentials_rejected"],
+      [429, "alpaca_rate_limited"],
+      [503, "alpaca_service_error"],
+      [404, "alpaca_http_error"]
+    ];
+    for (const [httpStatus, reason] of examples) {
+      globalThis.fetch = async () => new Response(
+        '{"message":"SECRET_ERROR_TEXT_DO_NOT_EXPOSE"}',
+        {status:httpStatus, headers:{"Content-Type":"application/json"}}
+      );
+      const response = await handler.fetch(
+        new Request(url + "/api/alpaca/status"),
+        {...authorizedEnv, ALPACA_PAPER_KEY_ID:"EXAMPLE_TEST_KEY", ALPACA_PAPER_SECRET_KEY:"EXAMPLE_TEST_SECRET"},
+        authenticated
+      );
+      const body = await response.json();
+      assert.equal(response.status, 200);
+      assert.equal(body.connected, false);
+      assert.equal(body.reason, reason);
+      assert.equal(body.endpoint, "account");
+      assert.equal(body.http_status, httpStatus);
+      assert.ok(!JSON.stringify(body).includes("SECRET_ERROR_TEXT_DO_NOT_EXPOSE"));
+      assert.ok(!JSON.stringify(body).includes("EXAMPLE_TEST"));
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("reports network errors without leaking exception text", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {throw Error("PRIVATE_RUNTIME_ERROR");};
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/status"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID:"EXAMPLE_TEST_KEY", ALPACA_PAPER_SECRET_KEY:"EXAMPLE_TEST_SECRET"},
+      authenticated
+    );
+    const body = await response.json();
+    assert.equal(body.connected, false);
+    assert.equal(body.reason, "alpaca_network_error");
+    assert.equal(body.endpoint, "account");
+    assert.ok(!JSON.stringify(body).includes("PRIVATE_RUNTIME_ERROR"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("reports malformed Alpaca account data without exposing it", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (destination) =>
+    String(destination).endsWith("/v2/positions") ? Response.json([]) : Response.json({account_number:"PRIVATE"});
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/status"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID:"EXAMPLE_TEST_KEY", ALPACA_PAPER_SECRET_KEY:"EXAMPLE_TEST_SECRET"},
+      authenticated
+    );
+    const body = await response.json();
+    assert.equal(body.reason, "alpaca_invalid_response");
+    assert.ok(!JSON.stringify(body).includes("PRIVATE"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
