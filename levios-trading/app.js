@@ -1783,6 +1783,138 @@
       renderPaperPredictions();
     }catch(error){status.textContent="Prediction not saved: "+String(error?.message||error);}
   }
+  function renderCommandCenter(){
+    const engine=globalThis.LeviPaperPredictions;
+    if(!engine)return;
+    const observed=paperPredictions.map(p=>paperOutcomes[p.id]||
+      {symbol:p.symbol,status:"unscored",reason:"Awaiting result check"});
+    const report=engine.stats(observed);
+    $("command-wins").textContent=String(report.wins);
+    $("command-losses").textContent=String(report.losses);
+    $("command-win-rate").textContent=report.winRatePct===null?"—":
+      report.winRatePct.toFixed(1)+"%";
+    $("command-expectancy").textContent=report.averageR===null?"—":
+      report.averageR.toFixed(2)+"R";
+    $("command-resolved-note").textContent=report.completed+
+      " resolved / "+report.plans+" total";
+    const recent=$("command-recent-ideas");recent.replaceChildren();
+    if(!paperPredictions.length){
+      const p=document.createElement("p");p.className="muted";
+      p.textContent="No PAPER strategies have produced results yet.";
+      recent.append(p);
+    }else{
+      for(const plan of paperPredictions.slice(0,4)){
+        const data=paperOutcomes[plan.id]||{status:"not checked"};
+        const item=document.createElement("div");item.className="command-recent-row";
+        const left=document.createElement("div");
+        const symbol=document.createElement("strong");symbol.textContent=plan.symbol;
+        const caption=document.createElement("small");
+        caption.textContent=" · Entry $"+plan.entry+" · Target $"+plan.target+" · Stop $"+plan.stop;
+        left.append(symbol,caption);
+        const state=document.createElement("span");
+        state.textContent=String(data.status).replaceAll("_"," ");
+        item.append(left,state);recent.append(item);
+      }
+    }
+    const strategy=$("command-strategy-status");
+    strategy.replaceChildren();
+    const title=document.createElement("strong");
+    title.textContent="Manual entry/target/stop experiment";
+    const desc=document.createElement("p");desc.className="muted";
+    desc.textContent=paperPredictions.length?
+      paperPredictions.length+" recorded PAPER prediction(s). "+report.completed+
+      " have resolved so far. No autonomous strategy runner is active.":
+      "No verified autonomous strategy runner yet. Manual PAPER predictions can be scored as prices become available.";
+    strategy.append(title,desc);
+    const count=$("desk-saved-count"),resolved=$("desk-resolved-count");
+    if(count)count.textContent=report.plans+" saved";
+    if(resolved)resolved.textContent=report.completed+" resolved";
+    const ledger=$("desk-ledger");
+    if(!ledger)return;ledger.replaceChildren();
+    if(!paperPredictions.length){
+      const p=document.createElement("p");p.className="muted";
+      p.textContent="No forward PAPER predictions saved. The scoreboard starts at zero.";
+      ledger.append(p);return;
+    }
+    for(const plan of paperPredictions){
+      const result=paperOutcomes[plan.id]||{status:"unscored"};
+      const row=document.createElement("div");row.className="desk-ledger-row";
+      const symbol=document.createElement("strong");symbol.textContent=plan.symbol;
+      const prices=document.createElement("small");
+      prices.textContent="Buy $"+plan.entry+" · Target $"+plan.target+" · Stop $"+plan.stop;
+      const state=document.createElement("span");
+      state.className="status "+(result.status==="loss"?"loss":"");
+      state.textContent=String(result.status).replaceAll("_"," ");
+      const stat=document.createElement("small");
+      stat.textContent=(Number.isFinite(result.rMultiple)?
+        result.rMultiple.toFixed(2)+"R · ":"")+plan.createdAt.slice(0,10);
+      row.append(symbol,prices,state,stat);ledger.append(row);
+    }
+  }
+  async function loadDeskCandles(event){
+    if(event)event.preventDefault();
+    const status=$("desk-chart-status"),chart=$("desk-candle-chart");
+    const symbol=$("desk-chart-symbol").value.trim().toUpperCase();
+    chart.replaceChildren();
+    if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)){
+      status.textContent="Enter a valid stock ticker.";return;
+    }
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Historical candles are available inside the protected LeviOS dashboard.";
+      return;
+    }
+    const button=$("desk-chart-form").querySelector("button");
+    button.disabled=true;status.textContent="Loading completed IEX candles for "+symbol+"…";
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),16000);
+    try{
+      const res=await fetch("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=3M",{
+        credentials:"same-origin",cache:"no-store",redirect:"error",signal:controller.signal
+      });
+      if(!res.ok)throw Error("Market history request returned "+res.status);
+      const payload=await res.json(),today=currentNYTradingDate();
+      if(payload?.connected!==true||payload.feed!=="iex"||payload.symbol!==symbol||
+        payload.truncated===true||!Array.isArray(payload.bars))
+        throw Error("Completed IEX candle history unavailable.");
+      const bars=payload.bars.filter(b=>typeof b?.time==="string"&&
+        /^\\d{4}-\\d{2}-\\d{2}$/.test(b.time)&&b.time<today&&
+        ["open","high","low","close"].every(k=>typeof b[k]==="number"&&
+          Number.isFinite(b[k])&&b[k]>0)&&
+        b.high>=Math.max(b.open,b.close)&&b.low<=Math.min(b.open,b.close))
+        .sort((a,b)=>a.time.localeCompare(b.time)).slice(-60);
+      if(bars.length<3)throw Error("Not enough completed IEX candles for the chart.");
+      const low=Math.min(...bars.map(b=>b.low)),high=Math.max(...bars.map(b=>b.high));
+      const margin=(high-low)*.08||high*.02,minimum=Math.max(.001,low-margin),maximum=high+margin;
+      const top=24,bottom=286,left=16,right=738,height=bottom-top;
+      const ns="http://www.w3.org/2000/svg";
+      const add=(type,attrs)=>{
+        const element=document.createElementNS(ns,type);
+        for(const [k,v] of Object.entries(attrs))element.setAttribute(k,String(v));
+        chart.append(element);return element;
+      };
+      const y=v=>top+(maximum-v)/(maximum-minimum)*height;
+      for(let k=0;k<=4;k++){
+        const level=minimum+(maximum-minimum)*k/4,yy=y(level);
+        add("line",{x1:left,y1:yy,x2:right,y2:yy,stroke:"#28443d","stroke-width":"1"});
+        const t=add("text",{x:747,y:yy+4,fill:"#91aaa5","font-size":"11"});
+        t.textContent="$"+level.toFixed(level>=100?0:2);
+      }
+      const cell=(right-left)/bars.length,body=Math.max(2.5,cell*.58);
+      for(let i=0;i<bars.length;i++){
+        const b=bars[i],cx=left+i*cell+cell/2;
+        const green=b.close>=b.open,color=green?"#5cddb2":"#ea8884";
+        add("line",{x1:cx,y1:y(b.high),x2:cx,y2:y(b.low),stroke:color,
+          "stroke-width":"1.6","stroke-linecap":"round"});
+        const a=y(Math.max(b.open,b.close)),z=y(Math.min(b.open,b.close));
+        add("rect",{x:cx-body/2,y:a,width:body,height:Math.max(1.8,z-a),rx:"1",
+          fill:color,opacity:".93"});
+      }
+      const label=add("text",{x:20,y:307,fill:"#8faea7","font-size":"11"});
+      label.textContent=bars[0].time+"  —  "+bars.at(-1).time;
+      status.textContent=symbol+" · "+bars.length+" completed IEX daily candles · latest close $"+
+        bars.at(-1).close.toFixed(2)+" ("+bars.at(-1).time+")";
+    }catch(error){status.textContent="Candlestick chart unavailable: "+String(error?.message||error);}
+    finally{clearTimeout(timer);button.disabled=false;}
+  }
   function renderPaperPredictions(){
     const score=$("paper-prediction-score"),rows=$("paper-prediction-records");
     score.replaceChildren();rows.replaceChildren();
@@ -1798,6 +1930,7 @@
       const n=document.createElement("strong");n.textContent=String(value);
       box.append(name,n);score.append(box);
     }
+    renderCommandCenter();
     if(!paperPredictions.length){rows.textContent="No predictions yet. Save a PAPER plan to start tracking.";return;}
     for(const p of paperPredictions){
       const result=paperOutcomes[p.id]||{status:"unscored",reason:"Not yet checked."};
@@ -2016,7 +2149,7 @@
     const next=!view.classList.contains("show-advanced");
     view.classList.toggle("show-advanced",next);
     button.setAttribute("aria-pressed",String(next));
-    button.textContent=next?"Hide advanced analytics":"Show advanced analytics";
+    button.textContent=next?"Hide research and advanced analytics":"Show research and advanced analytics";
     if(next){renderAccountSummary();}
   }
   let briefingRunning=false,briefingRecords=null,briefingSymbols="";
@@ -2441,13 +2574,15 @@
     }
   }
   function showView(name) {
-    const headings = {overview:["Your trading dashboard","Your priorities, portfolio and next research steps."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],learning:["Level Up","Learn long-term investing and short-term trading with practical examples."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
+    const headings = {overview:["Command Center","PAPER performance, strategy activity and portfolio status."],activity:["Trade Desk","Strategy status, trade history and completed IEX candlestick charts."],market:["Market data","Import closing prices and explore historical trends."],research:["Stock Research","Verify financial evidence and investigate valuation, business quality and risks."],strategy:["Strategy testing workbench","Test reproducible strategies with fees, slippage, chronological evaluation and research versions."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],journal:["Hypothesis Journal","Record research before the outcome, then attach separate reflective reviews."],fills:["Trade history","Verified executed orders from your Alpaca PAPER brokerage account."],watchlist:["IEX market watchlist","Time-stamped IEX snapshots for your tracked stocks and ETFs."],events:["Market Events Intelligence","Verified agency schedule snapshots and guided macroeconomic research."],learning:["Level Up","Learn long-term investing and short-term trading with practical examples."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
     document.querySelectorAll(".view").forEach(el => {
       const active = el.id === "view-" + name;
       el.hidden = !active;
       el.classList.toggle("active",active);
     });
+    if(["watchlist","events","market","research","strategy","fills","journal","trades","settings"].includes(name))
+      $("advanced-tools-nav").open=true;
     document.querySelectorAll("[data-view]").forEach(el => {
       const active = el.dataset.view === name;
       el.classList.toggle("active",active);
@@ -2456,6 +2591,7 @@
     $("view-heading").textContent = headings[name][0];
     $("view-description").textContent = headings[name][1];
     document.title = headings[name][0] + " | LeviOS Trading";
+    if (name==="activity"){renderCommandCenter();if(window.location.hostname.endsWith(".workers.dev"))void loadDeskCandles();}
     if (name==="learning") renderLearning();
     if (name==="journal") renderHypothesisJournal();
     if (name==="overview"){renderAccountSummary();renderDailyBrief();}
@@ -3342,6 +3478,7 @@
   $("learning-short").addEventListener("click",()=>{learningTrack="short";renderLearning();});
   $("learning-quiz-form").addEventListener("submit",submitLearningQuiz);
   $("decision-brief-form").addEventListener("submit",e=>void requestDecisionBrief(e));
+  $("desk-chart-form").addEventListener("submit",e=>void loadDeskCandles(e));
   $("paper-prediction-form").addEventListener("submit",savePaperPrediction);
   $("paper-prediction-check").addEventListener("click",()=>void checkPaperPredictions());
   $("paper-prediction-export").addEventListener("click",exportPaperPredictions);
