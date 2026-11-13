@@ -10,6 +10,7 @@
  *   so it works without cross-site third-party cookies.
  */
 import { assets } from "../generated-assets.mjs";
+import { equityScorecard } from "./performance.mjs";
 
 const ALPACA_BASE = "https://paper-api.alpaca.markets";
 const ALPACA_MARKET_DATA_BASE = "https://data.alpaca.markets";
@@ -216,7 +217,8 @@ async function portfolioHistory(env, range) {
       range,
       timeframe: "1D",
       base_value: Number.isFinite(base) ? base : null,
-      points
+      points,
+      scorecard: equityScorecard(points)
     };
   } catch (error) {
     const allowed = new Set([
