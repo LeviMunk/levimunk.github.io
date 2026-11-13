@@ -283,6 +283,11 @@ The `peer-thesis-engine.js` is a minimal standalone deterministic rules engine, 
 
 After the user runs an existing authenticated SEC and completed IEX two-ticker comparison, the same validated valuation data produces a separately labeled conditional **bull case**, **bear case**, **unknown evidence**, and **due diligence checklist**. The generated statements name their SEC-derived annual or IEX-proxy metrics and use explicit comparator values. Without comparable data the engine gives questions and unknowns, not invented evidence, targets, conviction scores, execution instructions or a buy/sell winner. No new network services, paid provider or secrets are added. Tests cover business-model distinctions, absent evidence and provenance guards.
 
+## Action-first Decision Brief and interface cleanup (Upgrade 22)
+On the Overview tab, users can enter one ticker and request a concise decision brief. Existing protected SEC companyfacts and completed Alpaca IEX daily candles are requested on demand, with independent error handling. The deterministic `decision-brief-engine.js` combines account-verified PAPER exposure, price observations, optional annual filing numbers and the latest locally saved original thesis. It reports a plain-language **next research action**, bull evidence, bear evidence, unknowns, and an explicit why/next step. It prioritizes verified concentration or invalidation concerns above entry research. It never produces a live brokerage order, price target, expected return, or personalized Buy/Sell instruction. Missing SEC data downgrades confidence; stale price data aborts assessment.
+
+Overview copy is shorter, the large development notices are collapsed into optional disclosures, and advanced risk/scorecard/imported-data panels are hidden behind an explicit Show advanced analytics button. Core P/L and account status remain visible. All original advanced data and access controls remain available. Design research references include KaanCan1/portfolio-tracker (discipline/thesis first), idiehl/stockview (concise terminal dashboard) and lightweight local-first dashboards. No large UI dependency, credentials or new provider required. The static public GitHub Pages copy abstains from protected research.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
