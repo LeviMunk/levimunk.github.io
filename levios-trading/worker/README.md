@@ -66,6 +66,28 @@ LeviOS now includes a separate **Trade History** tab in the protected trading da
 
 Reference examples: [OpenBB](https://github.com/openbq-org/OpenBB) for data exploration, [QuantStats](https://github.com/ranaroussi/quantstats) for risk analytics, and [Freqtrade](https://github.com/freqtrade/freqtrade) for trading-strategy evaluation. We borrow concepts rather than adding those projects as dependencies.
 
+## IEX market watchlist (second incremental upgrade)
+
+The dashboard now has a **separate IEX Watchlist** tab for up to 12 U.S. stock or ETF symbols, with a starter list of SPY, QQQ, AAPL, MSFT and NVDA.
+
+- API: `GET /api/market/watchlist?symbols=SPY,QQQ`. This endpoint is read-only, authenticates via Cloudflare Access and `ALLOWED_EMAIL`, validates 1–12 unique tickers, and uses a single request to `https://data.alpaca.markets/v2/stocks/snapshots?symbols=...&feed=iex`.
+- **No extra API subscription required** if the user's existing Alpaca credentials retain the normal free IEX market-data entitlement. If data isn't available or a plan restriction changes, the UI shows an error rather than claiming success.
+- Each row shows the **last IEX trade**, bid, ask, previous-session comparison if available, the **trade timestamp**, and the **quote timestamp**. Missing snapshots stay missing, not invented. Older times are labeled as potentially stale.
+- The page **polls once per 60 seconds** only while the watchlist tab is visible. It is *not* a WebSocket tick-by-tick feed. Use the Refresh button to request another snapshot; each refresh batches the whole watchlist into one API call.
+- Watchlist symbol choices are saved in that browser's localStorage only; the public GitHub Pages origin and the protected Worker origin do **not** automatically sync their lists between computers. Account data and Alpaca keys are never stored in browser localStorage.
+- The public GitHub Pages version provides a private-dashboard link rather than making an unauthenticated call to Alpaca.
+- **IEX is one exchange and does not provide consolidated SIP market coverage**. Daily bars and latest trade timestamps may differ in scope; the change figure is explicitly the last reported IEX trade versus Alpaca's prior daily closing bar, not guaranteed executable P/L. Last trade/quote timestamps must be inspected before acting on any figure.
+- This is research/paper-trading functionality, not a market order interface, and does not modify paper positions or perform real-money trading.
+
+### Frankenstein build: inspiration, not bundled dependencies
+
+- [OpenBB](https://github.com/openbq-org/OpenBB): research dashboards and modular provider/data exploration. We borrow the *separation of feeds from views*, not its large Python backend.
+- [QuantStats](https://github.com/ranaroussi/quantstats): ideas for the forthcoming risk and performance scorecard (returns, drawdowns, benchmark comparison), but only after metric methodology is verified.
+- [Freqtrade](https://github.com/freqtrade/freqtrade): strategy research, backtesting and operational safety concepts; don't import its trading execution engine into our intentionally read-only Worker.
+- [TradingView Lightweight Charts](https://github.com/tradingview/lightweight-charts): promising future option if the charting experience justifies a dependency; keep the existing compact SVG charts for now to minimize cost and complexity.
+
+Source: [Alpaca multiple stock snapshots](https://docs.alpaca.markets/us/reference/stocksnapshots-1) and [Alpaca market-data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq).
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
