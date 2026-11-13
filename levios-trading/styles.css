@@ -242,3 +242,28 @@
  .strategy-versions .button-row{width:100%;flex-wrap:wrap}
  .strategy-versions .button-row button{flex:1}
 }
+
+/* Deterministic research approval gates and explicit local promotion audit. */
+.validation-panel,.validation-audit-panel{margin-top:18px}
+.validation-head{gap:16px;align-items:flex-start;flex-wrap:wrap}
+.validation-head .muted{font-size:12px;line-height:1.65;max-width:730px}
+.validation-status{font-size:10px;font-weight:850;letter-spacing:.7px;color:#a9c5c4;border:1px solid #466068;border-radius:20px;padding:8px 11px;white-space:nowrap}
+.validation-status.eligible{color:#79ecc0;border-color:#397e66;background:#123b30}
+.validation-status.rejected{color:#ffc0bc;border-color:#845157;background:#462b32}
+.validation-controls{display:flex;align-items:flex-end;flex-wrap:wrap;gap:11px;margin:21px 0 18px}
+.validation-controls>div{flex:1;min-width:220px}
+.validation-controls label{display:block;font-size:12px;color:#b0ccca;font-weight:750;margin-bottom:7px}
+.validation-controls select{width:100%;min-height:43px;padding:9px 12px;background:#10242a;border:1px solid #34545b;border-radius:9px;color:#e4f7f0}
+.validation-controls button{min-height:43px}
+.validation-policy{display:flex;gap:8px;flex-wrap:wrap;padding:13px 0;border-top:1px solid #2b4547;border-bottom:1px solid #2b4547;margin-bottom:15px}
+.validation-policy span{font-size:10px;font-weight:740;line-height:1.35;color:#b9d5ce;padding:7px 10px;border-radius:6px;background:#173037;border:1px solid #315358}
+.validation-champion{font-size:12px;line-height:1.6;color:#a0e5c9}
+.validation-summary{font-size:13px;line-height:1.6;font-weight:650;margin-top:12px}
+.validation-checks{list-style:none;margin:14px 0 17px;padding:0;display:grid;gap:8px}
+.validation-checks li{border:1px solid #325057;background:#11272c;border-radius:9px;padding:11px 13px;font-size:12px;line-height:1.5;color:#d2e5df}
+.validation-checks li.validation-pass{border-color:#356b5c;background:#123329;color:#a2f2cc}
+.validation-checks li.validation-fail{border-color:#80545b;background:#37232a;color:#ffd0cb}
+.validation-audit-table{min-width:780px}
+.validation-audit-table td{font-size:12px;line-height:1.5;vertical-align:top}
+.validation-audit-panel .footnote{margin-top:14px}
+@media(max-width:690px){.validation-controls>div,.validation-controls button{width:100%;min-width:0}.validation-status{font-size:9px}}
