@@ -52,6 +52,36 @@
           <article class="stat"><span id="metric-positions-label">ALPACA POSITIONS</span><strong id="metric-positions">—</strong><small id="metric-symbols">Unavailable until authenticated</small></article>
           <article class="stat"><span id="metric-trades-label">ALPACA BUYING POWER</span><strong id="metric-trades">—</strong><small id="metric-trades-note">Broker orders unavailable here</small></article>
         </div>
+        <article class="panel pnl-panel" aria-labelledby="pnl-heading">
+          <div class="panel-head pnl-panel-heading">
+            <div>
+              <p class="eyebrow">ALPACA PAPER PERFORMANCE</p>
+              <h2 id="pnl-heading">Profit &amp; loss</h2>
+              <p class="muted pnl-subtitle">Period P/L reported by Alpaca, not the browser simulator.</p>
+            </div>
+            <div class="pnl-range" role="group" aria-label="Profit and loss chart period">
+              <button type="button" class="pnl-range-button" data-pnl-range="1W" aria-pressed="false">1W</button>
+              <button type="button" class="pnl-range-button active" data-pnl-range="1M" aria-pressed="true">1M</button>
+              <button type="button" class="pnl-range-button" data-pnl-range="3M" aria-pressed="false">3M</button>
+              <button type="button" class="pnl-range-button" data-pnl-range="1Y" aria-pressed="false">1Y</button>
+            </div>
+          </div>
+          <div class="pnl-stats">
+            <div><span>PERIOD P/L</span><strong id="pnl-value">—</strong></div>
+            <div><span>PERIOD RETURN</span><strong id="pnl-return">—</strong></div>
+            <div><span>REFERENCE EQUITY</span><strong id="pnl-base">—</strong></div>
+          </div>
+          <div class="pnl-graph">
+            <svg id="pnl-chart" viewBox="0 0 800 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Historical Alpaca paper profit and loss chart"></svg>
+            <div id="pnl-empty" class="pnl-empty" role="status">Connect to your protected Alpaca PAPER dashboard to see profit and loss history.</div>
+          </div>
+          <div class="pnl-timeline" aria-hidden="true">
+            <span id="pnl-start-date">—</span>
+            <span id="pnl-end-date">—</span>
+          </div>
+          <p id="pnl-status" class="muted pnl-status" aria-live="polite">Historical data loads after your Alpaca paper account connects.</p>
+          <p class="muted footnote">This chart uses Alpaca's portfolio-history baseline for the selected period; P/L is not necessarily realized profit, and deposits or withdrawals can affect interpretation. Paper money only.</p>
+        </article>
         <div class="grid-2">
           <article class="panel"><div class="panel-head"><div><p class="eyebrow" id="holdings-source">ALPACA PAPER ACCOUNT</p><h2 id="holdings-heading">Brokerage paper positions</h2></div><button id="portfolio-action" type="button" class="text-button" data-go="trades" hidden>Open journal →</button></div>
             <div class="scroll-table"><table><thead><tr><th>Symbol</th><th>Shares</th><th id="holdings-third-heading">Unrealized P/L</th><th id="holdings-fourth-heading">Market value</th></tr></thead><tbody id="holdings-rows"><tr><td colspan="4" class="empty">Alpaca disconnected. Sign in to the private bridge and refresh.</td></tr></tbody></table></div>
