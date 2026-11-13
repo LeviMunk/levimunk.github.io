@@ -56,7 +56,12 @@ Cloudflare Access enforces login **before** the Worker is invoked. The Worker al
 
 ## Troubleshooting
 
-- **Worker says `403 Authenticated Cloudflare Access session required`**: Protect production **All traffic**, log in using your allowed email, and set the secret `ALLOWED_EMAIL` to the exact same email. Access policies by themselves are not enough for this Worker.
+- **Worker says `403 Authenticated Cloudflare Access session required`**: After the latest GitHub deployment, open `https://levimunk-alpaca.levivanstap.workers.dev/api/health` and read its non-sensitive `reason` code:
+  - `access_not_authenticated`: Cloudflare did not provide an authenticated Access context. In **Workers & Pages → levimunk-alpaca → Access**, confirm **All traffic** is protected for **production** (not Previews only), apply policy for your exact account, and sign in again in a private browser window. This is an Access policy/configuration issue, not an Alpaca issue.
+  - `allowed_email_not_configured`: Add `ALLOWED_EMAIL` under **Settings → Variables and Secrets**, secret type, matching the email that logs into Access. Save/deploy.
+  - `allowed_email_mismatch`: Access authenticated somebody, but the Worker secret `ALLOWED_EMAIL` does not match the signed-in email. Fix the secret or log in with the intended account. This diagnostic intentionally does not reveal the email.
+  - `access_identity_unavailable`: Cloudflare Access could not supply the identity. Check your policy and login; don't bypass Access.
+  If the response still has no `reason`, Cloudflare hasn't deployed the updated code yet. Check **Deployments** for a new successful GitHub build. Never disable authentication to troubleshoot.
 - **Main balance shows `—` / "Alpaca disconnected"**: Your Access session may have expired; try logging in to the protected Worker URL, and verify the two Alpaca paper secrets are set. No credentials should be entered in the public site.
 - **"Alpaca rejected the paper credentials"**: Regenerate/correct the Alpaca **paper** key pair in Cloudflare Worker Secrets. Do not use live credentials.
 - **Build fails to find `generated-assets.mjs`**: Set **Root directory** to `levios-trading/worker` and **Build command** to `node build.mjs`, then retry deployment.
