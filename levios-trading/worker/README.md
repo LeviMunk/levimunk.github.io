@@ -1,10 +1,10 @@
 # LeviOS Trading Lab — Private Alpaca PAPER account, no DNS changes
 
-**Chosen architecture (November 2026):** Keep `https://levimunk.com/levios-trading/` hosted on GitHub Pages and the domain registration/DNS wherever they already are. Deploy the **same dashboard UI**, plus a **read-only Alpaca PAPER API**, to a private Cloudflare Worker on `https://levimunk-github-io.levivanstap.workers.dev/`.
+**Chosen architecture (November 2026):** Keep `https://levimunk.com/levios-trading/` hosted on GitHub Pages and the domain registration/DNS wherever they already are. Deploy the **same dashboard UI**, plus a **read-only Alpaca PAPER API**, to a private Cloudflare Worker on `https://levimunk-alpaca.levivanstap.workers.dev/`.
 
 The Access-protected Worker is what you open from any computer or phone to see your **actual Alpaca PAPER** account. The existing public GitHub Pages page remains available for browsing and browser-only practice. The two URLs share **code** but not browser localStorage, because the origins are different.
 
-**Deployment:** Cloudflare successfully built and deployed the Worker as `levimunk-github-io` on November 12, 2026. The secure account experience is **not yet enabled** until you protect the Worker with Cloudflare Access and add your private secrets. None of these steps transfers your domain, changes Bluehost DNS, requires your ThinkCentre to be online, or requires paid hosting at small personal usage levels.
+**Deployment:** Cloudflare originally deployed this Worker under a different name on November 12, 2026; the owner has since renamed it to `levimunk-alpaca`. The secure account experience is **not yet enabled** until you protect the Worker with Cloudflare Access and add your private secrets. None of these steps transfers your domain, changes Bluehost DNS, requires your ThinkCentre to be online, or requires paid hosting at small personal usage levels.
 
 ## Current Cloudflare build configuration (root directory)
 
@@ -14,26 +14,26 @@ The Access-protected Worker is what you open from any computer or phone to see y
 - **Build command:** `node build.mjs`
 - **Deploy command:** `npx wrangler deploy`
 - **Production branch:** `main`
-- **Worker name:** `levimunk-github-io`
+- **Worker name:** `levimunk-alpaca`
 
-Cloudflare successfully ran `node build.mjs` and `npx wrangler deploy` from the root of the repository. Both root and nested Wrangler configuration files now match Cloudflare's actual deployed Worker name, `levimunk-github-io`. Continue with Access and secrets; don't create a second Worker.
+Cloudflare successfully ran `node build.mjs` and `npx wrangler deploy` from the root of the repository. Both root and nested Wrangler configuration files now match Cloudflare's actual deployed Worker name, `levimunk-alpaca`. Continue with Access and secrets; don't create a second Worker.
 
 If you already set root directory to `levios-trading/worker`, the original `node build.mjs` and `npx wrangler deploy` commands still work there as well. **Do not combine a nested root directory with a root-prefixed command.**
 
 ## One-time steps in Cloudflare (no command line necessary)
 
-1. Open [Cloudflare Dashboard](https://dash.cloudflare.com/). Your existing Worker is **Workers & Pages → `levimunk-github-io`**. Do not create another Worker or add/transfer `levimunk.com`. There is no DNS step.
+1. Open [Cloudflare Dashboard](https://dash.cloudflare.com/). Your existing Worker is **Workers & Pages → `levimunk-alpaca`**. Do not create another Worker or add/transfer `levimunk.com`. There is no DNS step.
 2. GitHub integration for **`LeviMunk/levimunk.github.io`** and production branch **`main`** already deployed successfully. This step is complete.
 3. Existing deployment configuration (for reference; already working):
-   - **Worker name:** `levimunk-github-io` (matches deployed Cloudflare project and both Wrangler configs)
+   - **Worker name:** `levimunk-alpaca` (matches deployed Cloudflare project and both Wrangler configs)
    - **Root directory:** `levios-trading/worker`
    - **Build command:** `node build.mjs`
    - **Deploy command:** `npx wrangler deploy`
-   - **Worker URL:** enabled; Cloudflare supplies `https://levimunk-github-io.levivanstap.workers.dev/`.
+   - **Worker URL:** enabled; Cloudflare supplies `https://levimunk-alpaca.levivanstap.workers.dev/`.
    - If Cloudflare requires a package manager or dependencies, use the default available Node runtime for the build; no extra npm packages are used by the project build.
 4. **Next action: protect the entire Worker**: open that Worker in Cloudflare **Workers & Pages → Access → Protect this Worker behind Access → All traffic** (not just previews). Configure an **Allow policy for your own exact email address** and an identity method you control (such as an email one-time PIN). Do **not** choose Everyone, an entire email domain, or "Previews only". Make sure the policy applies to the production `workers.dev` URL.
 5. After enabling Access, in the same Worker open **Settings → Variables and Secrets**, add **three secret variables** (Secret type, NOT plaintext): `ALLOWED_EMAIL` (the same login email authorized above), `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY`. Use **paper**, not live broker credentials. Cloudflare will no longer show these values after they are stored. Never paste the secrets into ChatGPT, GitHub, public JS, or screenshots.
-6. Visit the exact `https://levimunk-github-io.levivanstap.workers.dev/` URL. You should see the Cloudflare Access login, then the **same LeviOS Trading interface** you already use, but with actual Alpaca PAPER equity, cash, buying power and positions as the primary cards. Click **Connect / Refresh** if needed.
+6. Visit the exact `https://levimunk-alpaca.levivanstap.workers.dev/` URL. You should see the Cloudflare Access login, then the **same LeviOS Trading interface** you already use, but with actual Alpaca PAPER equity, cash, buying power and positions as the primary cards. Click **Connect / Refresh** if needed.
 7. From your work computer or phone, visit the **same protected Worker URL**, complete login, and see Alpaca PAPER balances. Bookmark this secure URL. No VPN client, separate host, DNS migration, or home computer is required.
 8. (Optional) Visit `https://levimunk.com/levios-trading/` and paste your real Worker URL into its **Private Cloudflare Worker address** field; click **Open secure Alpaca dashboard**. This saves only the URL in that browser, never any secrets. Once you share the *public* `workers.dev` hostname (not secret), ChatGPT can hardcode a link from your portfolio if desired.
 
@@ -60,7 +60,7 @@ Cloudflare Access enforces login **before** the Worker is invoked. The Worker al
 - **Main balance shows `—` / "Alpaca disconnected"**: Your Access session may have expired; try logging in to the protected Worker URL, and verify the two Alpaca paper secrets are set. No credentials should be entered in the public site.
 - **"Alpaca rejected the paper credentials"**: Regenerate/correct the Alpaca **paper** key pair in Cloudflare Worker Secrets. Do not use live credentials.
 - **Build fails to find `generated-assets.mjs`**: Set **Root directory** to `levios-trading/worker` and **Build command** to `node build.mjs`, then retry deployment.
-- **Build cannot deploy**: Verify Worker name is exactly `levimunk-github-io`, and Git integration is connected to the correct repo and main branch.
+- **Build cannot deploy**: Verify Worker name is exactly `levimunk-alpaca`, and Git integration is connected to the correct repo and main branch.
 - **Public `levimunk.com` page still defaults to disconnected**: Expected; the public page is not the authenticated account page. Use the secure Worker URL.
 - **Existing browser-simulated trades missing on Worker**: Browser localStorage does not sync between origins. The original practice data remains on `levimunk.com`; it can be exported/imported manually.
 - **Privacy:** this is a personal project for read-only Alpaca paper data. Do not permit other users unless you intend to share your Alpaca account information.
