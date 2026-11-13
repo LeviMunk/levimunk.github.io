@@ -589,7 +589,7 @@
         "Data is IEX-only, not consolidated market coverage.");
     }
     if (!count) {
-      $("watch-rows").innerHTML = '<tr><td colspan="7" class="empty">Your watchlist is empty. Add a ticker to begin.</td></tr>';
+      $("watch-rows").innerHTML = '<tr><td colspan="8" class="empty">Your watchlist is empty. Add a ticker to begin.</td></tr>';
       return;
     }
     $("watch-rows").innerHTML = watchSymbols.map(symbol => {
@@ -599,16 +599,19 @@
       const delta = changeValue === null || changeValue === undefined ||
         !Number.isFinite(changeValue) ? "—" :
         (changeValue > 0 ? "+" : changeValue < 0 ? "−" : "") +
-        formatIexPrice(Math.abs(changeValue));
+        (changeValue === 0 ? "$0.00" : formatIexPrice(Math.abs(changeValue)));
       const pct = Number.isFinite(snap?.change_percent) ?
         " (" + (snap.change_percent > 0 ? "+" : "") +
         snap.change_percent.toFixed(2) + "%)" : "";
       const direction = Number.isFinite(changeValue)
         ? changeValue >= 0 ? "positive" : "negative" : "";
       const time = formatIexTime(snap?.trade_time);
-      const noData = worker && watchRefreshTime && !snap?.available;
-      const note = noData ? '<span class="watch-stale">No IEX trade available</span>' :
+      const quoteTime = formatIexTime(snap?.quote_time);
+      const noTrade = worker && watchRefreshTime && snap?.last_trade == null;
+      const note = noTrade ? '<span class="watch-stale">No IEX trade available</span>' :
         time.stale ? '<span class="watch-stale">Earlier trade · check timestamp</span>' : "";
+      const quoteNote = quoteTime.stale
+        ? '<span class="watch-stale">Earlier quote</span>' : "";
       return '<tr><td class="watch-symbol">' + escapeHTML(symbol) + '</td>' +
         '<td>' + lastPrice + (snap?.last_trade == null ? note : "") + '</td>' +
         '<td class="watch-delta ' + direction + '">' + delta + pct + '</td>' +
@@ -616,6 +619,7 @@
         '<td>' + formatIexPrice(snap?.ask) + '</td>' +
         '<td class="watch-quote-time">' + escapeHTML(time.text) +
         (snap?.last_trade != null ? note : "") + '</td>' +
+        '<td class="watch-quote-time">' + escapeHTML(quoteTime.text) + quoteNote + '</td>' +
         '<td><button class="watch-remove" type="button" data-watch-remove="' +
         escapeHTML(symbol) + '" aria-label="Remove ' +
         escapeHTML(symbol) + ' from watchlist">Remove</button></td></tr>';
@@ -1039,6 +1043,8 @@
         throw Error("Watchlist limit reached: remove a ticker before adding another.");
       }
       watchSymbols.push(symbol);
+      watchGeneration++;
+      watchFetching = false;
       saveWatchSymbols();
       $("watch-symbol-input").value = "";
       watchRefreshTime = null;
