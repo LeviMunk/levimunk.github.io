@@ -34,29 +34,41 @@ for (const [browserName, browserType, device] of targets) {
         await page.locator('h1').first().waitFor({state:'visible',timeout:10000});
         await page.waitForTimeout(400);
         if(label==='levios-trading'){
-          await page.locator('#decision-brief-form').waitFor({state:'visible',timeout:10000});
-          if(!(await page.locator('#decision-brief-output').isVisible()))
-            result.problems.push('Decision brief output is not visible');
+          await page.locator('#command-win-rate').waitFor({state:'visible',timeout:10000});
+          if(!(await page.locator('#command-recent-ideas').isVisible()))
+            result.problems.push('Command Center trading outcomes not visible');
+          if(await page.locator('#decision-brief-form').isVisible())
+            result.problems.push('Advanced research should not crowd the Command Center');
           if(await page.locator('.overview-advanced').first().isVisible())
             result.problems.push('Advanced analytics should be collapsed initially');
           await page.locator('#overview-more').click();
+          if(!(await page.locator('#decision-brief-form').isVisible()))
+            result.problems.push('Existing research form unavailable after expansion');
           if(!(await page.locator('.overview-advanced').first().isVisible()))
             result.problems.push('Advanced analytics could not be expanded');
           await page.locator('#overview-more').click();
           if(await page.locator('.overview-advanced').first().isVisible())
             result.problems.push('Advanced analytics could not be collapsed');
+          await page.locator('[data-view="activity"]').first().click();
+          if(!(await page.locator('#desk-candle-chart').isVisible()))
+            result.problems.push('Trade Desk candlestick canvas not visible');
+          if(!(await page.locator('#desk-ledger').isVisible()))
+            result.problems.push('Trade Desk prediction ledger not visible');
+          if(await page.locator('#desk-saved-count').textContent()!=='0 saved')
+            result.problems.push('Empty trading state invented records');
           await page.locator('[data-view="learning"]').first().click();
           if(!(await page.locator('#learning-quiz-form').isVisible()))
             result.problems.push('Level Up learning tab is unavailable');
           await page.locator('#learning-short').click();
           if(!(await page.locator('#learning-title').textContent()))
             result.problems.push('Short-term learning track did not render');
+          await page.locator('#advanced-tools-nav summary').click();
           await page.locator('[data-view="research"]').first().click();
           if(!(await page.locator('#valuation-form').isVisible()))
             result.problems.push('Research tools are unavailable from simplified navigation');
           await page.locator('[data-view="overview"]').first().click();
-          if(!(await page.locator('#decision-brief-form').isVisible()))
-            result.problems.push('Could not return to trading overview');
+          if(!(await page.locator('#command-win-rate').isVisible()))
+            result.problems.push('Could not return to Command Center');
         }
 
         const state = await page.evaluate(()=>({

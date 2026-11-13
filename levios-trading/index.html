@@ -32,18 +32,24 @@
       <a class="brand" href="../"><span class="brand-mark">LM</span><span><strong>LEVI<span class="brand-accent">OS</span></strong><small>TRADING</small></span></a>
       <div class="sidebar-label">YOUR WORKSPACE</div>
       <nav id="nav" class="nav">
-        <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Overview</button>
-        <button class="nav-item" type="button" data-view="watchlist"><span class="nav-symbol">◉</span> Watchlist</button>
-        <button class="nav-item" type="button" data-view="events"><span class="nav-symbol">◷</span> Events</button>
-        <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Price Data</button>
-        <button class="nav-item" type="button" data-view="research"><span class="nav-symbol">◇</span> Research</button>
-        <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategies</button>
-        <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> Trade History</button>
-        <button class="nav-item" type="button" data-view="journal"><span class="nav-symbol">✎</span> Journal</button>
-        <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Simulator</button>
-        <button class="nav-item" type="button" data-view="learning"><span class="nav-symbol">✦</span> Level Up</button>
-        <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Settings</button>
+        <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Command Center</button>
+        <button class="nav-item" type="button" data-view="activity"><span class="nav-symbol">▥</span> Trade Desk</button>
+        <button class="nav-item" type="button" data-view="learning"><span class="nav-symbol">✦</span> Academy</button>
       </nav>
+      <details class="sidebar-tools" id="advanced-tools-nav">
+        <summary><span>Advanced tools</span><span aria-hidden="true">⌄</span></summary>
+        <nav class="nav" aria-label="Advanced trading research tools">
+          <button class="nav-item" type="button" data-view="watchlist"><span class="nav-symbol">◉</span> Watchlist</button>
+          <button class="nav-item" type="button" data-view="events"><span class="nav-symbol">◷</span> Events</button>
+          <button class="nav-item" type="button" data-view="market"><span class="nav-symbol">▥</span> Price Data</button>
+          <button class="nav-item" type="button" data-view="research"><span class="nav-symbol">◇</span> Research</button>
+          <button class="nav-item" type="button" data-view="strategy"><span class="nav-symbol">⌁</span> Strategies</button>
+          <button class="nav-item" type="button" data-view="fills"><span class="nav-symbol">▤</span> PAPER Fills</button>
+          <button class="nav-item" type="button" data-view="journal"><span class="nav-symbol">✎</span> Journal</button>
+          <button class="nav-item" type="button" data-view="trades"><span class="nav-symbol">⇄</span> Simulator</button>
+          <button class="nav-item" type="button" data-view="settings"><span class="nav-symbol">⚙</span> Settings</button>
+        </nav>
+      </details>
       <div class="sidebar-bottom">
         <div class="mode-pill"><span class="live-dot"></span> PAPER · READ ONLY</div>
         <p>Market research. No real-money trades.</p>
@@ -60,7 +66,35 @@
       </header>
       <div class="notice notice-slim" role="note"><strong>PAPER account · Read-only.</strong> Research only. No real-money orders. <details><summary>About this data</summary><p>Alpaca PAPER holdings and browser simulations are separate. IEX prices are single-exchange data. Never enter brokerage credentials on this page.</p></details></div>
       <section id="view-overview" class="view active" aria-label="Trading overview">
-                <article class="panel" aria-labelledby="home-plan-heading">
+        <div class="command-hero">
+          <div><p class="eyebrow">LEVIOS / PAPER TRADING COMMAND CENTER</p>
+            <h2>Trading performance at a glance</h2>
+            <p>No real-money orders. Results only appear after actual simulated observations.</p></div>
+          <span class="command-mode"><span aria-hidden="true">●</span> PAPER ONLY</span>
+        </div>
+        <div class="command-stats">
+          <article class="command-stat"><span>SIMULATED WINS</span><strong id="command-wins">0</strong><small>Resolved trade ideas</small></article>
+          <article class="command-stat"><span>SIMULATED LOSSES</span><strong id="command-losses">0</strong><small>Resolved trade ideas</small></article>
+          <article class="command-stat"><span>WIN RATE</span><strong id="command-win-rate">—</strong><small id="command-resolved-note">No results yet</small></article>
+          <article class="command-stat"><span>AVERAGE RESULT</span><strong id="command-expectancy">—</strong><small>R per resolved prediction</small></article>
+        </div>
+        <div class="command-two-up">
+          <article class="panel command-focus">
+            <div class="panel-head"><div><p class="eyebrow">STRATEGY STATUS</p><h2>What is LeviOS testing?</h2></div><span class="scorecard-period">MANUAL PAPER TRACKING</span></div>
+            <div id="command-strategy-status">
+              <strong>Forward trade-plan experiment</strong>
+              <p class="muted">Entry, target and stop outcomes are tracked when you check the data. Automated strategy selection is not running yet.</p>
+            </div>
+            <div class="button-row"><button type="button" class="button secondary" data-go="activity">See strategy activity</button><button type="button" class="button secondary" data-go="learning">Level Up</button></div>
+          </article>
+          <article class="panel command-focus">
+            <div class="panel-head"><div><p class="eyebrow">RECENT OUTCOMES</p><h2>Wins, losses &amp; pending</h2></div></div>
+            <div id="command-recent-ideas" class="command-recent-list"><p class="muted">No PAPER predictions recorded yet.</p></div>
+            <button class="button secondary" type="button" data-go="activity">Open trade log</button>
+          </article>
+        </div>
+
+                <article class="panel overview-workbench" aria-labelledby="home-plan-heading">
           <div class="panel-head"><div>
             <p class="eyebrow">TODAY’S PRIORITIES</p>
             <h2 id="home-plan-heading">Your next move</h2>
@@ -77,7 +111,7 @@
           </div>
           <details class="research-disclosure"><summary>How the portfolio review works</summary><p>It screens completed IEX daily closes using 20- and 50-day averages and flags PAPER positions over 25% of account equity. These are starting points, not validated trade signals. It does not establish fair value or suitability.</p></details>
         </article>
-                <article class="panel decision-brief-panel" aria-labelledby="decision-brief-heading">
+                <article class="panel decision-brief-panel overview-workbench" aria-labelledby="decision-brief-heading">
           <div class="panel-head"><div><p class="eyebrow">STOCK DECISION BRIEF</p><h2 id="decision-brief-heading">What about this stock?</h2>
             <p class="muted">One ticker. A clear next step. The evidence for and against it.</p></div>
           </div>
@@ -94,7 +128,7 @@
             <p>The brief draws on annual SEC filings and completed IEX single-exchange closes. Figures can be delayed or missing. It does not establish fair value, expected returns or a personal buy/sell instruction. No orders are placed.</p>
           </details>
         </article>
-                <article class="panel" aria-labelledby="paper-prediction-heading">
+                <article class="panel overview-workbench" aria-labelledby="paper-prediction-heading">
           <div class="panel-head"><div><p class="eyebrow">PAPER PREDICTION TRACKER</p>
             <h2 id="paper-prediction-heading">Did the trade idea work?</h2>
             <p class="muted">Set the entry, profit target and safety exit before seeing the outcome. Track wins, losses, and untriggered plans using completed market data.</p>
@@ -135,7 +169,7 @@
           <article class="stat"><span id="metric-positions-label">ALPACA POSITIONS</span><strong id="metric-positions">—</strong><small id="metric-symbols">Unavailable until authenticated</small></article>
           <article class="stat"><span id="metric-trades-label">ALPACA BUYING POWER</span><strong id="metric-trades">—</strong><small id="metric-trades-note">Broker orders unavailable here</small></article>
         </div>
-        <div class="overview-more-bar"><button type="button" class="button secondary" id="overview-more" aria-pressed="false">Show advanced analytics</button></div>
+        <div class="overview-more-bar"><button type="button" class="button secondary" id="overview-more" aria-pressed="false">Show research and advanced analytics</button></div>
         <article class="panel pnl-panel" aria-labelledby="pnl-heading">
           <div class="panel-head pnl-panel-heading">
             <div>
@@ -680,7 +714,43 @@
           </article>
         </div>
       </section>
-            <section id="view-learning" class="view" aria-label="Stock market learning academy" hidden>
+                  <section id="view-activity" class="view" aria-label="Trade desk and strategy activity" hidden>
+        <div class="trade-desk-intro">
+          <div><p class="eyebrow">STRATEGIES / MARKET / HISTORY</p><h2>Trade Desk</h2>
+            <p>Track what was tested, what worked, and where the next idea stands.</p></div>
+          <span class="command-mode">PAPER ONLY</span>
+        </div>
+        <div class="trade-desk-grid">
+          <article class="panel trade-chart-panel">
+            <div class="panel-head"><div><p class="eyebrow">COMPLETED IEX CANDLES</p><h2>Candlestick chart</h2></div><span class="scorecard-period">HISTORICAL · NOT LIVE</span></div>
+            <form id="desk-chart-form" class="desk-chart-form">
+              <label for="desk-chart-symbol">Stock ticker</label>
+              <input id="desk-chart-symbol" maxlength="10" value="MSFT" required aria-label="Candlestick chart ticker">
+              <button type="submit" class="button secondary">Load candles</button>
+            </form>
+            <svg id="desk-candle-chart" class="desk-candle-chart" viewBox="0 0 800 310" role="img" aria-label="Historical OHLC candlestick chart"></svg>
+            <p id="desk-chart-status" role="status" aria-live="polite" class="muted footnote">Enter a ticker to load historical IEX candles from your protected dashboard.</p>
+            <p class="muted footnote">IEX-only completed daily bars, not a streaming or consolidated market quote.</p>
+          </article>
+          <article class="panel trade-strategy-panel">
+            <p class="eyebrow">STRATEGY CONTROL</p>
+            <h2>What LeviOS is doing</h2>
+            <div class="strategy-state-row"><span>Automatic scanning</span><strong>Not enabled</strong></div>
+            <div class="strategy-state-row"><span>Automatic PAPER execution</span><strong>Not enabled</strong></div>
+            <div class="strategy-state-row"><span>Manual PAPER predictions</span><strong id="desk-saved-count">0 saved</strong></div>
+            <div class="strategy-state-row"><span>Resolved simulated trades</span><strong id="desk-resolved-count">0 resolved</strong></div>
+            <p class="muted footnote">The future autonomous runner will be shown here only when it actually exists and has verified executions. This page cannot place orders.</p>
+            <div class="button-row"><button class="button secondary" type="button" data-go="strategy">Open backtesting tools</button></div>
+          </article>
+        </div>
+        <article class="panel trade-ledger-panel">
+          <div class="panel-head"><div><p class="eyebrow">PREDICTION LEDGER</p><h2>Trade history &amp; outcomes</h2>
+            <p class="muted">Every recorded idea, including wins, losses, pending trades, and ambiguous outcomes.</p></div></div>
+          <div id="desk-ledger" class="desk-ledger" aria-live="polite"><p class="muted">No PAPER predictions saved yet.</p></div>
+          <div class="button-row"><button class="button secondary" type="button" data-go="overview" id="desk-to-overview">Back to dashboard</button></div>
+        </article>
+      </section>
+      <section id="view-learning" class="view" aria-label="Stock market learning academy" hidden>
         <article class="panel learning-intro">
           <div class="panel-head"><div>
             <p class="eyebrow">LEVIOS ACADEMY · SEPARATE FROM PAPER TRADING</p>
@@ -725,7 +795,7 @@
           </article>
         </div>
       </section>
-      <footer class="footer"><span>LEVIOS TRADING LAB / v0.4 · GITHUB + CLOUDFLARE</span><span>Research &amp; education only. Not financial advice. Charting: <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>.</span></footer>
+      <footer class="footer"><span>LEVIOS · PAPER RESEARCH</span><span>Research &amp; education only. Not financial advice. Charting: <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>.</span></footer>
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
