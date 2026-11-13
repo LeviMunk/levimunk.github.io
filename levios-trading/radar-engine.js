@@ -28,7 +28,7 @@ function analyze(symbol,bars){
   const avgMove=average(moves);
   const findings=[];
   // Threshold is intentionally descriptive, never a directional signal.
-  if(Math.abs(movePct)>=2&&Math.abs(movePct)>=2*avgMove&&avgMove>0){
+  if(Math.abs(movePct)>=2&&(avgMove===0||Math.abs(movePct)>=2*avgMove)){
     findings.push({kind:"PRICE_MOVE",title:"Large daily close-to-close move",
       evidence:movePct.toFixed(2)+"% versus "+avgMove.toFixed(2)+"% mean absolute daily move over the previous 20 comparisons.",
       explain:"A relative outlier deserves investigation, not an automatic buy or sell.",
