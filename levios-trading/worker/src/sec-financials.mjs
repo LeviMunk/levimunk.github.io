@@ -14,7 +14,9 @@ const TAGS=Object.freeze({
  capex:["PaymentsToAcquirePropertyPlantAndEquipment"],
  equity:["StockholdersEquity"],
  debtCurrent:["LongTermDebtCurrent"],
- debtLong:["LongTermDebtNoncurrent"]
+ debtLong:["LongTermDebtNoncurrent"],
+ income:["NetIncomeLoss","ProfitLoss"],
+ dilutedShares:["WeightedAverageNumberOfDilutedSharesOutstanding"]
 });
 function annual(f){
  return TEN_K.has(f.form)&&DATE.test(f.start||"")&&DATE.test(f.end||"")&&
@@ -38,6 +40,19 @@ function concept(facts,tags,kind,anchor=null){
    String(b.filed||"").localeCompare(String(a.filed||""))||
    a.tagPriority-b.tagPriority);
  return all[0]||null;
+}
+function conceptShares(facts,tags,anchor){
+ const gaap=facts?.facts?.["us-gaap"]||{};
+ const candidates=[];
+ for(const tag of tags){
+  for(const row of gaap[tag]?.units?.shares||[]){
+   if(annual(row)&&row.end===anchor.end&&
+     Math.abs(days(anchor.start,row.start))<=15&&row.val>0)
+    candidates.push({...row,tag});
+  }
+ }
+ candidates.sort((a,b)=>String(b.filed||"").localeCompare(String(a.filed||"")));
+ return candidates[0]||null;
 }
 function safeTickerMap(data,ticker){
  if(!data||typeof data!=="object"||Array.isArray(data))throw Error("sec_ticker_map_invalid");
@@ -72,6 +87,8 @@ export function summarizeSecFacts(payload,{ticker,cik,name}){
  const equity=concept(payload,TAGS.equity,"instant",anchor);
  const debtCur=concept(payload,TAGS.debtCurrent,"instant",anchor);
  const debtLong=concept(payload,TAGS.debtLong,"instant",anchor);
+ const income=concept(payload,TAGS.income,"annual",anchor);
+ const annualDiluted=conceptShares(payload,TAGS.dilutedShares,anchor);
  const growth=previous&&previous.val!==0?(revenue.val/previous.val-1)*100:null;
  const margin=op&&revenue.val!==0?op.val/revenue.val*100:null;
  const fcf=cash&&capex?(cash.val-capex.val)/1000000:null;
@@ -89,7 +106,9 @@ export function summarizeSecFacts(payload,{ticker,cik,name}){
    {key:"capitalExpenditure",name:"Property and equipment purchases",value:capex?.val??null,unit:"USD",tag:capex?.tag||null,filingDate:capex?.filed||null},
    {key:"stockholdersEquity",name:"Stockholders' equity",value:equity?.val??null,unit:"USD",tag:equity?.tag||null,filingDate:equity?.filed||null},
    {key:"longTermDebtCurrent",name:"Current portion of long-term debt",value:debtCur?.val??null,unit:"USD",tag:debtCur?.tag||null,filingDate:debtCur?.filed||null},
-   {key:"longTermDebtNoncurrent",name:"Noncurrent long-term debt",value:debtLong?.val??null,unit:"USD",tag:debtLong?.tag||null,filingDate:debtLong?.filed||null}
+   {key:"longTermDebtNoncurrent",name:"Noncurrent long-term debt",value:debtLong?.val??null,unit:"USD",tag:debtLong?.tag||null,filingDate:debtLong?.filed||null},
+   {key:"netIncome",name:"Annual net income",value:income?.val??null,unit:"USD",tag:income?.tag||null,filingDate:income?.filed||null},
+   {key:"annualDilutedShares",name:"Annual diluted weighted-average shares",value:annualDiluted?.val??null,unit:"shares",tag:annualDiluted?.tag||null,filingDate:annualDiluted?.filed||null}
  ];
  const valid=n=>finite(n)&&Math.abs(n)<=1e8?n:null;
  return {status:"available",ticker,name,cik,reportEnd:anchor.end,reportStart:anchor.start,

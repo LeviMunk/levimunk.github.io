@@ -14,7 +14,9 @@ const facts={cik:320193,facts:{"us-gaap":{
  PaymentsToAcquirePropertyPlantAndEquipment:tag([annual("2025-09-28","2026-09-26",4000000000)]),
  StockholdersEquity:tag([instant("2026-09-26",50000000000)]),
  LongTermDebtCurrent:tag([instant("2026-09-26",10000000000)]),
- LongTermDebtNoncurrent:tag([instant("2026-09-26",20000000000)])
+ LongTermDebtNoncurrent:tag([instant("2026-09-26",20000000000)]),
+ NetIncomeLoss:tag([annual("2025-09-28","2026-09-26",25000000000)]),
+ WeightedAverageNumberOfDilutedSharesOutstanding:{units:{shares:[annual("2025-09-28","2026-09-26",1000000000)]}}
 }}};
 test("only coherent 10-K periods produce sourced annual metrics",()=>{
  const out=summarizeSecFacts(facts,{ticker:"AAPL",cik,name:"Apple Inc."});
@@ -22,6 +24,8 @@ test("only coherent 10-K periods produce sourced annual metrics",()=>{
  assert.equal(out.computed.operatingMarginPct,20);
  assert.equal(out.computed.freeCashFlowMillions,14000);
  assert.equal(out.computed.longTermDebtToEquity,.6);
+ assert.equal(out.measures.find(x=>x.key==="annualDilutedShares")?.value,1000000000);
+ assert.equal(out.measures.find(x=>x.key==="netIncome")?.value,25000000000);
  assert.match(out.sourceUrl,/www.sec.gov\/Archives/);
 });
 test("absent XBRL concept is null, not zero",()=>{

@@ -1871,6 +1871,107 @@
         ". Existing inputs have not been submitted as a recommendation.";
     }finally{secLookupRunning=false;$("sec-fetch").disabled=false;}
   }
+  let valuationBusy=false;
+  async function runValuationComparison(event){
+    event.preventDefault();
+    if(valuationBusy)return;
+    const status=$("valuation-status"),results=$("valuation-results");
+    results.replaceChildren();
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Open the authenticated Cloudflare Worker for SEC/IEX valuation research.";
+      return;
+    }
+    const symbols=[$("valuation-first").value,$("valuation-second").value]
+      .map(x=>x.trim().toUpperCase());
+    if(symbols.some(x=>!/^[A-Z][A-Z0-9.-]{0,9}$/.test(x))||
+       symbols[0]===symbols[1]){
+      status.textContent="Enter two different valid U.S. equity tickers.";return;
+    }
+    if(!globalThis.LeviRelativeValuation){
+      status.textContent="Valuation engine did not load. Refresh the dashboard.";return;
+    }
+    valuationBusy=true;
+    $("valuation-form").querySelector("button").disabled=true;
+    const today=currentNYTradingDate(),rows=[];
+    async function getResponse(endpoint){
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),25000);
+      try{
+        const response=await fetch(endpoint,{
+          method:"GET",cache:"no-store",redirect:"error",
+          credentials:"same-origin",signal:controller.signal
+        });
+        if(!response.ok)throw Error("Source request returned HTTP "+response.status);
+        return await response.json();
+      }finally{clearTimeout(timer);}
+    }
+    try{
+      for(const symbol of symbols){
+        status.textContent="Checking SEC annual report and completed IEX prices for "+symbol+"…";
+        const sec=await getResponse("/api/research/sec-financials?symbol="+encodeURIComponent(symbol));
+        if(sec?.status!=="available"||sec.ticker!==symbol||
+           !Array.isArray(sec.measures)||sec.measures.length>15||
+           !/^https:\/\/www\.sec\.gov\/Archives\//.test(String(sec.sourceUrl||"")))
+          throw Error("SEC financial evidence unavailable or invalid for "+symbol+
+            (sec?.status==="not_configured"?". Configure private SEC_USER_AGENT.":"."));
+        const price=await getResponse("/api/market/bars?symbol="+encodeURIComponent(symbol)+"&range=1M");
+        if(price?.connected!==true||price.feed!=="iex"||price.symbol!==symbol||
+           price.truncated===true||!Array.isArray(price.bars))
+          throw Error("Completed IEX daily prices unavailable for "+symbol+".");
+        const prior=price.bars.filter(b=>typeof b?.time==="string"&&
+          b.time<today&&typeof b.close==="number"&&Number.isFinite(b.close)&&b.close>0)
+          .sort((a,b)=>a.time.localeCompare(b.time));
+        const last=prior.at(-1);
+        if(!last)throw Error("No completed positive IEX close for "+symbol+".");
+        rows.push(globalThis.LeviRelativeValuation.build({
+          sec,priceObservation:{symbol,date:last.time,close:last.close},today
+        }));
+      }
+      const evaluation=globalThis.LeviRelativeValuation.compare(rows[0],rows[1]);
+      for(const company of rows){
+        const card=document.createElement("div");
+        const label=document.createElement("span");
+        label.textContent=company.ticker+" · SEC "+company.reportEnd+
+          " · IEX "+company.asOf;
+        const heading=document.createElement("strong");heading.textContent=company.name;
+        const summary=document.createElement("small");
+        summary.textContent="IEX reference close "+formatIexPrice(company.price)+
+          " · "+(company.ready?
+            "Annual share-count valuation proxies available.":
+            "Ratio inputs stale or incomplete; valuation multiples withheld.");
+        const source=document.createElement("a");source.href=company.sourceUrl;
+        source.target="_blank";source.rel="noopener noreferrer";
+        source.textContent="Review SEC source ↗";
+        card.append(label,heading,summary,source);results.append(card);
+      }
+      for(const metric of evaluation.items){
+        const block=document.createElement("div");
+        const label=document.createElement("span");label.textContent=metric.name.toUpperCase();
+        const value=document.createElement("strong");
+        const display=n=>n===null?"Unavailable":
+          n.toLocaleString("en-US",{maximumFractionDigits:2})+
+          (metric.name==="Operating margin"||metric.name==="Revenue growth"?"%":"×");
+        value.textContent=rows[0].ticker+": "+display(metric.first)+" · "+
+          rows[1].ticker+": "+display(metric.second);
+        const caveat=document.createElement("small");caveat.textContent=metric.evidence;
+        block.append(label,value,caveat);results.append(block);
+      }
+      const footer=document.createElement("div");
+      const warning=document.createElement("small");
+      warning.textContent=evaluation.judgment+" "+rows[0].limitations;
+      footer.append(warning);results.append(footer);
+      status.textContent="Compared "+rows[0].ticker+" and "+rows[1].ticker+
+        " · "+(evaluation.aligned?"fiscal periods within 120 days.":
+          "fiscal periods differ; comparison withheld.")+
+        " All calculations are approximate educational research, not Buy/Hold/Sell advice.";
+    }catch(error){
+      status.textContent="Comparison unavailable: "+String(error?.message||"source failure")+
+        " No valuation estimate was invented.";
+      results.replaceChildren();
+    }finally{
+      valuationBusy=false;$("valuation-form").querySelector("button").disabled=false;
+    }
+  }
   function submitFundamentalsResearch(event){
     event.preventDefault();
     const summary=$("fund-summary"),results=$("fund-results");
@@ -2805,6 +2906,7 @@
   $("journal-export").addEventListener("click",exportHypothesisJournal);
   $("sec-fetch").addEventListener("click",()=>void loadSecAnnualFacts());
   $("fundamentals-form").addEventListener("submit",submitFundamentalsResearch);
+  $("valuation-form").addEventListener("submit",runValuationComparison);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
   $("events-refresh").addEventListener("click",()=>void refreshMarketEvents(true));
