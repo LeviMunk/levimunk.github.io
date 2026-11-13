@@ -16,6 +16,11 @@
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
+  // Broker history is only held in memory, never mixed with the practice ledger.
+  let pnlRange = "1M";
+  let pnlHistory = null;
+  let pnlMessage = "Sign in to view Alpaca PAPER performance.";
+  let pnlRequestToken = 0;
 
   function validSymbol(value) {
     const valueText = String(value || "").trim().toUpperCase();
@@ -210,6 +215,7 @@
         : '<tr><td colspan="4" class="empty">No positions yet. Import CSV history and place a simulated order.</td></tr>';
       $("view-description").textContent = "Explore your separate browser-simulated $10,000 portfolio with historical prices.";
     }
+    renderProfitLoss();
   }
   function render() {
     const symbols = Object.keys(state.prices).sort();
@@ -223,6 +229,165 @@
     $("trade-rows").innerHTML = rows.length ? rows.map(t=>`<tr><td>${escapeHTML(t.at.slice(0,10))}</td><td>${escapeHTML(t.symbol)}</td><td>${escapeHTML(t.side)}</td><td>${t.qty}</td><td>${money(t.price)}</td></tr>`).join("") : '<tr><td class="empty" colspan="5">No simulated orders yet.</td></tr>';
     plotHistory();
   }
+  function renderProfitLoss() {
+    const chart = $("pnl-chart");
+    const empty = $("pnl-empty");
+    chart.replaceChildren();
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    const connected = Boolean(alpacaSnapshot?.connected);
+    const paper = accountView === "alpaca";
+    for (const button of document.querySelectorAll("[data-pnl-range]")) {
+      const selected = button.dataset.pnlRange === pnlRange;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-pressed", String(selected));
+      button.disabled = !privateWorker || !paper || !connected;
+    }
+    for (const id of ["pnl-value", "pnl-return", "pnl-base"]) {
+      $(id).textContent = "—";
+      $(id).classList.remove("positive", "negative");
+    }
+    $("pnl-start-date").textContent = "—";
+    $("pnl-end-date").textContent = "—";
+    empty.hidden = false;
+    let message;
+    if (!paper) {
+      message = "This chart uses your actual Alpaca PAPER portfolio history. Select Alpaca Paper to view it.";
+    } else if (!privateWorker) {
+      message = "Paper-account P/L is private. Open your Cloudflare-protected Alpaca dashboard to view its chart.";
+    } else if (!connected) {
+      message = "Connect to Alpaca PAPER to load your portfolio history.";
+    } else if (!pnlHistory || pnlHistory.range !== pnlRange) {
+      message = pnlMessage || "Loading Alpaca portfolio history…";
+    } else {
+      const rows = Array.isArray(pnlHistory.points)
+        ? pnlHistory.points.filter(p => Number.isFinite(p?.timestamp) &&
+          Number.isFinite(p?.profit_loss) && Number.isFinite(p?.equity))
+          .sort((a, b) => a.timestamp - b.timestamp)
+        : [];
+      if (!rows.length) {
+        message = "No Alpaca portfolio-history observations are available for this period yet.";
+      } else {
+        const last = rows[rows.length - 1];
+        const pnl = last.profit_loss;
+        const pnlText = (pnl > 0 ? "+" : pnl < 0 ? "−" : "") + money(Math.abs(pnl));
+        $("pnl-value").textContent = pnlText;
+        $("pnl-value").classList.add(pnl >= 0 ? "positive" : "negative");
+        if (last.profit_loss_pct !== null && last.profit_loss_pct !== undefined &&
+            Number.isFinite(last.profit_loss_pct)) {
+          const percent = last.profit_loss_pct * 100;
+          $("pnl-return").textContent =
+            (percent > 0 ? "+" : "") + percent.toFixed(2) + "%";
+          $("pnl-return").classList.add(percent >= 0 ? "positive" : "negative");
+        }
+        if (Number.isFinite(pnlHistory.base_value)) {
+          $("pnl-base").textContent = money(pnlHistory.base_value);
+        }
+        const dateLabel = timestamp =>
+          new Intl.DateTimeFormat("en-US", {
+            month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York"
+          }).format(new Date(timestamp * 1000));
+        $("pnl-start-date").textContent = dateLabel(rows[0].timestamp);
+        $("pnl-end-date").textContent = dateLabel(last.timestamp);
+        if (rows.length < 2) {
+          message = "Only one daily P/L observation is available. The chart will draw a trend when Alpaca reports more history.";
+        } else {
+          empty.hidden = true;
+          message = "Alpaca PAPER · " + rows.length + " daily observations · through " +
+            dateLabel(last.timestamp) + ".";
+          const ns = "http://www.w3.org/2000/svg";
+          const add = (tag, attributes, label) => {
+            const el = document.createElementNS(ns, tag);
+            for (const [key, value] of Object.entries(attributes)) {
+              el.setAttribute(key, String(value));
+            }
+            if (label !== undefined) el.textContent = label;
+            chart.appendChild(el);
+            return el;
+          };
+          const values = rows.map(p => p.profit_loss);
+          const min = Math.min(0, ...values);
+          const max = Math.max(0, ...values);
+          const padding = Math.max(1, (max - min) * 0.12);
+          const low = min - padding;
+          const high = max + padding;
+          const left = 83, right = 779, top = 19, bottom = 219;
+          const x = i => left + (right - left) * i / (rows.length - 1);
+          const y = value => bottom - (value - low) / (high - low) * (bottom - top);
+          for (let i = 0; i <= 4; i++) {
+            const tick = low + (high - low) * (i / 4);
+            const py = y(tick);
+            add("line", {x1: left, x2: right, y1: py, y2: py, class: "pnl-gridline"});
+            add("text", {x: left - 12, y: py + 4, "text-anchor": "end",
+              class: "pnl-axis-label"}, (tick < 0 ? "−" : "") +
+              "$" + Math.abs(tick).toLocaleString("en-US", {maximumFractionDigits: 0}));
+          }
+          const zeroY = y(0);
+          add("line", {x1: left, x2: right, y1: zeroY, y2: zeroY, class: "pnl-zero"});
+          const points = rows.map((row, i) => [x(i), y(row.profit_loss)]);
+          const path = points.map(([px, py], i) =>
+            (i ? "L" : "M") + px.toFixed(2) + " " + py.toFixed(2)).join(" ");
+          const color = pnl >= 0 ? "#69ddb2" : "#f09999";
+          add("path", {d: path + " L" + x(rows.length - 1).toFixed(2) +
+            " " + zeroY.toFixed(2) + " L" + x(0).toFixed(2) +
+            " " + zeroY.toFixed(2) + " Z", fill: color, class: "pnl-area"});
+          add("path", {d: path, stroke: color, class: "pnl-line"});
+          const dot = add("circle", {
+            cx: x(rows.length - 1), cy: y(pnl), r: 5.5, fill: color, class: "pnl-dot"
+          });
+          const title = document.createElementNS(ns, "title");
+          title.textContent = dateLabel(last.timestamp) + ": " + pnlText +
+            " period P/L in Alpaca PAPER";
+          dot.appendChild(title);
+          chart.setAttribute("aria-label", pnlRange + " Alpaca paper P/L: " +
+            pnlText + " as of " + dateLabel(last.timestamp) +
+            ", based on " + rows.length + " daily observations.");
+        }
+      }
+    }
+    empty.textContent = message;
+    $("pnl-status").textContent = message;
+  }
+
+  async function loadProfitLoss() {
+    if (!window.location.hostname.endsWith(".workers.dev") || !alpacaSnapshot?.connected) {
+      return;
+    }
+    const currentRequest = ++pnlRequestToken;
+    const selectedRange = pnlRange;
+    pnlHistory = null;
+    pnlMessage = "Loading Alpaca PAPER " + selectedRange + " history…";
+    renderProfitLoss();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch("/api/alpaca/history?range=" +
+        encodeURIComponent(selectedRange), {
+          method: "GET", credentials: "same-origin", cache: "no-store",
+          redirect: "error", signal: controller.signal
+        });
+      if (!response.ok) throw Error("Portfolio history request returned HTTP " + response.status);
+      const result = await response.json();
+      if (currentRequest !== pnlRequestToken || selectedRange !== pnlRange) return;
+      if (!result || result.connected !== true || result.mode !== "paper" ||
+          result.range !== selectedRange || !Array.isArray(result.points)) {
+        pnlMessage = result?.message || "Alpaca paper history is unavailable.";
+        pnlHistory = null;
+      } else {
+        pnlHistory = result;
+        pnlMessage = "";
+      }
+    } catch (error) {
+      if (currentRequest !== pnlRequestToken || selectedRange !== pnlRange) return;
+      pnlHistory = null;
+      pnlMessage = error?.name === "AbortError"
+        ? "Alpaca history request timed out; refresh to retry."
+        : "Could not load Alpaca portfolio history. Check the private connection and try again.";
+    } finally {
+      clearTimeout(timeout);
+      if (currentRequest === pnlRequestToken) renderProfitLoss();
+    }
+  }
+
   function showView(name) {
     const headings = {overview:["Trading overview","Explore a simulated portfolio and test ideas against your own historical data."],market:["Market data","Import closing prices and explore historical trends."],strategy:["Strategy lab","Experiment with a simple long-only moving-average model."],trades:["Paper trade journal","Record hypothetical orders, never real Alpaca trades."],settings:["Data & settings","Your simulation data stays in this browser unless you export it."]};
     if (!headings[name]) return;
@@ -398,6 +563,9 @@
     for (const id of ["alpaca-equity","alpaca-cash","alpaca-buying-power","alpaca-position-count"]) $(id).textContent = "—";
     $("alpaca-position-list").replaceChildren();
     alpacaSnapshot = null;
+    pnlRequestToken++;
+    pnlHistory = null;
+    pnlMessage = "Alpaca PAPER account disconnected.";
     renderAccountSummary();
     feedback("alpaca-feedback", message);
   }
@@ -447,6 +615,8 @@
       }
     }
     feedback("alpaca-feedback", "Connected to Alpaca PAPER account through your private bridge. Read-only.");
+    // Broker history is requested only from the protected same-origin Worker.
+    if (window.location.hostname.endsWith(".workers.dev")) void loadProfitLoss();
   }
   async function connectAlpaca() {
     let base;
@@ -545,6 +715,17 @@
     const connectButton = $("alpaca-connect");
     connectButton.textContent = (base.endsWith(".workers.dev") && base !== window.location.origin)
       ? "Open secure dashboard" : "Connect / Refresh";
+  }
+  for (const button of document.querySelectorAll("[data-pnl-range]")) {
+    button.addEventListener("click", () => {
+      if (!["1W", "1M", "3M", "1Y"].includes(button.dataset.pnlRange)) return;
+      if (pnlRange === button.dataset.pnlRange) return;
+      pnlRange = button.dataset.pnlRange;
+      pnlHistory = null;
+      pnlMessage = "Loading Alpaca PAPER " + pnlRange + " history…";
+      renderProfitLoss();
+      void loadProfitLoss();
+    });
   }
   $("alpaca-endpoint").addEventListener("input", updateCloudflareLogin);
   $("alpaca-connect-form").addEventListener("submit", e => {e.preventDefault();connectAlpaca();});
