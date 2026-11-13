@@ -150,3 +150,18 @@
  #watch-refresh{width:100%}
  .watch-meta{align-items:flex-start}
 }
+
+/* Small, auditable Alpaca PAPER equity-performance scorecard. */
+.scorecard-panel{margin:0 0 20px}
+.scorecard-description{font-size:12px;margin:7px 0 0}
+.scorecard-period{white-space:nowrap;color:#a4e7d1;border:1px solid #426f67;background:#18342f;border-radius:20px;font-size:10px;font-weight:780;letter-spacing:.6px;padding:8px 12px}
+.scorecard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+.scorecard-metric{min-width:0;display:flex;flex-direction:column;gap:9px;padding:17px 15px;border-radius:11px;border:1px solid #2a4648;background:#10242a}
+.scorecard-metric span{color:#9ab8b7;letter-spacing:1px;font-size:10px;font-weight:800}
+.scorecard-metric strong{color:#e3f9ed;font-size:23px;font-weight:750;letter-spacing:-.4px;font-variant-numeric:tabular-nums;line-height:1.1}
+.scorecard-metric strong.negative{color:#f2a3a3}
+.scorecard-metric small{font-size:11px;color:#a3bbbb;line-height:1.5}
+.scorecard-status{font-size:12px;margin:16px 0 11px;line-height:1.5}
+.scorecard-panel .footnote{font-size:11px;line-height:1.6}
+@media(max-width:1100px){.scorecard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.scorecard-grid{gap:9px}.scorecard-metric{padding:13px 11px}.scorecard-metric strong{font-size:18px}.scorecard-metric span{font-size:9px}.scorecard-period{margin-top:5px}}
