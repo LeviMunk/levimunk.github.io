@@ -18,6 +18,7 @@
   <script defer src="./journal-engine.js"></script>
   <script defer src="./decision-guide.js"></script>
   <script defer src="./fundamentals-engine.js"></script>
+  <script defer src="./valuation-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -386,6 +387,19 @@
           </article>
         </div>
       </section>
+        <article class="panel" aria-labelledby="valuation-heading">
+          <div class="panel-head"><div><p class="eyebrow">UPGRADE 20 / RELATIVE VALUATION</p><h2 id="valuation-heading">Compare two companies</h2>
+            <p class="muted">Fetch SEC annual financial statements and completed Alpaca IEX prices for two chosen companies. This is a transparent relative valuation exercise, not a buy/sell ranking.</p>
+          </div><span class="scorecard-period">IEX + SEC · READ-ONLY</span></div>
+          <form id="valuation-form" class="form-stack">
+            <label for="valuation-first">First company ticker</label><input id="valuation-first" maxlength="10" value="MSFT" required>
+            <label for="valuation-second">Second company ticker</label><input id="valuation-second" maxlength="10" value="AAPL" required>
+            <button type="submit" class="button primary">Compare financials &amp; valuation</button>
+          </form>
+          <p id="valuation-status" class="muted footnote" role="status" aria-live="polite">Available in the authenticated private dashboard. Missing or stale sources mean no multiple is produced.</p>
+          <div id="valuation-results" class="strategy-evaluation"></div>
+          <p class="muted footnote">P/S, P/E and P/FCF are approximate proxies calculated with annual diluted weighted-average shares and recent IEX-only prices, not authoritative market capitalization or trailing-12-month consensus estimates. Fiscal periods must be within 120 days to compare; different industries may not be meaningful peers. These ratios alone do not predict stock returns.</p>
+        </article>
       <section id="view-strategy" class="view" aria-label="Strategy research workbench" hidden>
         <div class="grid-2">
           <article class="panel">

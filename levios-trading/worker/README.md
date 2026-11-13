@@ -271,6 +271,13 @@ The parser requires annual 10-K reporting durations of roughly one fiscal year, 
 
 SEC data is free but no live response is claimed until the Worker secret is configured and the live endpoint has been separately verified. The authenticated Worker test suite uses synthetic SEC fixtures and never contacts the agency. No new provider secrets committed to GitHub.
 
+## Relative Valuation v1 (Upgrade 20)
+The Stock Research tab now offers on-demand two-ticker relative valuation, following transparent factor and source-provenance approaches found in maintained investment analysis tools. It reuses the authenticated, rate-limited-by-user SEC annual financials and the existing read-only Alpaca IEX daily bar endpoint; no paid market feed, proxy or new key. Users select **two** tickers; the app retrieves two SEC annual reports and two recent IEX daily bars with a bounded sequential workflow.
+
+The SEC adapter now includes annual net income and annual diluted **weighted-average** shares from same-period US-GAAP XBRL tags when available. With a recent completed IEX-only closing price (<=7 calendar days old), the client computes approximate price/sales, price/earnings and price/free-cash-flow multiples using annual per-diluted-share figures. These are approximate proxies, **not** consensus multiples, precise market cap, forward forecasts, authoritative price targets or trading signals. Missing/negative denominators yield missing ratios rather than zero or misleading cheapness. Fiscal reporting periods must be within 120 calendar days to mark an explicit peer comparison as numerically comparable. Cross-industry valuations, share-count changes, accounting policies, special charges and stock-based compensation require additional study.
+
+No provider secret appears in the browser; market-data access remains Cloudflare Access-protected. All requests must originate in the private Worker; no user-specified external URLs. Tests cover invalid/missing inputs, stale prices, fiscal mismatch and failure to rank securities. No broker order capability was added.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.

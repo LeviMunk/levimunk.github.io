@@ -582,6 +582,7 @@ export default {
       "/journal-engine.js": [assets.journalEngine, "text/javascript; charset=utf-8"],
       "/decision-guide.js": [assets.decisionGuide, "text/javascript; charset=utf-8"],
       "/fundamentals-engine.js": [assets.fundamentalsEngine, "text/javascript; charset=utf-8"],
+      "/valuation-engine.js": [assets.valuationEngine, "text/javascript; charset=utf-8"],
       "/lightweight-charts.js": [assets.chartLib, "text/javascript; charset=utf-8"],
       "/styles.css": [assets.css, "text/css; charset=utf-8"]
     }[url.pathname];

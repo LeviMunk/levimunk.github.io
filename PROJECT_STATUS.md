@@ -33,6 +33,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 - Action-first home page with risk-first PAPER watchlist guidance, conditional hold/reduce/entry research prompts, visible evidence and no orders
 - Stock Research v1: dated user-entered financial evidence, quality/valuation/financial-health learning rubric, explicit limitations and no invented automated ratings
 - SEC financials v1: guarded on-demand SEC ticker→CIK lookup and annual companyfacts XBRL, provenance, conservative partial prefill, requires private SEC_USER_AGENT secret
+- Relative Valuation v1: deliberate two-stock SEC/Alpaca IEX annual-multiple proxies and source-aligned peer comparisons; never a buy/sell winner or target price
 - Previous reference good build: `45f816c` (frontend, Worker tests, mobile and Pages all passed). This does not independently prove the private Cloudflare deployment.
 
 ## Security invariants
