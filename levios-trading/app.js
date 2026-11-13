@@ -245,6 +245,66 @@
     plotHistory();
     renderFills();
   }
+  function renderPerformanceScorecard() {
+    $("scorecard-range").textContent = pnlRange + " PERIOD";
+    for (const id of ["scorecard-drawdown", "scorecard-peak",
+      "scorecard-low", "scorecard-count"]) {
+      $(id).textContent = "—";
+    }
+    $("scorecard-drawdown").classList.remove("negative");
+    $("scorecard-drawdown-usd").textContent =
+      "Requires at least two daily equity observations";
+    $("scorecard-coverage").textContent = "Waiting for Alpaca history";
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    const connected = Boolean(alpacaSnapshot?.connected);
+    const stats = pnlHistory?.range === pnlRange ? pnlHistory?.scorecard : null;
+    if (accountView !== "alpaca") {
+      $("scorecard-status").textContent =
+        "Performance statistics are for Alpaca PAPER, not the browser simulator.";
+      return;
+    }
+    if (!privateWorker) {
+      $("scorecard-status").textContent =
+        "Open the protected Alpaca dashboard to view private performance statistics.";
+      return;
+    }
+    if (!connected) {
+      $("scorecard-status").textContent =
+        "Connect to Alpaca PAPER to load this scorecard.";
+      return;
+    }
+    if (!stats || !Number.isInteger(stats.observations) || stats.observations < 0) {
+      $("scorecard-status").textContent =
+        pnlMessage || "Waiting for authenticated Alpaca daily equity data.";
+      return;
+    }
+    const count = stats.observations;
+    $("scorecard-count").textContent = count.toLocaleString("en-US");
+    $("scorecard-coverage").textContent = count === 1
+      ? "One observed daily snapshot" : count + " observed daily snapshots";
+    if (Number.isFinite(stats.observed_peak_equity)) {
+      $("scorecard-peak").textContent = money(stats.observed_peak_equity);
+    }
+    if (Number.isFinite(stats.observed_low_equity)) {
+      $("scorecard-low").textContent = money(stats.observed_low_equity);
+    }
+    if (count >= 2 && Number.isFinite(stats.max_observed_drawdown_pct) &&
+        stats.max_observed_drawdown_pct >= 0 &&
+        Number.isFinite(stats.max_observed_drawdown_usd) &&
+        stats.max_observed_drawdown_usd >= 0) {
+      $("scorecard-drawdown").textContent =
+        "−" + stats.max_observed_drawdown_pct.toFixed(2) + "%";
+      if (stats.max_observed_drawdown_pct > 0) {
+        $("scorecard-drawdown").classList.add("negative");
+      }
+      $("scorecard-drawdown-usd").textContent =
+        money(stats.max_observed_drawdown_usd) + " largest peak-to-trough drop";
+    }
+    $("scorecard-status").textContent = count >= 2
+      ? "Based on " + count + " daily Alpaca PAPER equity observations; this is raw account-equity drawdown, not cash-flow-adjusted strategy performance."
+      : "Not enough Alpaca PAPER observations to calculate a historical drawdown.";
+  }
+
   function renderProfitLoss() {
     const chart = $("pnl-chart");
     const empty = $("pnl-empty");
@@ -374,6 +434,7 @@
     }
     empty.textContent = message;
     $("pnl-status").textContent = message;
+    renderPerformanceScorecard();
   }
 
   async function loadProfitLoss() {
