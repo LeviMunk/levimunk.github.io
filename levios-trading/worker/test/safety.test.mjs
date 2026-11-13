@@ -212,3 +212,118 @@ test("does not follow Alpaca redirects or send keys to a redirect destination", 
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("private portfolio history is read-only and returns only Alpaca-approved P/L fields", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (destination, options) => {
+    requests.push({url:String(destination), method:options.method, redirect:options.redirect});
+    return Response.json({
+      timestamp:[1762900000,1762986400,1763072800],
+      equity:[100000,100020,100065.79],
+      profit_loss:[0,20,65.79],
+      profit_loss_pct:[0,0.0002,0.0006579],
+      base_value:100000,
+      account_number:"PRIVATE_ACCOUNT_NUMBER",
+      secret_field:"PRIVATE_DATA"
+    });
+  };
+  try {
+    const urlHistory = url + "/api/alpaca/history?range=1M";
+    const env = {...authorizedEnv, ALPACA_PAPER_KEY_ID:"TEST_KEY", ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+    const response = await handler.fetch(new Request(urlHistory), env, authenticated);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.connected, true);
+    assert.equal(body.mode, "paper");
+    assert.equal(body.range, "1M");
+    assert.equal(body.timeframe, "1D");
+    assert.equal(body.base_value, 100000);
+    assert.equal(body.points.length, 3);
+    assert.equal(body.points[2].profit_loss, 65.79);
+    assert.equal(body.points[2].equity, 100065.79);
+    assert.equal(body.points[2].profit_loss_pct, 0.0006579);
+    assert.deepEqual(Object.keys(body.points[0]).sort(), ["equity","profit_loss","profit_loss_pct","timestamp"]);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, "https://paper-api.alpaca.markets/v2/account/portfolio/history?period=1M&timeframe=1D");
+    assert.equal(requests[0].method, "GET");
+    assert.equal(requests[0].redirect, "manual");
+    assert.ok(!JSON.stringify(body).includes("PRIVATE"));
+    assert.ok(!JSON.stringify(body).includes("TEST_SECRET"));
+    const rejected = await handler.fetch(new Request(urlHistory,{method:"POST"}), env, authenticated);
+    assert.equal(rejected.status, 405);
+    assert.equal(requests.length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("portfolio history maps year to Alpaca annual period and rejects untrusted parameters", async () => {
+  const originalFetch = globalThis.fetch;
+  const observed = [];
+  globalThis.fetch = async destination => {
+    observed.push(String(destination));
+    return Response.json({
+      timestamp:[], equity:[], profit_loss:[], profit_loss_pct:[], base_value:null
+    });
+  };
+  const env = {...authorizedEnv, ALPACA_PAPER_KEY_ID:"TEST_KEY", ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"};
+  try {
+    for(const [range,period] of [["1W","1W"],["3M","3M"],["1Y","1A"]]) {
+      const response = await handler.fetch(new Request(url + "/api/alpaca/history?range=" + range), env, authenticated);
+      const body = await response.json();
+      assert.equal(response.status, 200);
+      assert.equal(body.connected, true);
+      assert.equal(body.range, range);
+      assert.deepEqual(body.points, []);
+      assert.equal(observed.at(-1), "https://paper-api.alpaca.markets/v2/account/portfolio/history?period=" + period + "&timeframe=1D");
+    }
+    for(const query of ["range=1Y%26evil=true", "range=100Y", "range=1M&url=https://elsewhere.invalid", "range=1M&range=1Y"]) {
+      const response = await handler.fetch(new Request(url + "/api/alpaca/history?" + query), env, authenticated);
+      assert.equal(response.status, 400);
+    }
+    assert.equal(observed.length, 3);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("portfolio history is unavailable without Access authentication", async () => {
+  const originalFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = async () => {called = true; return Response.json({});};
+  try {
+    const response = await handler.fetch(
+      new Request(url + "/api/alpaca/history?range=1M"),
+      {...authorizedEnv, ALPACA_PAPER_KEY_ID:"TEST_KEY", ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"},
+      {}
+    );
+    assert.equal(response.status, 403);
+    assert.equal(called, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("portfolio history rejects malicious or malformed points instead of fabricating values", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    timestamp:[1762900000,1762986400,1763072800,1763159200],
+    equity:[100000,null,100065,100055],
+    profit_loss:[0,10,null,-12],
+    profit_loss_pct:[0,0.0001,null,null],
+    base_value:100000
+  });
+  try {
+    const response = await handler.fetch(new Request(url + "/api/alpaca/history?range=1M"), {
+      ...authorizedEnv,ALPACA_PAPER_KEY_ID:"TEST_KEY", ALPACA_PAPER_SECRET_KEY:"TEST_SECRET"
+    },authenticated);
+    const body=await response.json();
+    assert.equal(body.connected,true);
+    assert.deepEqual(body.points.map(p=>p.profit_loss),[0,-12]);
+    assert.equal(body.points[1].profit_loss_pct,null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
