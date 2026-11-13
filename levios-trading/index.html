@@ -14,6 +14,7 @@
   <script defer src="./radar-engine.js"></script>
   <script defer src="./events-engine.js"></script>
   <script defer src="./earnings-engine.js"></script>
+  <script defer src="./catalyst-engine.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -240,7 +241,7 @@
             <div class="button-row"><button id="radar-scan" type="button" class="button secondary">Scan watchlist</button></div>
             <p id="radar-status" class="muted footnote" role="status" aria-live="polite">No scan yet. Scans run when you request them, not continuously in the background.</p>
             <div id="radar-results" class="strategy-evaluation"><div><span>NOT SCANNED</span><small>Read-only educational monitoring. No trades or alerts.</small></div></div>
-            <p class="muted footnote">Uses completed IEX daily candles, not SIP/consolidated market data. This first version does not monitor earnings, headlines, SEC filings or economic announcements. No future price predictions or automated trading decisions.</p>
+            <p class="muted footnote">Catalyst Context pairs dated macro and company earnings schedules with radar observations, including source labels and uncertainty. It does not automatically monitor headlines, SEC filings, or report actual event outcomes. Events after a price observation cannot explain the earlier move. IEX coverage remains single-exchange; no predictions or trades.</p>
           </div>
           <div class="watch-price-panel">
             <div class="panel-head watch-chart-header">

@@ -49,6 +49,8 @@
   let watchGeneration = 0;
   let radarScanning = false;
   let radarSequence = 0;
+  let latestRadarFindings = null;
+  let latestRadarSymbols = "";
   let fillRows = [];
   let fillCursor = null;
   let fillsLoaded = false;
@@ -1082,6 +1084,100 @@
     const get=type=>parts.find(x=>x.type===type)?.value;
     return get("year")+"-"+get("month")+"-"+get("day");
   }
+  function renderRadarContext() {
+    const target=$("radar-results");
+    if(!latestRadarFindings)return;
+    target.replaceChildren();
+    if(latestRadarSymbols!==watchSymbols.join(",")){
+      const warning=document.createElement("p");warning.className="muted";
+      warning.textContent="Watchlist changed since the scan. Run Market Radar again for current selections.";
+      target.append(warning);
+      return;
+    }
+    const engine=globalThis.LeviCatalystContext;
+    const eventEngine=globalThis.LeviMarketEvents;
+    const earningsEngine=globalThis.LeviEarningsEducation;
+    const today=currentNYTradingDate();
+    // Only a successfully retrieved agency replaces its snapshot;
+    // an unavailable source retains the dated, explicitly labeled fallback.
+    const allMacro=eventEngine?eventEngine.events.map(e=>({...e,source:"snapshot"})):[];
+    if(officialEvents?.sources){
+      for(const source of officialEvents.sources){
+        if(source.status!=="fresh")continue;
+        for(let i=allMacro.length-1;i>=0;i--){
+          if(allMacro[i].agency===source.agency)allMacro.splice(i,1);
+        }
+        for(const event of source.events)allMacro.push(event);
+      }
+    }
+    const earnings=earningsEngine?earningsEngine.confirmed.slice():[];
+    const match=earningsRequestedSymbols===watchSymbols.join(",") &&
+      earningsResult?.status==="fetched" ? earningsResult.events:[];
+    for(const event of match){
+      // Forecast dates are not issuer confirmations. Attach a source reference
+      // or a relevant issuer research page, never an untrusted upstream URL.
+      earnings.push({...event,
+        url:earningsEngine?.investorRelations[event.symbol]||
+          "https://www.alphavantage.co/documentation/"});
+    }
+    for(const result of latestRadarFindings){
+      const box=document.createElement("div");
+      const title=document.createElement("span");
+      title.textContent=result.symbol+" · "+(result.ready?result.asOf:"DATA UNAVAILABLE");
+      const strong=document.createElement("strong");
+      strong.textContent=result.ready?
+        result.flags+" observation(s) · "+result.attention:result.reason;
+      box.append(title,strong);
+      if(result.ready){
+        const context=document.createElement("small");
+        context.textContent="Completed IEX close "+formatIexPrice(result.lastClose)+
+          " · "+(result.movePct>=0?"+":"")+result.movePct.toFixed(2)+
+          "% session move. "+(result.quiet||"");
+        box.append(context);
+        for(const observation of result.findings){
+          const note=document.createElement("small");
+          note.textContent=observation.title+". "+observation.evidence+" "+
+            observation.explain+" Investigate: "+observation.question;
+          box.append(note);
+        }
+        const heading=document.createElement("span");
+        heading.textContent="CATALYST CONTEXT · TEMPORAL ASSOCIATIONS ONLY";
+        box.append(heading);
+        const analysis=engine?.context(result,allMacro,earnings,today);
+        if(analysis?.ready && analysis.items.length){
+          for(const event of analysis.items){
+            const line=document.createElement("small");
+            const source=event.sourceLevel==="issuer_confirmed"?"COMPANY CONFIRMED":
+              event.sourceLevel==="provider_estimate"?"THIRD-PARTY ESTIMATE":
+              event.sourceLevel==="official_feed"?"OFFICIAL FEED":"DATED SNAPSHOT";
+            const when=event.relation==="upcoming_seven_calendar_days"?"UPCOMING":
+              event.relation==="same_calendar_date_time_unverified"?"SAME DATE":
+              "EARLIER DATE";
+            line.textContent=when+" · "+event.date+" · "+
+              (event.scope==="marketwide"?"MARKETWIDE":"SAME TICKER")+
+              " · "+source+" · "+event.name+". "+event.interpretation+
+              " Investigate: "+event.question;
+            const a=document.createElement("a");
+            a.href=event.url;a.target="_blank";a.rel="noopener noreferrer";
+            a.textContent="Verify source ↗";
+            box.append(line,a);
+          }
+          if(analysis.limited){
+            const trunc=document.createElement("small");
+            trunc.textContent="Additional possible events omitted; see Market Events and original sources.";
+            box.append(trunc);
+          }
+        }else{
+          const empty=document.createElement("small");
+          empty.textContent="No matching calendar events found in available sources. "+
+            "This is not evidence that no catalyst exists; this tool does not search news, "+
+            "corporate filings or unscheduled announcements.";
+          box.append(empty);
+        }
+      }
+      target.append(box);
+    }
+  }
   async function scanMarketRadar() {
     if(radarScanning)return;
     const status=$("radar-status"),results=$("radar-results");
@@ -1148,30 +1244,14 @@
       if(sequence!==radarSequence)return;
       findings.sort((a,b)=>(b.flags||0)-(a.flags||0)||
         symbols.indexOf(a.symbol)-symbols.indexOf(b.symbol));
-      for(const result of findings){
-        const box=document.createElement("div");
-        const title=document.createElement("span");
-        title.textContent=result.symbol+" · "+(result.ready?result.asOf:"DATA UNAVAILABLE");
-        const strong=document.createElement("strong");
-        strong.textContent=result.ready?
-          result.flags+" observation(s) · "+result.attention:
-          result.reason;
-        box.append(title,strong);
-        if(result.ready){
-          const context=document.createElement("small");
-          context.textContent="Latest completed IEX close "+formatIexPrice(result.lastClose)+
-            " · "+(result.movePct>=0?"+":"")+result.movePct.toFixed(2)+
-            "% session move. "+(result.quiet||"");
-          box.append(context);
-          for(const f of result.findings){
-            const note=document.createElement("small");
-            note.textContent=f.title+". "+f.evidence+" "+f.explain+
-              " Investigate: "+f.question;
-            box.append(note);
-          }
-        }
-        results.append(box);
-      }
+      latestRadarFindings=findings;
+      latestRadarSymbols=symbols.join(",");
+      renderRadarContext();
+      // These loaders reuse six-hour session caches, label source failures,
+      // and never authorize order placement. The radar results display
+      // immediately and update as verified context arrives.
+      void refreshMarketEvents(false);
+      void refreshWatchlistEarnings(false);
       status.textContent="Scan complete · "+(symbols.length-unavailable)+
         " tickers analyzed · "+unavailable+" unavailable · "+
         findings.reduce((s,x)=>s+(x.flags||0),0)+
@@ -1225,7 +1305,7 @@
     const privateWorker=window.location.hostname.endsWith(".workers.dev");
     if(!privateWorker){renderMarketEvents();return;}
     const cache=force?null:readOfficialCache();
-    if(cache){officialEvents=cache.data;renderMarketEvents();return;}
+    if(cache){officialEvents=cache.data;renderMarketEvents();renderRadarContext();return;}
     const token=++officialEventsToken;
     officialEventsLoading=true;officialEventsError="";
     renderMarketEvents();
@@ -1250,7 +1330,7 @@
       officialEvents=null;
     }finally{
       clearTimeout(timeout);
-      if(token===officialEventsToken){officialEventsLoading=false;renderMarketEvents();}
+      if(token===officialEventsToken){officialEventsLoading=false;renderMarketEvents();renderRadarContext();}
     }
   }
   function renderMarketEvents(){
@@ -1353,7 +1433,7 @@
         if(cached&&Number.isFinite(cached.savedAt)&&
            cached.savedAt<=Date.now()&&Date.now()-cached.savedAt<EARNINGS_CACHE_MS){
           const checked=validEarningsResponse(cached.data);
-          if(checked){earningsResult=checked;earningsRequestedSymbols=query;renderEarnings();return;}
+          if(checked){earningsResult=checked;earningsRequestedSymbols=query;renderEarnings();renderRadarContext();return;}
         }
       }catch{}
     }
@@ -1381,7 +1461,7 @@
         String(error?.message||"Earnings provider unavailable.");
     }finally{
       clearTimeout(timeout);
-      if(token===earningsRequestToken){earningsLoading=false;renderEarnings();}
+      if(token===earningsRequestToken){earningsLoading=false;renderEarnings();renderRadarContext();}
     }
   }
   function renderEarnings(){
