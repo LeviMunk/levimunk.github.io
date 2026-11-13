@@ -30,6 +30,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 - Company Earnings Intelligence with issuer-confirmed source references, optional protected Alpha Vantage estimates and explicit no-date status
 - Catalyst Context links Market Radar observations with dated marketwide events and same-ticker earnings, preserving source and timing caveats
 - Trading Hypothesis Journal: original reasoning locked after creation, independent retrospective reviews, risk calculations, local JSON exports
+- Action-first home page with risk-first PAPER watchlist guidance, conditional hold/reduce/entry research prompts, visible evidence and no orders
 - Previous reference good build: `45f816c` (frontend, Worker tests, mobile and Pages all passed). This does not independently prove the private Cloudflare deployment.
 
 ## Security invariants

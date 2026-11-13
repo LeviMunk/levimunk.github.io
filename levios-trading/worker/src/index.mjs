@@ -571,6 +571,7 @@ export default {
       "/earnings-engine.js": [assets.earningsEngine, "text/javascript; charset=utf-8"],
       "/catalyst-engine.js": [assets.catalystEngine, "text/javascript; charset=utf-8"],
       "/journal-engine.js": [assets.journalEngine, "text/javascript; charset=utf-8"],
+      "/decision-guide.js": [assets.decisionGuide, "text/javascript; charset=utf-8"],
       "/lightweight-charts.js": [assets.chartLib, "text/javascript; charset=utf-8"],
       "/styles.css": [assets.css, "text/css; charset=utf-8"]
     }[url.pathname];
