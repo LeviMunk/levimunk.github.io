@@ -560,6 +560,13 @@
             <tbody id="walkforward-rows"><tr><td class="empty" colspan="10">Run a walk-forward test to inspect the chronological folds.</td></tr></tbody>
           </table></div>
           <p class="muted footnote">Tests use historical data. Repeated tuning can overfit results.</p>
+          <h3>Candidate comparison</h3>
+          <p class="muted footnote">Fixed moving-average candidates compared on the same three historical evaluation folds. REVIEW means additional independent paper testing may be worthwhile, not that a strategy is approved.</p>
+          <div class="scroll-table"><table class="strategy-version-table">
+            <thead><tr><th>Candidate</th><th>Positive folds</th><th>Weighted excess</th><th>Worst drawdown</th><th>Executions</th><th>Research status</th></tr></thead>
+            <tbody id="walkforward-candidates"><tr><td colspan="6" class="empty">Run walk-forward testing to compare candidates.</td></tr></tbody>
+          </table></div>
+          <p id="walkforward-candidate-note" class="muted footnote">No automatic trades, approvals, or strategy promotions.</p>
         </article>
         <article class="panel strategy-versions" aria-labelledby="robustness-heading">
           <div class="panel-head"><div><p class="eyebrow">EVALUATION CONSISTENCY / FIXED PARAMETERS</p><h2 id="robustness-heading">Three-window robustness</h2></div><span class="scorecard-period">DIAGNOSTIC ONLY</span></div>
