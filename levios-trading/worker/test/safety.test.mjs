@@ -37,6 +37,11 @@ test("protected dashboard and assets are served after login", async () => {
   assert.match(html, /LeviOS Trading Lab/);
   assert.match(html, /id="pnl-chart"/);
   assert.match(html, /src="\.\/strategy-engine\.js"/);
+  assert.match(html, /src="\.\/validation-engine\.js"/);
+  assert.match(html, /id="validation-review"/);
+  assert.match(html, /id="validation-approve"/);
+  assert.match(html, /id="validation-checks"/);
+  assert.match(html, /id="validation-decisions"/);
   assert.match(html, /id="strategy-train-return"/);
   assert.match(html, /id="strategy-test-return"/);
   assert.match(html, /id="strategy-versions"/);
@@ -877,4 +882,20 @@ test("strategy-engine script is served only behind Cloudflare Access", async () 
   assert.equal(allowed.headers.get("access-control-allow-origin"),null);
   const denied=await handler.fetch(request,authorizedEnv,{});
   assert.equal(denied.status,403);
+});
+
+test("validation engine JavaScript is guarded by Cloudflare Access and cannot expose account data", async () => {
+  const resource = new Request(url+"/validation-engine.js");
+  const allowed=await handler.fetch(resource,authorizedEnv,authenticated);
+  assert.equal(allowed.status,200);
+  assert.match(allowed.headers.get("content-type"),/text\/javascript/);
+  const script=await allowed.text();
+  assert.match(script,/LeviStrategyValidation/);
+  assert.match(script,/levios-validation-v1/);
+  assert.ok(!script.includes("APCA-API-SECRET-KEY"));
+  assert.equal(allowed.headers.get("access-control-allow-origin"),null);
+  const denied=await handler.fetch(resource,authorizedEnv,{});
+  assert.equal(denied.status,403);
+  const noPost=await handler.fetch(new Request(url+"/validation-engine.js",{method:"POST"}),authorizedEnv,authenticated);
+  assert.equal(noPost.status,405);
 });
