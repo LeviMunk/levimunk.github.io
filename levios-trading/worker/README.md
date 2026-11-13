@@ -4,7 +4,7 @@
 
 The Access-protected Worker is what you open from any computer or phone to see your **actual Alpaca PAPER** account. The existing public GitHub Pages page remains available for browsing and browser-only practice. The two URLs share **code** but not browser localStorage, because the origins are different.
 
-**Deployment:** Cloudflare originally deployed this Worker under a different name on November 12, 2026; the owner has since renamed it to `levimunk-alpaca`. The secure account experience is **not yet enabled** until you protect the Worker with Cloudflare Access and add your private secrets. None of these steps transfers your domain, changes Bluehost DNS, requires your ThinkCentre to be online, or requires paid hosting at small personal usage levels.
+**Deployment:** Cloudflare originally deployed this Worker under a different name on November 12, 2026; the owner has since renamed it to `levimunk-alpaca`. Cloudflare Access has been verified and the PAPER account API connection has returned `connected: true`. Both production protection and private secrets must stay configured. None of these steps transfers your domain, changes Bluehost DNS, requires your ThinkCentre to be online, or requires paid hosting at small personal usage levels.
 
 ## Current Cloudflare build configuration (root directory)
 
@@ -38,6 +38,17 @@ If you already set root directory to `levios-trading/worker`, the original `node
 8. (Optional) Visit `https://levimunk.com/levios-trading/` and paste your real Worker URL into its **Private Cloudflare Worker address** field; click **Open secure Alpaca dashboard**. This saves only the URL in that browser, never any secrets. Once you share the *public* `workers.dev` hostname (not secret), ChatGPT can hardcode a link from your portfolio if desired.
 
 **Important:** Until both the Access policy and secret `ALLOWED_EMAIL` are configured, the Worker intentionally returns `403` even if its URL is known. This is expected: the app fails closed instead of exposing Alpaca financial information.
+
+## Alpaca PAPER profit/loss chart (November 2026)
+
+The signed-in Worker dashboard now displays an **Alpaca PAPER profit/loss chart** with **1W, 1M, 3M and 1Y** periods, plus percentage return, reported P/L, reference equity and chart dates. It uses Alpaca's official `GET /v2/account/portfolio/history` endpoint through the same protected Worker; **no API keys are exposed to browser code**.
+
+- Worker API: `GET /api/alpaca/history?range=1W|1M|3M|1Y`, GET and HEAD only, requires the same Cloudflare Access identity and `ALLOWED_EMAIL` secret as the account endpoint.
+- Alpaca query uses `timeframe=1D` and `period=1W`, `1M`, `3M`, or `1A` respectively. Values are sanitized to timestamp, equity, profit/loss and percentage only, with a maximum of 400 observations.
+- **No fabricated history**: when Alpaca has no eligible observations or only one day, the chart explains this. A disconnected public GitHub Pages visitor sees a private-dashboard prompt, not simulated brokerage data.
+- The browser simulator is unchanged and cannot place orders in Alpaca.
+- **Interpretation**: Alpaca's P/L is relative to the selected period's portfolio-history baseline; it is not necessarily realized profit/loss, and deposits, withdrawals or changes in basis can affect interpretation.
+- If the chart says history is unavailable, make sure the new GitHub deployment finished, sign in to Cloudflare Access, and (privately) inspect `/api/alpaca/history?range=1M`. Never share keys, account numbers, or detailed private positions.
 
 ## How updates work
 
