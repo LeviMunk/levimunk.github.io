@@ -356,6 +356,13 @@
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">FUNDAMENTALS / EVIDENCE FIRST</p><h2>Analyze company quality and price</h2></div><span class="scorecard-period">NO ORDERS</span></div>
             <p class="muted">Use figures from an issuer filing and an independently checked valuation source. The five-input rubric is a *learning aid*, not a validated stock rating. The source link is your evidence reference; LeviOS does not automatically verify its contents.</p>
+            <div class="watch-price-panel" aria-labelledby="sec-lookup-heading">
+              <h3 id="sec-lookup-heading">Import real annual financials from SEC EDGAR</h3>
+              <p class="muted">Enter a stock ticker below and fetch public 10-K XBRL facts through your private Worker. LeviOS will show provenance and prefill only calculations whose reporting periods align. You still supply a dated P/E value.</p>
+              <div class="button-row"><button type="button" id="sec-fetch" class="button secondary">Fetch SEC annual facts for ticker</button></div>
+              <p id="sec-status" class="muted footnote" role="status" aria-live="polite">SEC access requires a privately configured Worker SEC_USER_AGENT identifying your application and contact email.</p>
+              <div id="sec-facts" class="strategy-evaluation"></div>
+            </div>
             <form id="fundamentals-form" class="form-stack">
               <label for="fund-symbol">Ticker</label><input id="fund-symbol" value="MSFT" maxlength="10" required>
               <label for="fund-period">Financial reporting period end</label><input id="fund-period" type="date" required>
