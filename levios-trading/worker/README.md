@@ -88,6 +88,24 @@ The dashboard now has a **separate IEX Watchlist** tab for up to 12 U.S. stock o
 
 Source: [Alpaca multiple stock snapshots](https://docs.alpaca.markets/us/reference/stocksnapshots-1) and [Alpaca market-data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq).
 
+## Alpaca PAPER performance scorecard (third incremental upgrade)
+
+The Overview now includes a **Performance Scorecard** beneath the 1W/1M/3M/1Y P/L chart. It reuses the same authenticated `/api/alpaca/history` response and does not add Alpaca HTTP calls.
+
+- `levios-trading/worker/src/performance.mjs` contains a pure, independently tested equity-scorecard function; Cloudflare's JS Worker imports it directly.
+- Fields: max observed percentage drawdown from a previous daily equity high, dollar loss from the **same** maximum-percentage drawdown event, highest observed daily equity, lowest observed daily equity and observation count.
+- One or zero observations → drawdown is **unavailable** rather than falsely 0%. A complete flat or ascending history of at least two observations correctly reports 0%.
+- **Important accounting limitation:** this is drawdown on the *raw account equity series*. Deposits, withdrawals and transfers can distort it; no claim of cash-flow-adjusted investment performance, realized P/L, strategy Sharpe, win rate or profit factor is made. This is educational PAPER-account analytics.
+- There is no second Python server or OpenBB runtime; the account credentials remain in Cloudflare secrets and every portfolio-history request is protected by Access.
+
+### OpenBB decision: deliberate integration point, not a ban
+
+OpenBB Python V5 supports **modular provider packages**, a Python interface, FastAPI endpoints and MCP integration. It can be extremely useful for multi-provider research, fundamental screening and economic datasets, but it is a separate Python-based ecosystem from the existing lightweight JavaScript Worker. Installing the *whole* OpenBB platform simply to calculate an equity drawdown and show Alpaca IEX quotes would add unnecessary deployment dependencies without supplying new licensed market-data rights. OpenBB doesn't inherently make a project slow or expensive, and using it would **not** stop GitHub editing.
+
+**Future integration when justified:** add an optional secured `/api/research/*` adapter to a selectively installed OpenBB provider service (or a compatible Cloudflare-managed Python runtime if its dependencies prove supported) for fundamentals, macro data or cross-provider research. Keep Alpaca keys isolated, examine provider API key/licensing costs, and deploy behind Cloudflare Access; do not expose a generic OpenBB API publicly.
+
+References: [OpenBB V5 architecture](https://docs.openbb.co/odp/python/concepts/architecture), [Cloudflare Python Workers packages](https://developers.cloudflare.com/workers/languages/python/packages/).
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
