@@ -248,11 +248,60 @@
           x.date>=rows[trainEnd].date && x.date<=rows[evalEnd-1].date).length
       });
     }
-    return {version:"levios-walk-forward-v1",dataHash:checksum(rows),
+
+    // Compare the fixed candidate grid over exactly the same chronological
+    // folds. These are retrospective diagnostics, NOT independent new tests.
+    // Each evaluation window uses parameter settings fixed before inspecting
+    // its scores, with carried-in position state from historical warmup.
+    const leaderboard = candidates.map(choice => {
+      const windows = folds.map(f => {
+        const endIndex = rows.findIndex(r => r.date === f.evalEnd) + 1;
+        const startIndex = rows.findIndex(r => r.date === f.evalStart);
+        const trial = run(rows.slice(0, endIndex),
+          {...baseSettings, ...choice});
+        const before = trial.curve[startIndex - 1].equity;
+        const after = trial.curve[endIndex - 1].equity;
+        const holdBefore = trial.benchmark[startIndex - 1];
+        const holdAfter = trial.benchmark[endIndex - 1];
+        let peak = before, drawdown = 0;
+        for (let i = startIndex; i < endIndex; i++) {
+          peak = Math.max(peak, trial.curve[i].equity);
+          drawdown = Math.min(drawdown, (trial.curve[i].equity / peak - 1) * 100);
+        }
+        const returnPct = (after / before - 1) * 100;
+        const holdPct = (holdAfter / holdBefore - 1) * 100;
+        return {
+          fold: f.fold, returnPct, holdPct,
+          excessPctPoints: returnPct - holdPct,
+          maxDrawdownPct: drawdown,
+          executions: trial.executions.filter(x =>
+            x.date >= f.evalStart && x.date <= f.evalEnd).length
+        };
+      });
+      const totalObservations = folds.reduce((sum, f) => sum + f.evalObservations, 0);
+      const weightedExcessPctPoints = windows.reduce((sum, w, i) =>
+        sum + w.excessPctPoints * folds[i].evalObservations, 0) / totalObservations;
+      const positiveFolds = windows.filter(w => w.excessPctPoints > 0).length;
+      const maxDrawdownPct = Math.min(...windows.map(w => w.maxDrawdownPct));
+      const executions = windows.reduce((sum, w) => sum + w.executions, 0);
+      return {
+        ...choice, windows, positiveFolds, weightedExcessPctPoints,
+        maxDrawdownPct, executions,
+        reviewStatus: positiveFolds >= 2 && executions >= 2 &&
+          weightedExcessPctPoints > 0 && maxDrawdownPct >= -15
+          ? "REVIEW" : "INSUFFICIENT"
+      };
+    }).sort((a,b) =>
+      b.positiveFolds - a.positiveFolds ||
+      b.weightedExcessPctPoints - a.weightedExcessPctPoints ||
+      b.maxDrawdownPct - a.maxDrawdownPct ||
+      a.fast - b.fast);
+    return {version:"levios-walk-forward-v2",dataHash:checksum(rows),
+      leaderboard,
       method:"expanding-training-three-chronological-evaluation-folds",
       candidates,folds,
       positiveFolds:folds.filter(f=>f.excessPctPoints>0).length,
-      caveat:"Historical repeated out-of-sample simulation, not untouched forward/live testing. Each fold has independent carried-in positions; fold returns are not a stitched executable equity curve. Close-only hypothetical fills, IEX coverage and corporate-action limitations apply."};
+      caveat:"Historical repeated out-of-sample simulation, not untouched forward/live testing. Leaderboard ranks fixed candidate parameters on the same already-inspected folds, not fresh independent evidence. REVIEW means investigate, not approve or deploy. Each fold has independent carried-in positions; fold returns are not a stitched executable equity curve. Close-only hypothetical fills, IEX coverage and corporate-action limitations apply."};
   }
   scope.LeviStrategyEngine = Object.freeze({version: VERSION, run, checksum, evaluationWindows, walkForward});
 })(globalThis);
