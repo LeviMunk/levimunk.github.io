@@ -16,6 +16,15 @@
   let toastTimer;
   let alpacaSnapshot = null; // In-memory only; not part of exported or browser-stored simulation.
   let accountView = "alpaca";
+  let tradingViewPnl = null;
+  let tradingViewCandle = null;
+  let candleSymbol = "SPY";
+  let candleRange = "3M";
+  let candleRequestToken = 0;
+  let candleBars = null;
+  let candleError = "";
+  let candleRequesting = false;
+
   const WATCHLIST_STORAGE_KEY = "levios-iex-watchlist-v1";
   const WATCHLIST_DEFAULT = ["SPY", "QQQ", "AAPL", "MSFT", "NVDA"];
   const WATCHLIST_MAX = 12;
@@ -388,9 +397,203 @@
       : "Not enough Alpaca PAPER observations to calculate a historical drawdown.";
   }
 
+  // Uses the actual TradingView Lightweight Charts v5 standalone browser build,
+  // self-hosted on the authenticated Cloudflare Worker (not a third-party CDN).
+  function tradingViewAvailable() {
+    const lib = window.LightweightCharts;
+    return Boolean(lib && lib.createChart && lib.AreaSeries && lib.CandlestickSeries);
+  }
+  function chartTheme() {
+    return {
+      autoSize: true,
+      layout: { background: { type: "solid", color: "#10242a" },
+        textColor: "#a9c3c0", fontFamily: "Inter, system-ui, sans-serif" },
+      grid: { vertLines: { color: "#223b40" },
+        horzLines: { color: "#223b40" } },
+      rightPriceScale: { borderColor: "#35545a" },
+      timeScale: { borderColor: "#35545a", timeVisible: false,
+        rightOffset: 3, fixLeftEdge: true },
+      crosshair: { vertLine: { labelBackgroundColor: "#235145" },
+        horzLine: { labelBackgroundColor: "#235145" } },
+      handleScroll: true,
+      handleScale: true
+    };
+  }
+  function chartDailyData(points, toValue) {
+    const unique = new Map();
+    for (const point of points) {
+      const time = point.time || (Number.isSafeInteger(point.timestamp)
+        ? new Date(point.timestamp * 1000).toISOString().slice(0, 10) : null);
+      if (!time || !/^\\d{4}-\\d{2}-\\d{2}$/.test(time)) continue;
+      const value = toValue(point);
+      if (value && Object.values(value).every(Number.isFinite)) {
+        unique.set(time, {time, ...value});
+      }
+    }
+    return [...unique.values()].sort((a, b) => a.time.localeCompare(b.time));
+  }
+  function renderTradingViewPnl(points) {
+    const el = $("pnl-lwc");
+    if (!tradingViewAvailable() || !window.location.hostname.endsWith(".workers.dev")) return;
+    const daily = chartDailyData(points, p => ({value: Number(p.profit_loss)}));
+    if (daily.length < 2) return;
+    try {
+      el.hidden = false;
+      if (!tradingViewPnl) {
+        const chart = window.LightweightCharts.createChart(el, chartTheme());
+        const series = chart.addSeries(window.LightweightCharts.AreaSeries, {
+          lineColor: "#69ddb2",
+          topColor: "rgba(105,221,178,.4)",
+          bottomColor: "rgba(105,221,178,.02)",
+          lineWidth: 2,
+          priceLineVisible: false
+        });
+        series.createPriceLine({
+          price: 0, color: "#64847f", lineWidth: 1,
+          lineStyle: 2, axisLabelVisible: true, title: "Break-even"
+        });
+        tradingViewPnl = { chart, series };
+      }
+      const value = daily[daily.length - 1].value;
+      tradingViewPnl.series.applyOptions({
+        lineColor: value < 0 ? "#f3a3a3" : "#69ddb2",
+        topColor: value < 0 ? "rgba(243,163,163,.32)" : "rgba(105,221,178,.4)",
+        bottomColor: "rgba(105,221,178,.02)"
+      });
+      tradingViewPnl.series.setData(daily);
+      tradingViewPnl.chart.timeScale().fitContent();
+      $("pnl-chart").hidden = true;
+    } catch (error) {
+      console.warn("TradingView P/L chart could not render; retaining SVG fallback.", error);
+      el.hidden = true;
+      $("pnl-chart").hidden = false;
+    }
+  }
+
+  function syncCandleSymbol() {
+    if (!watchSymbols.includes(candleSymbol)) candleSymbol = watchSymbols[0] || "";
+    const select = $("watch-chart-symbol");
+    if (select.options.length !== watchSymbols.length ||
+        watchSymbols.some((symbol, index) => select.options[index]?.value !== symbol)) {
+      select.replaceChildren();
+      for (const symbol of watchSymbols) select.add(new Option(symbol, symbol));
+    }
+    if (candleSymbol) select.value = candleSymbol;
+    select.disabled = !candleSymbol;
+  }
+  function renderCandleChart() {
+    syncCandleSymbol();
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    for (const button of document.querySelectorAll("[data-ohlc-range]")) {
+      const active = button.dataset.ohlcRange === candleRange;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+      button.disabled = !privateWorker || !candleSymbol;
+    }
+    const status = $("watch-candle-status");
+    if (!privateWorker) {
+      status.textContent = "Interactive IEX candles are available in the protected Alpaca dashboard.";
+      return;
+    }
+    if (!tradingViewAvailable()) {
+      status.textContent = "TradingView chart library is unavailable; review the Cloudflare build.";
+      return;
+    }
+    if (!candleSymbol) {
+      status.textContent = "Add a ticker to your watchlist to view daily candles.";
+      return;
+    }
+    if (candleRequesting) {
+      status.textContent = "Loading historical IEX candles for " + candleSymbol + "…";
+      return;
+    }
+    if (candleError) {
+      status.textContent = candleError;
+      return;
+    }
+    if (!Array.isArray(candleBars)) {
+      status.textContent = "Choose a ticker to load daily IEX candles.";
+      return;
+    }
+    const rows = chartDailyData(candleBars, p => ({
+      open: Number(p.open), high: Number(p.high),
+      low: Number(p.low), close: Number(p.close)
+    })).filter(p => p.low <= Math.min(p.open, p.close, p.high) &&
+      p.high >= Math.max(p.open, p.close, p.low) && p.open > 0);
+    if (!rows.length) {
+      status.textContent = "No eligible IEX daily candles were returned for " + candleSymbol + ".";
+      return;
+    }
+    try {
+      const el = $("watch-candle-chart");
+      if (!tradingViewCandle) {
+        const chart = window.LightweightCharts.createChart(el, chartTheme());
+        const series = chart.addSeries(window.LightweightCharts.CandlestickSeries, {
+          upColor: "#69ddb2", downColor: "#f3a3a3",
+          borderVisible: false,
+          wickUpColor: "#69ddb2", wickDownColor: "#f3a3a3"
+        });
+        tradingViewCandle = { chart, series };
+      }
+      tradingViewCandle.series.setData(rows);
+      tradingViewCandle.chart.timeScale().fitContent();
+      status.textContent = candleSymbol + " · " + candleRange +
+        " · " + rows.length + " IEX daily candles · " +
+        rows[0].time + " to " + rows[rows.length - 1].time +
+        ". Scroll to zoom; drag to pan; use crosshair to inspect prices.";
+    } catch (error) {
+      console.warn("TradingView IEX candlesticks failed to render.", error);
+      status.textContent = "Candlestick chart could not render. Refresh and verify the TradingView build.";
+    }
+  }
+  async function loadCandleBars() {
+    const privateWorker = window.location.hostname.endsWith(".workers.dev");
+    if (!privateWorker || !candleSymbol || !tradingViewAvailable()) {
+      renderCandleChart();
+      return;
+    }
+    const token = ++candleRequestToken;
+    const symbol = candleSymbol, range = candleRange;
+    candleError = "";
+    candleBars = null;
+    candleRequesting = true;
+    renderCandleChart();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch("/api/market/bars?symbol=" +
+        encodeURIComponent(symbol) + "&range=" + encodeURIComponent(range), {
+          method:"GET", credentials:"same-origin", cache:"no-store",
+          redirect:"error", signal:controller.signal
+        });
+      if (!response.ok) throw Error("Alpaca bars endpoint returned HTTP " + response.status);
+      const result = await response.json();
+      if (token !== candleRequestToken) return;
+      if (!result || result.connected !== true || result.feed !== "iex" ||
+          result.symbol !== symbol || result.range !== range || !Array.isArray(result.bars)) {
+        throw Error(result?.reason || "IEX bars unavailable");
+      }
+      candleBars = result.bars;
+      if (result.truncated) candleError = "Historical IEX bar range was truncated; try a shorter period.";
+    } catch (error) {
+      if (token !== candleRequestToken) return;
+      candleBars = null;
+      candleError = error?.name === "AbortError" ? "IEX candlestick request timed out."
+        : "Could not load historical IEX bars: " + String(error?.message || "connection error");
+    } finally {
+      clearTimeout(timeout);
+      if (token === candleRequestToken) {
+        candleRequesting = false;
+        renderCandleChart();
+      }
+    }
+  }
+
   function renderProfitLoss() {
     const chart = $("pnl-chart");
     const empty = $("pnl-empty");
+    chart.hidden = false;
+    $("pnl-lwc").hidden = true;
     chart.replaceChildren();
     const privateWorker = window.location.hostname.endsWith(".workers.dev");
     const connected = Boolean(alpacaSnapshot?.connected);
@@ -512,6 +715,7 @@
           chart.setAttribute("aria-label", pnlRange + " Alpaca paper P/L: " +
             pnlText + " as of " + dateLabel(last.timestamp) +
             ", based on " + rows.length + " daily observations.");
+          renderTradingViewPnl(rows);
         }
       }
     }
