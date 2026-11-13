@@ -43,6 +43,7 @@ test("protected dashboard and assets are served after login", async () => {
   assert.ok(html.includes('id="events-category"'));
   assert.ok(html.includes('id="earnings-refresh"'));
   assert.ok(html.includes('src="./earnings-engine.js"'));
+  assert.ok(html.includes('src="./catalyst-engine.js"'));
   assert.ok(html.includes('src="./radar-engine.js"'));
   assert.match(html, /id="validation-review"/);
   assert.match(html, /id="validation-approve"/);

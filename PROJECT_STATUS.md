@@ -28,6 +28,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 - On-demand watchlist Market Radar for unusual IEX-only price, volume and range movements
 - Official-source Market Events Intelligence with automatically fetched BLS ICS and BEA JSON on protected calendar visits (6-hour per-browser refresh), per-source failure fallback, and Federal Reserve dated snapshot
 - Company Earnings Intelligence with issuer-confirmed source references, optional protected Alpha Vantage estimates and explicit no-date status
+- Catalyst Context links Market Radar observations with dated marketwide events and same-ticker earnings, preserving source and timing caveats
 - Previous reference good build: `45f816c` (frontend, Worker tests, mobile and Pages all passed). This does not independently prove the private Cloudflare deployment.
 
 ## Security invariants
@@ -39,7 +40,7 @@ A read-only Alpaca PAPER market-data dashboard and personal trading-education/re
 
 ## Current work / roadmap
 1. **Market Events Intelligence v2**: BLS and BEA agency feeds checked automatically on opening the authenticated calendar with a six-hour browser cache and independent source-status/fallback. FOMC remains a dated snapshot; not continuous unattended polling or earnings data.
-2. Company Earnings Intelligence: a limited issuer-confirmed announcement and IR links, with optional third-party estimates when a privately stored Alpha Vantage key is configured. Next: source verification workflow, news context, and a trading hypothesis journal.
+2. Company Earnings Intelligence: a limited issuer-confirmed announcement and IR links, with optional third-party estimates when a privately stored Alpha Vantage key is configured. Next: source verification workflow, news context, and a trading hypothesis journal. Catalyst Context offers temporal proximity only, never an attributed cause.
 3. Optional recurring checks/notifications only after a separately approved operational design; the browser's on-demand radar is NOT always-on.
 
 ## Development procedure

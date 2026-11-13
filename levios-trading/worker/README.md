@@ -244,6 +244,11 @@ The Market Events tab includes Earnings Intelligence for the local IEX watchlist
 
 Optional **Alpha Vantage** estimates can supplement the dashboard after you privately set a Cloudflare Worker secret named `ALPHAVANTAGE_API_KEY`. The protected `GET /api/market/earnings?symbols=AAPL,MSFT` endpoint validates 1–12 unique watchlist tickers, requests a 3-month provider calendar once, filters to the selected tickers, validates CSV format, and labels all provider entries **provider_estimate**, never issuer_confirmed. The secret is never returned in JSON or exposed to browser JS or GitHub. Missing credentials give an explicit unavailable state, not a fabricated schedule. Free API rates/terms apply; avoid excessive refreshes. This is a manually refreshed research panel with short-lived browser cache, not unattended notifications. No changes to Alpaca, Cloudflare Access policy, DNS or hosting.
 
+## Market Radar Catalyst Context
+Market Radar now cross-references its last **completed IEX daily candle date** with official macro release schedules and issuer-confirmed or explicitly estimated same-ticker earnings dates. The deterministic `catalyst-engine.js` only displays source-labeled events on the same date, the prior three calendar days, or the following seven calendar days. It never claims an event caused a price move. Same-day events are flagged as **intraday timing unverified**; a future event is marked **upcoming and cannot explain the earlier move**. Marketwide macro events are general context, not ticker-specific causes. If no relevant events are available, it says so, rather than inventing one.
+
+The existing six-hour agency-feed and optional earnings lookup caches are reused on radar scans to limit requests; the results appear alongside each radar ticker. The issuer snapshot is dated and Alpha Vantage entries remain estimates. No persistent news archive, issuer results matching, economic surprise data, model prediction, new data provider, broker write API or 24/7 process was added. Unit tests cover temporal boundaries, symbol matching and attribution safeguards.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
