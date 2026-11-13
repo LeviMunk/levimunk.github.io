@@ -1667,6 +1667,150 @@
     document.body.append(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
   }
+  const PAPER_PLANS_KEY="levios-paper-predictions-v1";
+  const PAPER_OUTCOMES_KEY="levios-paper-outcomes-v1";
+  let paperPredictions=[],paperOutcomes={},checkingPredictions=false;
+  function loadPaperPredictions(){
+    try{
+      const x=JSON.parse(localStorage.getItem(PAPER_PLANS_KEY)||"[]");
+      paperPredictions=Array.isArray(x)?x.filter(p=>p&&p.mode==="PAPER_SIM_ONLY"&&
+        typeof p.id==="string"&&/^[A-Z][A-Z0-9.-]{0,9}$/.test(p.symbol)&&
+        typeof p.createdAt==="string"&&Number.isFinite(Date.parse(p.createdAt))&&
+        Number.isFinite(p.entry)&&Number.isFinite(p.stop)&&Number.isFinite(p.target)&&
+        p.stop<p.entry&&p.entry<p.target&&Number.isInteger(p.expiryDays)&&
+        p.expiryDays>=1&&p.expiryDays<=60).slice(0,100):[];
+    }catch{paperPredictions=[];}
+    try{
+      const outcomes=JSON.parse(localStorage.getItem(PAPER_OUTCOMES_KEY)||"{}");
+      if(outcomes&&typeof outcomes==="object"&&!Array.isArray(outcomes)){
+        paperOutcomes={};
+        for(const p of paperPredictions){
+          const x=outcomes[p.id];
+          if(x&&["win","loss","open","waiting","expired","ambiguous","awaiting_data","unverifiable"].includes(x.status)&&
+            x.symbol===p.symbol)paperOutcomes[p.id]=x;
+        }
+      }
+    }catch{paperOutcomes={};}
+  }
+  function savePaperPrediction(event){
+    event.preventDefault();
+    const status=$("paper-prediction-status");
+    try{
+      if(paperPredictions.length>=100)throw Error("100-plan limit reached. Export your history before adding more.");
+      const plan=globalThis.LeviPaperPredictions.plan({
+        symbol:$("paper-plan-symbol").value,
+        entry:$("paper-plan-entry").value,
+        stop:$("paper-plan-stop").value,
+        target:$("paper-plan-target").value,
+        expiryDays:$("paper-plan-expiry").value,
+        riskBudget:$("paper-plan-risk").value
+      },{id:"paper-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10),
+        now:new Date().toISOString()});
+      const next=[plan,...paperPredictions];
+      localStorage.setItem(PAPER_PLANS_KEY,JSON.stringify(next));
+      paperPredictions=next;
+      status.textContent="Saved "+plan.symbol+" PAPER prediction. Only future completed daily candles can score it.";
+      $("paper-prediction-form").reset();
+      renderPaperPredictions();
+    }catch(error){status.textContent="Prediction not saved: "+String(error?.message||error);}
+  }
+  function renderPaperPredictions(){
+    const score=$("paper-prediction-score"),rows=$("paper-prediction-records");
+    score.replaceChildren();rows.replaceChildren();
+    const available=paperPredictions.map(p=>paperOutcomes[p.id]||
+      {symbol:p.symbol,status:"unscored",reason:"Not yet checked against completed price data."});
+    const x=globalThis.LeviPaperPredictions.stats(available);
+    const summary=[["Saved predictions",x.plans],["Resolved wins",x.wins],
+      ["Resolved losses",x.losses],["Win rate",x.winRatePct===null?"No resolved trades":x.winRatePct.toFixed(1)+"%"],
+      ["Average hypothetical R",x.averageR===null?"—":x.averageR.toFixed(2)+"R"]];
+    for(const [label,value] of summary){
+      const box=document.createElement("div");
+      const name=document.createElement("span");name.textContent=label.toUpperCase();
+      const n=document.createElement("strong");n.textContent=String(value);
+      box.append(name,n);score.append(box);
+    }
+    if(!paperPredictions.length){rows.textContent="No predictions yet. Save a PAPER plan to start tracking.";return;}
+    for(const p of paperPredictions){
+      const result=paperOutcomes[p.id]||{status:"unscored",reason:"Not yet checked."};
+      const card=document.createElement("div");
+      const label=document.createElement("span");
+      label.textContent=p.symbol+" · "+p.createdAt.slice(0,10)+" · PAPER ONLY";
+      const headline=document.createElement("strong");headline.textContent=
+        String(result.status).replaceAll("_"," ").toUpperCase();
+      const details=document.createElement("small");
+      details.textContent="Entry $"+p.entry+" · Stop $"+p.stop+" · Target $"+p.target+
+        " · Entry window "+p.expiryDays+"d · Planned risk $"+p.riskBudget+
+        " · "+p.plannedShares+" theoretical shares.";
+      const note=document.createElement("small");note.textContent=result.reason||
+        "Simulation only.";
+      card.append(label,headline,details,note);
+      if(result.status==="win"||result.status==="loss"){
+        const calc=document.createElement("small");
+        calc.textContent="Approximate result: "+result.rMultiple.toFixed(2)+"R · "+
+          result.returnPct.toFixed(2)+"% per share, before costs · "+
+          result.entryDate+" to "+result.exitDate;
+        card.append(calc);
+      }
+      rows.append(card);
+    }
+  }
+  async function checkPaperPredictions(){
+    const status=$("paper-prediction-status");
+    if(checkingPredictions)return;
+    if(!window.location.hostname.endsWith(".workers.dev")){
+      status.textContent="Open the protected Worker dashboard to check PAPER predictions.";return;
+    }
+    if(!paperPredictions.length){status.textContent="Save at least one PAPER prediction first.";return;}
+    checkingPredictions=true;$("paper-prediction-check").disabled=true;
+    let checked=0;
+    const today=currentNYTradingDate(),cache=new Map(),next={...paperOutcomes};
+    try{
+      for(const p of paperPredictions){
+        status.textContent="Checking "+(++checked)+" / "+paperPredictions.length+" PAPER predictions…";
+        try{
+          if(!cache.has(p.symbol)){
+            const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),16000);
+            try{
+              const res=await fetch("/api/market/bars?symbol="+encodeURIComponent(p.symbol)+"&range=3M",{
+                method:"GET",credentials:"same-origin",cache:"no-store",redirect:"error",signal:controller.signal
+              });
+              if(!res.ok)throw Error("History request failed: HTTP "+res.status);
+              const payload=await res.json();
+              if(payload?.connected!==true||payload.feed!=="iex"||payload.symbol!==p.symbol||
+                payload.truncated===true||!Array.isArray(payload.bars))
+                throw Error("Completed IEX data unavailable.");
+              cache.set(p.symbol,payload.bars);
+            }finally{clearTimeout(timer);}
+          }
+          // Three-month history cannot settle older plans whose early trades are missing.
+          const age=(Date.parse(today+"T00:00:00Z")-Date.parse(p.createdAt.slice(0,10)+"T00:00:00Z"))/86400000;
+          if(age>75&&!["win","loss","ambiguous"].includes(next[p.id]?.status))
+            throw Error("Prediction older than available 3-month research window; insufficient full history.");
+          // Never overwrite a resolved result with truncated history or a new incomplete feed.
+          const result=globalThis.LeviPaperPredictions.replay(p,cache.get(p.symbol),today);
+          if(!["win","loss","ambiguous"].includes(next[p.id]?.status)||
+              ["win","loss","ambiguous"].includes(result.status))next[p.id]=result;
+        }catch(error){
+          if(!next[p.id])next[p.id]={symbol:p.symbol,status:"unverifiable",
+            reason:String(error?.message||error)};
+        }
+      }
+      paperOutcomes=next;
+      try{localStorage.setItem(PAPER_OUTCOMES_KEY,JSON.stringify(next));}
+      catch{status.textContent="Result storage failed. Export your predictions now.";return;}
+      renderPaperPredictions();
+      status.textContent="Checked "+checked+" plan(s). W/L excludes open, expired, untriggered and ambiguous cases. These are simulated, not Alpaca fills.";
+    }finally{checkingPredictions=false;$("paper-prediction-check").disabled=false;}
+  }
+  function exportPaperPredictions(){
+    const data=JSON.stringify({version:1,mode:"PAPER_SIM_ONLY",exportedAt:new Date().toISOString(),
+      plans:paperPredictions,outcomes:paperOutcomes},null,2);
+    const blob=new Blob([data],{type:"application/json"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="levios-paper-predictions-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
   let decisionBriefRunning=false;
   async function requestDecisionBrief(event){
     event.preventDefault();
@@ -3125,6 +3269,9 @@
   $("valuation-peer-suggest").addEventListener("click",suggestResearchPeers);
   $("valuation-form").addEventListener("submit",runValuationComparison);
   $("decision-brief-form").addEventListener("submit",e=>void requestDecisionBrief(e));
+  $("paper-prediction-form").addEventListener("submit",savePaperPrediction);
+  $("paper-prediction-check").addEventListener("click",()=>void checkPaperPredictions());
+  $("paper-prediction-export").addEventListener("click",exportPaperPredictions);
   $("overview-more").addEventListener("click",toggleOverviewDetails);
   $("daily-brief-run").addEventListener("click",()=>void runDailyBrief());
   $("events-category").addEventListener("change", renderMarketEvents);
@@ -3185,6 +3332,8 @@
   loadStrategyVersions();
   loadValidationDecisions();
   loadHypotheses();
+  loadPaperPredictions();
+  renderPaperPredictions();
   updateStrategySource();
   render();showView("overview");
   renderWatchlist();

@@ -288,6 +288,13 @@ On the Overview tab, users can enter one ticker and request a concise decision b
 
 Overview copy is shorter, the large development notices are collapsed into optional disclosures, and advanced risk/scorecard/imported-data panels are hidden behind an explicit Show advanced analytics button. Core P/L and account status remain visible. All original advanced data and access controls remain available. Design research references include KaanCan1/portfolio-tracker (discipline/thesis first), idiehl/stockview (concise terminal dashboard) and lightweight local-first dashboards. No large UI dependency, credentials or new provider required. The static public GitHub Pages copy abstains from protected research.
 
+## PAPER prediction tracking (Upgrade 23)
+The Overview includes a strictly PAPER-only and local-only prediction ledger. The trader saves each long, limit-entry hypothetical prediction **before** the relevant future daily candles, including ticker, entry, stop, target, a 1–60 calendar-day entry window and risk budget. Plans are immutable in the UI. A separate Check Results action requests completed Alpaca IEX daily OHLC through the existing authenticated, read-only `/api/market/bars` route, never orders. Any completed candle on or before the plan-creation date is excluded to prevent look-ahead.
+
+Outcomes are **win, loss, open, waiting, expired, ambiguous, awaiting_data, or unverifiable**. Ambiguous OHLC candles (such as stop and target touched in one day) never count as winners or losers. The target and stop are evaluated only after the entry candle, and opening price gaps through a stop may produce larger modeled losses than planned. These approximations are **NOT actual broker fills**. Win percentage is calculated only among resolved unambiguous simulated cases; all unresolved and never-triggered cases remain visible. Expected R is the average realized hypothetical reward/risk across resolved cases and should not be trusted as live expectancy. No transaction costs, liquidity/volume checks, corporate action adjustments, tracking of missed opportunities, benchmark returns or automated background monitoring are included. Manual JSON export helps retain research. Browser clearing deletes this local record. Plans within the first 24 hours or with insufficient IEX history cannot be scored. A meaningful historical sample and realistic costs are required before claiming an edge.
+
+No real-money trading integration, order endpoint or auto-execution exists. The Worker remains GET/HEAD-only behind Cloudflare Access and PAPER-only.
+
 ## How updates work
 
 - All source is in **one GitHub repository**: `LeviMunk/levimunk.github.io`.
