@@ -110,3 +110,35 @@
 @media(max-width:800px){.talk-interest-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.talk-interest-options{grid-template-columns:1fr}.talk-show-times{width:100%}}
 @media(prefers-reduced-motion:reduce){.talk-interest-option{transition:none!important}.talk-interest-option:hover{transform:none}}
+
+/* Mobile booking and Calendly: prevent sideways scrolling, preserve focus and touch access. */
+.talk-page .talk-workspace-inner,.talk-page .talk-booking,.talk-page .talk-interest-panel,.talk-page .talk-interest-options{min-width:0}
+.talk-page #talk-calendar-panel{scroll-margin-top:160px}
+.talk-page .talk-calendly-embed{min-width:0;max-width:100%}
+.talk-page #calendly-embed .calendly-inline-widget{width:100%!important;max-width:100%!important}
+.talk-page #calendly-embed iframe{display:block;width:100%!important;max-width:100%!important}
+@media(max-width:900px){
+  .talk-page main#main{height:auto;max-height:none;overflow:visible}
+  .talk-page .talk-workspace-inner{width:100%;box-sizing:border-box}
+  .talk-page .talk-form-head{min-width:0}
+  .talk-page .talk-booking-highlights{gap:9px 16px;line-height:1.5}
+  .talk-page .talk-interest-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .talk-page .talk-interest-option{min-width:0;min-height:60px;overflow-wrap:anywhere}
+  .talk-page .talk-calendly-embed{min-height:850px}
+}
+@media(max-width:600px){
+  .talk-page .talk-workspace-inner{padding:28px 18px 60px}
+  .talk-page .talk-form-heading{font-size:clamp(27px,8vw,38px);overflow-wrap:anywhere}
+  .talk-page .talk-form-head{gap:12px;margin-bottom:16px;padding-bottom:20px}
+  .talk-page .talk-booking-highlights{font-size:12px;gap:8px 14px}
+  .talk-page .talk-interest-panel{padding-top:12px}
+  .talk-page .talk-interest-options{grid-template-columns:minmax(0,1fr);gap:9px}
+  .talk-page .talk-interest-option{min-height:56px;font-size:14px;padding:12px 14px}
+  .talk-page #talk-interest-notes{font-size:16px;min-height:72px}
+  .talk-page .talk-show-times{width:100%;min-height:52px;justify-content:space-between}
+  .talk-page .talk-booking-fallback{line-height:1.65}
+  .talk-page .talk-calendly-embed{min-height:900px}
+  .talk-page #talk-calendar-panel{scroll-margin-top:150px}
+  .talk-page .talk-fields input,.talk-page .talk-fields select,.talk-page .talk-wide-label input,.talk-page .talk-wide-label textarea{font-size:16px}
+}
+@media(max-width:360px){.talk-page .talk-workspace-inner{padding-inline:14px}}
