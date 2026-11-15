@@ -383,3 +383,27 @@
 @media(max-width:1050px){.trade-desk-grid{grid-template-columns:1fr}.command-two-up{grid-template-columns:1fr}}
 @media(max-width:750px){.command-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.command-hero,.trade-desk-intro{align-items:flex-start}.command-mode{font-size:9px}.desk-ledger-row{grid-template-columns:75px 1fr;gap:7px}.desk-ledger-row>*:nth-child(3),.desk-ledger-row>*:nth-child(4){justify-self:start}}
 @media(max-width:480px){.command-hero,.trade-desk-intro{flex-direction:column;gap:7px}.command-mode{align-self:start}.desk-chart-form{flex-wrap:wrap}.desk-chart-form button{flex:1}}
+
+
+/* Public-only paper research metrics (deliberately distinct from Alpaca history). */
+.public-research-panel{margin:20px 0 24px}
+.public-research-heading{align-items:flex-start;gap:15px;flex-wrap:wrap}
+.public-research-heading h2{font-size:23px;margin:4px 0 8px}
+.public-research-heading p{max-width:720px;line-height:1.55}
+.public-research-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.public-research-stats>div{padding:15px;background:#10262b;border:1px solid #2c4b50;border-radius:11px;min-width:0}
+.public-research-stats span{display:block;font-size:10px;letter-spacing:1.2px;color:#a4bbbd;font-weight:750;margin-bottom:9px}
+.public-research-stats strong{display:block;font-size:23px;line-height:1.2;color:#e9fff4;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#public-research-curve{display:block;width:100%;height:auto;min-height:75px;background:#0d1f24;border:1px solid #29444a;border-radius:10px}
+.public-research-counts{display:flex;gap:25px;flex-wrap:wrap}
+.public-research-counts p{margin:12px 0;color:#a8c6c7;font-size:13px}
+.public-research-counts strong{font-size:17px;color:#e6fff5;font-variant-numeric:tabular-nums}
+.public-research-panel h3{font-size:17px;margin:18px 0 11px}
+.public-research-table-wrap{overflow-x:auto}
+.public-research-table{width:100%;border-collapse:collapse;min-width:510px;text-align:left}
+.public-research-table th,.public-research-table td{padding:11px 12px;border-bottom:1px solid #254349;font-size:12px}
+.public-research-table th{color:#96b5b7;font-size:10px;text-transform:uppercase;letter-spacing:.7px}
+.public-research-table td:last-child{font-variant-numeric:tabular-nums}
+#public-research-status{font-size:12px;margin:13px 0}
+@media(max-width:800px){.public-research-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.public-research-stats strong{font-size:20px}}
+@media(max-width:430px){.public-research-stats{gap:8px}.public-research-stats>div{padding:11px}.public-research-heading h2{font-size:20px}}
