@@ -24,6 +24,7 @@
   <script defer src="./prediction-engine.js"></script>
   <script defer src="./learning-engine.js"></script>
   <script defer src="./public-research.js"></script>
+  <script defer src="./allocation-builder.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -35,6 +36,7 @@
       <nav id="nav" class="nav">
         <button class="nav-item active" type="button" data-view="overview" aria-current="page"><span class="nav-symbol">◈</span> Command Center</button>
         <button class="nav-item" type="button" data-view="activity"><span class="nav-symbol">▥</span> Trade Desk</button>
+        <button class="nav-item" type="button" data-view="allocation"><span class="nav-symbol">◫</span> Portfolio Builder</button>
         <button class="nav-item" type="button" data-view="learning"><span class="nav-symbol">✦</span> Academy</button>
       </nav>
       <details class="sidebar-tools" id="advanced-tools-nav">
@@ -783,6 +785,57 @@
             <p class="muted">Every recorded idea, including wins, losses, pending trades, and ambiguous outcomes.</p></div></div>
           <div id="desk-ledger" class="desk-ledger" aria-live="polite"><p class="muted">No PAPER predictions saved yet.</p></div>
           <div class="button-row"><button class="button secondary" type="button" data-go="overview" id="desk-to-overview">Back to dashboard</button></div>
+        </article>
+      </section>
+      <section id="view-allocation" class="view" aria-label="Long-term diversified portfolio builder" hidden>
+        <div class="command-hero"><div><p class="eyebrow">LEVIOS / LONG-TERM INVESTING</p><h2>Portfolio Builder</h2>
+          <p>Explore diversified ETF allocations, compare risk levels, and model how consistent investing could add up over time.</p></div>
+          <span class="command-mode">EDUCATIONAL · NO ORDERS</span>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">START WITH THE GOAL</p><h2>What kind of portfolio fits your timeline?</h2></div></div>
+          <p class="muted">These are the four allocations already modeled by LeviOS's private portfolio lab. The tool suggests a <em>starting mix</em>, not individual stock picks or a guarantee of returns.</p>
+          <div class="allocation-fit-controls">
+            <label>When do you need the money?
+              <select id="allocation-horizon"><option value="2">Within 3 years</option><option value="4">3–5 years</option><option value="7">5–10 years</option><option value="12" selected>10–15 years</option><option value="20">15+ years</option></select>
+            </label>
+            <label>How would you react to a large market drop?
+              <select id="allocation-risk"><option value="low">I would prioritize stability</option><option value="medium" selected>I could hold through some losses</option><option value="high">I could hold through major losses</option></select>
+            </label>
+            <button type="button" id="allocation-match-button" class="button primary">Explore a suitable mix</button>
+          </div>
+          <p class="muted allocation-match" id="allocation-match" role="status" aria-live="polite">Choose a time horizon and loss tolerance to explore an allocation.</p>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">FOUR MODEL PORTFOLIOS</p><h2>Compare the allocations</h2></div></div>
+          <div id="allocation-models" class="allocation-model-grid"></div>
+          <div class="allocation-detail">
+            <h3 id="allocation-selected-name">Growth 80/20</h3>
+            <div id="allocation-breakdown"></div>
+            <p class="muted footnote">VTI tracks the broad U.S. stock market; VXUS covers international stocks outside the U.S.; BND covers the broad U.S. investment-grade bond market. All three can lose value. Ratios are illustrative, not a recommendation to buy.</p>
+            <p class="muted footnote">Model assumptions: diversified ETFs, quarterly rebalancing, no leverage. LeviOS's historical portfolio lab uses a limited IEX sample, so short-term results should not drive a long-term allocation.</p>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">COMPOUNDING ILLUSTRATION</p><h2>What could regular contributions look like?</h2></div></div>
+          <div class="allocation-inputs">
+            <label>Starting amount ($)<input id="allocation-initial" type="number" min="0" max="100000000" step="100" value="1000"></label>
+            <label>Monthly contribution ($)<input id="allocation-monthly" type="number" min="0" max="1000000" step="25" value="250"></label>
+            <label>Years invested<input id="allocation-years" type="number" min="1" max="50" step="1" value="20"></label>
+            <label>Assumed annual return (%)<input id="allocation-assumption" type="number" min="-20" max="20" step=".5" value="5"></label>
+          </div>
+          <p class="muted footnote">The annual return is an editable <strong>hypothetical assumption</strong>, not a predicted return or an estimate specific to any model above.</p>
+          <div class="allocation-results">
+            <div><span>ILLUSTRATIVE END VALUE</span><strong id="allocation-projected">—</strong></div>
+            <div><span>YOUR CONTRIBUTIONS</span><strong id="allocation-contributions">—</strong></div>
+            <div><span>ASSUMED INVESTMENT CHANGE</span><strong id="allocation-change">—</strong></div>
+          </div>
+          <p id="allocation-calculation-status" class="muted" role="status" aria-live="polite"></p>
+        </article>
+        <article class="panel">
+          <h2>Before selecting an allocation</h2>
+          <p class="muted">An emergency fund, high-interest debts, account taxes, the amount of loss you can tolerate, and when you will actually need the money may matter more than finding the portfolio that won a recent backtest. Stocks and bond funds are both risky. There is no single best allocation for everyone.</p>
+          <p class="muted footnote">This builder is independent of your Alpaca account and the short-term strategy tournament. It does not make trades or use your brokerage credentials.</p>
         </article>
       </section>
       <section id="view-learning" class="view" aria-label="Stock market learning academy" hidden>
