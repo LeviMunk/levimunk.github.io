@@ -491,3 +491,11 @@ body.awwwards-v2 .v2-hero-outline img{
   body.awwwards-v2 .v2-hero-outline{display:none!important}
   body.awwwards-v2 .v2-hero-grid .rail-hero-copy{width:100%}
 }
+
+/* Homepage: visible third CTA, complementary to portfolio and résumé. */
+body.awwwards-v2 .rail-home-intro .rail-cta-row{gap:10px;align-items:stretch}
+body.awwwards-v2 .rail-home-intro .rail-talk-cta{display:inline-flex;align-items:center;justify-content:space-between;gap:26px;min-height:58px;padding:16px 22px;border:1px solid #9ab54d;border-radius:2px;background:#c8f37d;color:#162c20;font:700 14px/1.4 var(--display);box-shadow:0 5px 0 #3a60301b,0 10px 24px #203a2020;transition:transform .22s,background .22s,box-shadow .22s}
+body.awwwards-v2 .rail-home-intro .rail-talk-cta:hover{background:#d9ffa4;transform:translateY(-3px);box-shadow:0 7px 0 #3a60301b,0 14px 28px #203a2028}
+body.awwwards-v2 .rail-home-intro .rail-talk-cta:focus-visible{outline:3px solid #3476d5;outline-offset:3px}
+@media(max-width:650px){body.awwwards-v2 .rail-home-intro .rail-talk-cta{flex:1 1 100%;justify-content:space-between}}
+@media(prefers-reduced-motion:reduce){body.awwwards-v2 .rail-home-intro .rail-talk-cta{transition:none}}
