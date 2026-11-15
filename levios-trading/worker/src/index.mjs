@@ -573,6 +573,7 @@ export default {
       "/index.html": [assets.html, "text/html; charset=utf-8"],
       "/app.js": [assets.app, "text/javascript; charset=utf-8"],
       "/public-research.js": [assets.publicResearch, "text/javascript; charset=utf-8"],
+      "/allocation-builder.js": [assets.allocationBuilder, "text/javascript; charset=utf-8"],
       "/data/research-summary.json": [assets.publicSummary, "application/json; charset=utf-8"],
       "/strategy-engine.js": [assets.strategyEngine, "text/javascript; charset=utf-8"],
       "/validation-engine.js": [assets.validationEngine, "text/javascript; charset=utf-8"],
