@@ -80,6 +80,11 @@
 .talk-page .talk-booking[hidden],.talk-page #talk-email-fallback[hidden]{display:none!important}
 .talk-page .talk-booking-highlights{display:flex;flex-wrap:wrap;align-items:center;gap:10px 25px;color:#355d3f;font:700 13px var(--display)}
 .talk-page .talk-booking-help{color:#5b6c5e;font-size:14px;margin:19px 0 12px;max-width:660px}
-.talk-page .talk-calendly-embed{width:100%;min-height:690px;background:#fff;border:1px solid #d3dfd0;border-radius:12px;overflow:hidden}
+.talk-page .talk-calendly-embed{width:100%;min-height:690px;background:transparent;border:0;border-radius:0;overflow:visible}
 .talk-page .talk-booking-fallback{font-size:13px;color:#5c705f;margin:15px 0}.talk-page .talk-booking-fallback a{font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:650px){.talk-page .talk-calendly-embed{min-height:760px}}
+
+/* Keep Calendly's native booking card, but remove the white framing around it. */
+.talk-page #calendly-embed,
+.talk-page #calendly-embed .calendly-inline-widget,
+.talk-page #calendly-embed iframe{background:transparent!important;border:0!important;box-shadow:none!important}
