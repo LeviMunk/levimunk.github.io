@@ -1603,3 +1603,18 @@ body.rail-layout .rail-experience-section .rail-timeline-prior-logos .rail-timel
     width:48px;height:48px
   }
 }
+
+/* Mobile usability hardening: preserve desktop layout. */
+@media(max-width:900px){
+  body.rail-layout .rail-sidebar .rail-container{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  body.rail-layout .rail-mobile-shortcuts a{min-width:0;min-height:48px;white-space:normal;overflow-wrap:normal;text-align:center}
+  body.rail-layout .rail-panel{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  body.rail-layout :is(#intro,#work,#approach,#experience,#about,#contact,#main,#resume-experience,#conversation){scroll-margin-top:148px}
+  body.rail-layout :is(img,video,iframe){max-width:100%}
+  body.rail-layout :is(.rail-content,.rail-hero-copy,.v2-feature-copy,.resume-history,.entry,.contact-band){min-width:0}
+  body.rail-layout :is(.rail-cta-row a,.rail-contact-actions a,.about-feature-actions a){min-height:48px}
+}
+@media(max-width:390px){
+  body.rail-layout .rail-mobile-shortcuts a{gap:5px;font-size:12px;padding:9px 3px}
+  body.rail-layout .rail-mobile-shortcuts a>span{font-size:15px}
+}
