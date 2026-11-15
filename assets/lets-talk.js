@@ -1,6 +1,10 @@
 (()=>{'use strict';
 const form=document.getElementById('talk-form');if(!form)return;
 const status=document.getElementById('talk-status'),fallback=document.getElementById('talk-fallback'),copyArea=document.getElementById('talk-copy-text'),copy=document.getElementById('talk-copy');
+const choices=[...form.querySelectorAll('input[name="topic"]')],count=document.getElementById('talk-topic-count');
+const updateCount=()=>{const n=choices.filter(x=>x.checked).length;count.textContent=n===0?'None selected':n===1?'1 selected':n+' selected';};
+choices.forEach(input=>input.addEventListener('change',()=>{updateCount();status.textContent='';}));
+updateCount();
 form.addEventListener('submit',event=>{
  event.preventDefault();
  const data=new FormData(form),topics=data.getAll('topic');
