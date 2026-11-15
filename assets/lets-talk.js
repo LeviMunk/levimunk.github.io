@@ -13,7 +13,9 @@ if(validCalendly){
  script.async=true;
  script.onload=()=>{
    if(window.Calendly?.initInlineWidget){
-     window.Calendly.initInlineWidget({url:eventUrl,parentElement:parent,resize:true});
+     const bookingUrl=new URL(eventUrl);
+     bookingUrl.searchParams.set('hide_event_type_details','1');
+     window.Calendly.initInlineWidget({url:bookingUrl.toString(),parentElement:parent,resize:true});
    }
  };
  script.onerror=()=>{parent.textContent='The embedded calendar could not load. Please use the direct booking link below.';};
