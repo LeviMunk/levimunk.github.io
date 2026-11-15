@@ -51,3 +51,8 @@
 .talk-page .talk-fallback{border-radius:12px}
 @media(min-width:1050px){.talk-page .talk-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.talk-page .talk-workspace-inner{padding-top:38px}.talk-page .talk-intro h1{font-size:clamp(42px,10.5vw,64px)}.talk-meta{gap:10px 15px}.talk-meta span{font-size:11px}.talk-page .talk-choice-grid{grid-template-columns:1fr}.talk-page .talk-choice{min-height:86px}}
+
+/* Form-only layout: no duplicate top or bottom sections. */
+.talk-page .talk-workspace-inner{padding-top:clamp(22px,3vw,42px);padding-bottom:clamp(35px,5vw,65px)}
+.talk-page .talk-form-heading{font:600 clamp(27px,3.2vw,42px)/1.12 var(--display);letter-spacing:-.055em;margin:0 0 22px;color:#213c2b}
+.talk-page .talk-form{margin-top:0}
