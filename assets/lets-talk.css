@@ -142,3 +142,45 @@
   .talk-page .talk-fields input,.talk-page .talk-fields select,.talk-page .talk-wide-label input,.talk-page .talk-wide-label textarea{font-size:16px}
 }
 @media(max-width:360px){.talk-page .talk-workspace-inner{padding-inline:14px}}
+
+/* Homepage booking is THE final contact section, not a separate page.
+   Override the legacy dark contact-band styles that were hiding its content. */
+body.rail-layout.awwwards-v2 section#contact.rail-contact-section.talk-workspace{
+  display:block;
+  min-height:0;
+  padding:0;
+  background:linear-gradient(145deg,#f4f6ef 0%,#fcfcf8 70%);
+  color:#192a21;
+  border-bottom:1px solid #c8d9c5;
+}
+body.rail-layout.awwwards-v2 section#contact .talk-workspace-inner{
+  box-sizing:border-box;
+  width:min(1080px,100%);
+  margin-inline:auto;
+  padding:clamp(45px,6vw,78px) clamp(22px,5vw,76px) clamp(54px,7vw,90px);
+}
+body.rail-layout.awwwards-v2 section#contact h1.talk-form-heading{
+  color:#213c2b;
+}
+body.rail-layout.awwwards-v2 section#contact h2#talk-interest-heading{
+  color:#213c2b;
+}
+body.rail-layout.awwwards-v2 section#contact .talk-form-head{
+  border-bottom-color:#c6d4c5;
+}
+body.rail-layout.awwwards-v2 section#contact .talk-booking{
+  display:block;
+}
+body.rail-layout.awwwards-v2 section#contact .talk-booking[hidden],
+body.rail-layout.awwwards-v2 section#contact #talk-email-fallback[hidden],
+body.rail-layout.awwwards-v2 section#contact #talk-calendar-panel[hidden]{
+  display:none!important;
+}
+@media(max-width:900px){
+  body.rail-layout.awwwards-v2 section#contact{scroll-margin-top:145px}
+}
+@media(max-width:600px){
+  body.rail-layout.awwwards-v2 section#contact .talk-workspace-inner{
+    padding:30px 18px 62px;
+  }
+}
