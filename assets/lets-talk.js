@@ -1,0 +1,35 @@
+(()=>{'use strict';
+const form=document.getElementById('talk-form');if(!form)return;
+const status=document.getElementById('talk-status'),fallback=document.getElementById('talk-fallback'),copyArea=document.getElementById('talk-copy-text'),copy=document.getElementById('talk-copy');
+form.addEventListener('submit',event=>{
+ event.preventDefault();
+ const data=new FormData(form),topics=data.getAll('topic');
+ if(!topics.length){status.textContent='Choose at least one conversation topic to continue.';form.querySelector('input[name="topic"]').focus();return;}
+ if(!form.reportValidity())return;
+ const take=k=>String(data.get(k)||'').trim();
+ const lines=[
+ 'Hi Levi,',
+ '',
+ "I'd like to find a time to connect.",
+ '',
+ 'Name: '+take('name'),
+ 'Email: '+take('email'),
+ ...(take('company')?['Organization: '+take('company')]:[]),
+ 'Topics: '+topics.join(', '),
+ 'Preferred format: '+take('format'),
+ 'Conversation length: '+take('length'),
+ 'Time zone: '+take('timezone'),
+ ...(take('availability')?['General availability: '+take('availability')]:[]),
+ ...(take('notes')?['','What I would like to discuss:',take('notes')]:[]),
+ '',
+ 'Looking forward to connecting!'
+ ];
+ const subject='Call request: '+topics.slice(0,2).join(' + ');
+ const body=lines.join('\n');
+ copyArea.value='To: levivanstap@gmail.com\nSubject: '+subject+'\n\n'+body;
+ fallback.hidden=false;
+ status.textContent='Your request is ready. Your email app should open with the details; review and send it to request a time.';
+ window.location.href='mailto:levivanstap@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+});
+copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(copyArea.value);copy.textContent='Copied ✓';}catch(e){copyArea.focus();copyArea.select();status.textContent='Select and copy the prepared request above.';}});
+})();
