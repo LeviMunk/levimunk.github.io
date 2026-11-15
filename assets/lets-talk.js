@@ -51,7 +51,17 @@ if(validCalendly){
      script.onerror=()=>{parent.textContent='The embedded calendar could not load. Use the direct link below.';};
      document.head.appendChild(script);
    }
-   calendar.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+   // Let mobile layout settle, then align the calendar below the sticky navigation.
+   requestAnimationFrame(()=>{
+     const nav=document.querySelector('.rail-sidebar');
+     const offset=window.matchMedia('(max-width:900px)').matches?(nav?.getBoundingClientRect().height||0)+12:20;
+     const top=calendar.getBoundingClientRect().top+window.scrollY-offset;
+     if(window.matchMedia('(max-width:900px)').matches){
+       window.scrollTo({top:Math.max(0,top),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+     }else{
+       calendar.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+     }
+   });
  });
 }
 
