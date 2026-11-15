@@ -499,3 +499,26 @@ body.awwwards-v2 .rail-home-intro .rail-talk-cta:hover{background:#d9ffa4;transf
 body.awwwards-v2 .rail-home-intro .rail-talk-cta:focus-visible{outline:3px solid #3476d5;outline-offset:3px}
 @media(max-width:650px){body.awwwards-v2 .rail-home-intro .rail-talk-cta{flex:1 1 100%;justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){body.awwwards-v2 .rail-home-intro .rail-talk-cta{transition:none}}
+
+/* 2026 motion polish — intentionally no geometry, section, color or layout changes. */
+@media(prefers-reduced-motion:no-preference){
+  body.awwwards-v2 .rail-home-intro .rail-hero-statement{animation:lm-copy-enter .65s .18s both cubic-bezier(.2,.8,.2,1)}
+  body.awwwards-v2 .rail-home-intro .rail-hero-support{animation:lm-copy-enter .65s .28s both cubic-bezier(.2,.8,.2,1)}
+  body.awwwards-v2 .rail-home-intro .rail-cta-row{animation:lm-copy-enter .65s .38s both cubic-bezier(.2,.8,.2,1)}
+  body.awwwards-v2 .rail-home-intro .v2-hero-outline img{animation:lm-portrait-enter 1.05s .12s both cubic-bezier(.2,.8,.2,1)}
+  body.awwwards-v2 .rail-nav a .rail-link-arrow{transition:opacity .25s ease,transform .25s ease}
+  body.awwwards-v2 .rail-nav a:hover .rail-link-arrow,
+  body.awwwards-v2 .rail-nav a:focus-visible .rail-link-arrow{transform:translate3d(3px,-2px,0)}
+  body.awwwards-v2 .rail-cta-row a span[aria-hidden],
+  body.awwwards-v2 .rail-contact-actions a{transition:transform .25s cubic-bezier(.2,.8,.2,1),color .2s ease}
+  body.awwwards-v2 .rail-cta-row a:hover span[aria-hidden],
+  body.awwwards-v2 .rail-cta-row a:focus-visible span[aria-hidden]{transform:translate3d(3px,-3px,0)}
+  body.awwwards-v2 .rail-contact-actions a:hover{transform:translateY(-2px)}
+  body.awwwards-v2 .focus-disclosure summary .focus-toggle{transition:transform .3s ease,background .25s ease}
+  body.awwwards-v2 .focus-disclosure[open] summary .focus-toggle{transform:rotate(90deg)}
+  body.awwwards-v2 .about-photo-frame img{transition:transform .65s cubic-bezier(.2,.8,.2,1),filter .5s ease}
+  body.awwwards-v2 .about-photo-frame:hover img{transform:scale(1.035)}
+  @keyframes lm-copy-enter{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+  @keyframes lm-portrait-enter{from{opacity:0;transform:translate3d(18px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+}
+@media(prefers-reduced-motion:reduce){body.awwwards-v2 .rail-home-intro .rail-hero-statement,body.awwwards-v2 .rail-home-intro .rail-hero-support,body.awwwards-v2 .rail-home-intro .rail-cta-row,body.awwwards-v2 .rail-home-intro .v2-hero-outline img{animation:none!important}}
