@@ -56,3 +56,22 @@
 .talk-page .talk-workspace-inner{padding-top:clamp(22px,3vw,42px);padding-bottom:clamp(35px,5vw,65px)}
 .talk-page .talk-form-heading{font:600 clamp(27px,3.2vw,42px)/1.12 var(--display);letter-spacing:-.055em;margin:0 0 22px;color:#213c2b}
 .talk-page .talk-form{margin-top:0}
+
+/* Form refinements: no full-screen intro or additional footer. */
+.talk-page .talk-form-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:32px;border-bottom:1px solid #c6d4c5;padding-bottom:26px}
+.talk-page .talk-form-eyebrow{color:#69826d;font:700 10px/1.3 var(--display);letter-spacing:.16em}
+.talk-page .talk-form-heading{margin:9px 0 8px;font-size:clamp(27px,3.3vw,46px)}
+.talk-page .talk-heading-accent{color:#779c5d}
+.talk-page .talk-form-lead{margin:0;color:#576a5b;font-size:15px;line-height:1.6}
+.talk-page .talk-email-option{font:700 12px var(--display);color:#3b6045;white-space:nowrap;border-bottom:1px solid #7d9b7d;padding-bottom:3px}
+.talk-page .talk-step{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;background:#dfead9;border-radius:50%;color:#31563c;font:700 11px var(--display);letter-spacing:0;margin-right:10px;vertical-align:middle}
+.talk-page .talk-section-divider{display:flex;align-items:center;font:600 clamp(20px,2.4vw,29px) var(--display);letter-spacing:-.04em;margin:0 0 23px}
+.talk-page .talk-section-divider .talk-step{flex-shrink:0}
+.talk-page .talk-choice:hover{background:#f5faf0}
+.talk-page .talk-choice:has(input:checked){background:#e2f0d6;box-shadow:inset 0 0 0 1px #517c50}
+.talk-page .talk-submit-bar{background:#e9f1e4;border:1px solid #c8d9c5;border-radius:12px;padding:22px 24px;margin-top:38px}
+.talk-page .talk-submit-bar button{background:#244832}
+.talk-page .talk-submit-bar button:hover{background:#376044}
+.talk-page .talk-status:not(:empty){background:#f5eddb;border-left:3px solid #b78d3b;padding:12px 14px}
+.talk-page .talk-fallback[hidden]{display:none}
+@media(max-width:650px){.talk-page .talk-form-head{align-items:start;flex-direction:column;gap:14px}.talk-page .talk-submit-bar{padding:18px}.talk-page .talk-section-divider{font-size:22px}}
