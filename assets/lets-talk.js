@@ -8,18 +8,51 @@ if(validCalendly){
  const parent=document.getElementById('calendly-embed');
  const direct=document.getElementById('talk-direct-booking');
  wrapper.hidden=false;fallback.hidden=true;direct.href=eventUrl;
- const script=document.createElement('script');
- script.src='https://assets.calendly.com/assets/external/widget.js';
- script.async=true;
- script.onload=()=>{
-   if(window.Calendly?.initInlineWidget){
-     const bookingUrl=new URL(eventUrl);
-     bookingUrl.searchParams.set('hide_event_type_details','1');
-     window.Calendly.initInlineWidget({url:bookingUrl.toString(),parentElement:parent,resize:true});
+ const options=[...document.querySelectorAll('.talk-interest-option')];
+ const notes=document.getElementById('talk-interest-notes');
+ const showTimes=document.getElementById('talk-show-times');
+ const calendar=document.getElementById('talk-calendar-panel');
+ const selected=new Set();
+ options.forEach(button=>button.addEventListener('click',()=>{
+   const interest=button.dataset.interest;
+   if(selected.has(interest))selected.delete(interest);else selected.add(interest);
+   const pressed=selected.has(interest);
+   button.setAttribute('aria-pressed',String(pressed));
+   button.querySelector('span').textContent=pressed?'✓':'+';
+ }));
+ const buildAnswer=()=>[...(selected.size?['Interests: '+[...selected].join(', ')]:[]),...(notes.value.trim()?['Details: '+notes.value.trim()]:[])].join(' | ').slice(0,1000);
+ const bookingUrl=new URL(eventUrl);
+ bookingUrl.searchParams.set('hide_event_type_details','1');
+ showTimes.addEventListener('click',()=>{
+   const answer=buildAnswer();
+   const directUrl=new URL(bookingUrl.toString());
+   if(answer)directUrl.searchParams.set('a1',answer);
+   direct.href=directUrl.toString();
+   calendar.hidden=false;
+   showTimes.textContent='Update calendar details';
+   // Reload the widget only when the visitor explicitly asks to proceed.
+   parent.replaceChildren();
+   const init=()=>{
+     if(window.Calendly?.initInlineWidget){
+       window.Calendly.initInlineWidget({
+         url:bookingUrl.toString(),parentElement:parent,resize:true,
+         ...(answer?{prefill:{customAnswers:{a1:answer}}}:{})
+       });
+     } else {
+       parent.textContent='The embedded calendar could not load. Use the direct link below.';
+     }
+   };
+   if(window.Calendly?.initInlineWidget)init();
+   else {
+     const script=document.createElement('script');
+     script.src='https://assets.calendly.com/assets/external/widget.js';
+     script.async=true;
+     script.onload=init;
+     script.onerror=()=>{parent.textContent='The embedded calendar could not load. Use the direct link below.';};
+     document.head.appendChild(script);
    }
- };
- script.onerror=()=>{parent.textContent='The embedded calendar could not load. Please use the direct booking link below.';};
- document.head.appendChild(script);
+   calendar.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+ });
 }
 
 const status=document.getElementById('talk-status'),fallback=document.getElementById('talk-fallback'),copyArea=document.getElementById('talk-copy-text'),copy=document.getElementById('talk-copy');
