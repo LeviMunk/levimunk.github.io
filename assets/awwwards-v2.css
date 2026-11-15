@@ -522,3 +522,12 @@ body.awwwards-v2 .rail-home-intro .rail-talk-cta:focus-visible{outline:3px solid
   @keyframes lm-portrait-enter{from{opacity:0;transform:translate3d(18px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 }
 @media(prefers-reduced-motion:reduce){body.awwwards-v2 .rail-home-intro .rail-hero-statement,body.awwwards-v2 .rail-home-intro .rail-hero-support,body.awwwards-v2 .rail-home-intro .rail-cta-row,body.awwwards-v2 .rail-home-intro .v2-hero-outline img{animation:none!important}}
+
+/* Compact phones: hero actions stay readable and tappable in one column. */
+@media(max-width:480px){
+  body.awwwards-v2 .rail-home-intro .rail-cta-row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  body.awwwards-v2 .rail-home-intro .rail-cta-row a{width:100%;min-width:0;min-height:52px;justify-content:space-between}
+  body.awwwards-v2 .rail-hero-copy h1{overflow-wrap:normal;word-break:normal}
+  body.awwwards-v2 .v2-feature{max-width:100%}
+  body.awwwards-v2 .v2-feature-copy{min-width:0}
+}
