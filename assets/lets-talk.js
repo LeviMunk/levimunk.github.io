@@ -8,7 +8,7 @@ updateCount();
 form.addEventListener('submit',event=>{
  event.preventDefault();
  const data=new FormData(form),topics=data.getAll('topic');
- if(!topics.length){status.textContent='Choose at least one conversation topic to continue.';form.querySelector('input[name="topic"]').focus();return;}
+ if(!topics.length){status.textContent='Choose at least one topic before continuing.';document.getElementById('talk-topics')?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});form.querySelector('input[name="topic"]').focus();return;}
  if(!form.reportValidity())return;
  const take=k=>String(data.get(k)||'').trim();
  const lines=[
