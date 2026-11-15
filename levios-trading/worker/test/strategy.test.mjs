@@ -106,7 +106,7 @@ test("robustness rejects too-short periods without inventing observations",()=>{
 
 test("walk-forward uses chronological expanding training and non-overlapping evaluations",()=>{
   const result=engine.walkForward(series(180),settings);
-  assert.equal(result.version,"levios-walk-forward-v1");
+  assert.equal(result.version,"levios-walk-forward-v2");
   assert.equal(result.folds.length,3);
   assert.deepEqual(result.folds.map(x=>x.evalObservations),[30,30,30]);
   assert.deepEqual(result.folds.map(x=>x.trainObservations),[90,120,150]);
