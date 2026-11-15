@@ -23,6 +23,7 @@
   <script defer src="./decision-brief-engine.js"></script>
   <script defer src="./prediction-engine.js"></script>
   <script defer src="./learning-engine.js"></script>
+  <script defer src="./public-research.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -78,6 +79,32 @@
           <article class="command-stat"><span>WIN RATE</span><strong id="command-win-rate">—</strong><small id="command-resolved-note">No results yet</small></article>
           <article class="command-stat"><span>AVERAGE RESULT</span><strong id="command-expectancy">—</strong><small>R per resolved prediction</small></article>
         </div>
+        <section class="panel public-research-panel" aria-labelledby="public-research-heading">
+          <div class="panel-head public-research-heading">
+            <div><p class="eyebrow">AUTONOMOUS RESEARCH / PUBLIC PAPER DATA</p><h2 id="public-research-heading">LeviOS strategy performance</h2>
+              <p class="muted">Automatically tested strategies and a separate $10,000 research simulator. This is <strong>not</strong> your Alpaca brokerage account.</p></div>
+            <small id="public-research-date" class="muted">Loading recorded research…</small>
+          </div>
+          <div class="public-research-stats" aria-label="Automated research performance">
+            <div><span>SIMULATED EQUITY</span><strong id="public-research-equity">—</strong></div>
+            <div><span>RESEARCH P/L</span><strong id="public-research-pnl">—</strong></div>
+            <div><span>SIMULATED RETURN</span><strong id="public-research-return">—</strong></div>
+            <div><span>MAX DRAWDOWN</span><strong id="public-research-drawdown">—</strong></div>
+          </div>
+          <svg id="public-research-curve" viewBox="0 0 800 124" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Simulated portfolio equity based on completed research sessions"></svg>
+          <div class="public-research-counts">
+            <p><strong id="public-research-predictions">—</strong> frozen predictions</p>
+            <p><strong id="public-research-resolved">—</strong> evaluated outcomes</p>
+          </div>
+          <p id="public-research-note" class="muted">Loading forward research evidence…</p>
+          <h3>Strategy leaderboard</h3>
+          <div class="public-research-table-wrap"><table class="public-research-table">
+            <thead><tr><th>Strategy</th><th>Family</th><th>Recorded</th><th>Resolved</th><th>Average excess</th></tr></thead>
+            <tbody id="public-research-rows"><tr><td colspan="5">Loading research summary…</td></tr></tbody>
+          </table></div>
+          <p id="public-research-status" class="muted" role="status" aria-live="polite">Loading the latest approved public research snapshot…</p>
+          <p class="muted footnote">A historical backtest is not prospective proof. Forward results remain pending until future sessions close. All data here is research-only and excludes brokerage accounts, secrets and private positions.</p>
+        </section>
         <div class="command-two-up">
           <article class="panel command-focus">
             <div class="panel-head"><div><p class="eyebrow">STRATEGY STATUS</p><h2>What is LeviOS testing?</h2></div><span class="scorecard-period">MANUAL PAPER TRACKING</span></div>
