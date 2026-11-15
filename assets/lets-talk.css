@@ -88,3 +88,25 @@
 .talk-page #calendly-embed,
 .talk-page #calendly-embed .calendly-inline-widget,
 .talk-page #calendly-embed iframe{background:transparent!important;border:0!important;box-shadow:none!important}
+
+/* Interest choices before scheduling; no change to site layout outside this page. */
+.talk-page #talk-calendar-panel[hidden]{display:none!important}
+.talk-interest-panel{padding:24px 0 22px}
+.talk-interest-panel h2{font:600 clamp(21px,2.4vw,28px)/1.2 var(--display);letter-spacing:-.04em;color:#213c2b;margin:0 0 5px}
+.talk-interest-panel>p{color:#637468;font:400 14px/1.6 var(--text);margin:0 0 19px}
+.talk-interest-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.talk-interest-option{border:1px solid #cedbca;background:#fff;color:#274431;min-height:72px;padding:14px 15px;display:flex;justify-content:space-between;align-items:center;text-align:left;gap:14px;cursor:pointer;border-radius:10px;font:600 14px/1.4 var(--display);transition:border-color .2s,background .2s,transform .2s}
+.talk-interest-option span{font-size:21px;color:#66846b;font-weight:500}
+.talk-interest-option:hover{background:#f0f7e9;border-color:#8fa78a;transform:translateY(-2px)}
+.talk-interest-option[aria-pressed="true"]{border-color:#426949;background:#e1efd9;box-shadow:inset 0 0 0 1px #426949}
+.talk-interest-option[aria-pressed="true"] span{color:#285839}
+.talk-interest-option:focus-visible,.talk-show-times:focus-visible{outline:3px solid #4988ce;outline-offset:2px}
+.talk-interest-notes{display:flex;justify-content:space-between;gap:12px;font:600 13px var(--display);color:#274431;margin:22px 0 9px}
+.talk-interest-notes span{font:400 12px var(--text);color:#738375}
+#talk-interest-notes{width:100%;max-width:100%;border:1px solid #cedbca;background:#fff;border-radius:9px;padding:13px 15px;font:400 14px/1.5 var(--text);color:#233e2b;resize:vertical}
+.talk-show-times{margin-top:16px;background:#244832;color:#f8ffe9;border:0;border-radius:8px;padding:16px 23px;display:inline-flex;gap:32px;align-items:center;justify-content:space-between;font:700 14px var(--display);cursor:pointer}
+.talk-show-times:hover{background:#386044}
+.talk-booking #talk-calendar-panel{margin-top:20px}
+@media(max-width:800px){.talk-interest-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.talk-interest-options{grid-template-columns:1fr}.talk-show-times{width:100%}}
+@media(prefers-reduced-motion:reduce){.talk-interest-option{transition:none!important}.talk-interest-option:hover{transform:none}}
