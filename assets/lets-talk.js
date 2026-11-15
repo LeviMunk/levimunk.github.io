@@ -1,5 +1,25 @@
 (()=>{'use strict';
 const form=document.getElementById('talk-form');if(!form)return;
+const eventUrl=String(window.LEVI_CALENDLY_EVENT_URL||'').trim();
+const validCalendly=/^https:\/\/([a-z0-9-]+\.)?calendly\.com\/[a-z0-9_/%-]+(?:\?.*)?$/i.test(eventUrl);
+if(validCalendly){
+ const wrapper=document.getElementById('talk-booking');
+ const fallback=document.getElementById('talk-email-fallback');
+ const parent=document.getElementById('calendly-embed');
+ const direct=document.getElementById('talk-direct-booking');
+ wrapper.hidden=false;fallback.hidden=true;direct.href=eventUrl;
+ const script=document.createElement('script');
+ script.src='https://assets.calendly.com/assets/external/widget.js';
+ script.async=true;
+ script.onload=()=>{
+   if(window.Calendly?.initInlineWidget){
+     window.Calendly.initInlineWidget({url:eventUrl,parentElement:parent,resize:true});
+   }
+ };
+ script.onerror=()=>{parent.textContent='The embedded calendar could not load. Please use the direct booking link below.';};
+ document.head.appendChild(script);
+}
+
 const status=document.getElementById('talk-status'),fallback=document.getElementById('talk-fallback'),copyArea=document.getElementById('talk-copy-text'),copy=document.getElementById('talk-copy');
 const choices=[...form.querySelectorAll('input[name="topic"]')],count=document.getElementById('talk-topic-count');
 const updateCount=()=>{const n=choices.filter(x=>x.checked).length;count.textContent=n===0?'None selected':n===1?'1 selected':n+' selected';};
