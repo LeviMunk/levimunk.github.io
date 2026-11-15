@@ -41,6 +41,28 @@
     document.body.classList.add('v2-ready');
   }
 
+
+  // Motion-only polish. Animations do not alter layout or leave content hidden.
+  if(!reduced.matches && 'IntersectionObserver' in window){
+    const motionTargets=[
+      ...document.querySelectorAll('.rail-work-section > .rail-content > h2, .rail-approach-section > .rail-content > h2, .rail-experience-section > .rail-content > h2, .rail-about-section > .rail-content > h2, .rail-contact-section > .rail-content > h2, .focus-library-head, .focus-disclosure, .rail-tool-columns > div, .case-snapshot, .case-evidence-panel')
+    ].filter(el=>el instanceof HTMLElement && !el.matches('[data-v2-reveal]'));
+    const motionObserver=new IntersectionObserver(entries=>{
+      for(const entry of entries){
+        if(!entry.isIntersecting)continue;
+        motionObserver.unobserve(entry.target);
+        // Native WAAPI animates the compositor, with visible content as fallback.
+        if(typeof entry.target.animate==='function'){
+          entry.target.animate([
+            {opacity:0.72,transform:'translate3d(0,14px,0)'},
+            {opacity:1,transform:'translate3d(0,0,0)'}
+          ],{duration:560,easing:'cubic-bezier(.2,.8,.2,1)',iterations:1});
+        }
+      }
+    },{rootMargin:'0px 0px -35px 0px',threshold:0.1});
+    motionTargets.forEach(el=>motionObserver.observe(el));
+  }
+
   if(reduced.matches||!fine.matches)return;
   const mq=(element,name,value)=>element?.style.setProperty(name,value);
   if(hero&&glow&&portrait){
