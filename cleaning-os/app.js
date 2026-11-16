@@ -66,6 +66,7 @@ if(x.matches('[data-wb-filter]')){state.winback[x.dataset.wbFilter]=x.value;save
 if(x.matches('[data-wb-threshold]')){state.winback.config.threshold=Math.max(1,Math.min(730,Number(x.value)||60));save();render();return}
 if(x.matches('[data-wb-template]')){const t=window.CleaningWinback.templates[x.value],form=document.querySelector('#wb-campaign-form');if(t&&form){form.elements.messageA.value=t}return}
 if(x.matches('[data-wb-fee]')){const c=window.CleaningWinback.campaign(state);if(c){const key=x.dataset.wbFee;c.fee[key]=key==='feeMode'?x.value:Math.max(0,Number(x.value)||0);save();render()}return}
+if(x.matches('[data-wb-response]')){const c=window.CleaningWinback.campaign(state),a=c?.assignments.find(v=>String(v.clientId)===x.dataset.client);if(a){a.response=x.value;c.events.push({date:new Date().toISOString().slice(0,10),action:'Manual response record',detail:'Contact '+x.dataset.client+' response updated'});save();render()}return}
 if(x.matches('[data-wb-ledger]')){window.CleaningWinback.update(state,x.dataset.wbLedger,x.dataset.client,x.dataset.field,x.checked);save();render();return}
 if(x.matches('[data-wb-revenue]')){const c=window.CleaningWinback.campaign(state),a=c?.assignments.find(a=>String(a.clientId)===x.dataset.client);if(a){a.revenue=Math.max(0,Number(x.value)||0);save();render()}return}
 if(x.matches('[data-planner-crew]')){window.CleaningPlanner.filter(state,x.value);save();render();return}
