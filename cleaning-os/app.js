@@ -63,6 +63,7 @@ const nav=e.target.closest('[data-page]');if(nav){go(nav.dataset.page);return}co
 $('#app').addEventListener('change',async e=>{const x=e.target;
 if(x.id==='wb-file'&&x.files?.length){try{const f=x.files[0];if(f.size>2_000_000)throw Error('CSV exceeds 2 MB limit');const result=window.CleaningWinback.importCSV(state,await f.text());save();render();alert('CSV processed locally: '+result.added+' added, '+result.updated+' updated, '+result.skipped+' skipped. No network upload.')}catch(err){alert('CSV import error: '+err.message)}return}
 if(x.matches('[data-wb-filter]')){state.winback[x.dataset.wbFilter]=x.value;save();render();return}
+if(x.matches('[data-wb-segment-threshold]')){state.winback.config.thresholds??={};state.winback.config.thresholds[x.dataset.wbSegmentThreshold]=Math.max(1,Math.min(730,Number(x.value)||60));save();render();return}
 if(x.matches('[data-wb-threshold]')){state.winback.config.threshold=Math.max(1,Math.min(730,Number(x.value)||60));save();render();return}
 if(x.matches('[data-wb-template]')){const t=window.CleaningWinback.templates[x.value],form=document.querySelector('#wb-campaign-form');if(t&&form){form.elements.messageA.value=t}return}
 if(x.matches('[data-wb-fee]')){const c=window.CleaningWinback.campaign(state);if(c){const key=x.dataset.wbFee;c.fee[key]=key==='feeMode'?x.value:Math.max(0,Number(x.value)||0);save();render()}return}
