@@ -195,3 +195,69 @@ body[data-industry="real-estate"] .reos-analyst-item small{display:block;font-si
 body[data-industry="real-estate"] .reos-analyst-item .btn{margin-top:14px}
 @media(max-width:1050px){body[data-industry="real-estate"] .reos-tour-columns{grid-template-columns:1fr}}
 @media(max-width:740px){body[data-industry="real-estate"] .reos-tour-hero{padding:24px 20px}body[data-industry="real-estate"] .reos-tour-shortcut{flex-direction:column;align-items:flex-start}body[data-industry="real-estate"] .reos-transactions,body[data-industry="real-estate"] .reos-analyst-grid{grid-template-columns:1fr}body[data-industry="real-estate"] .reos-tour-scenarios button{width:100%;text-align:left}}
+
+
+/* Property Intelligence Studio */
+body[data-industry="real-estate"] .studio-properties{display:flex;gap:12px;overflow-x:auto;padding:12px 1px 20px;margin:4px 0;scrollbar-width:thin}
+body[data-industry="real-estate"] .studio-property{display:flex;gap:11px;align-items:center;min-width:265px;max-width:320px;text-align:left;flex:0 0 auto;background:#fff;border:1px solid #D8E3ED;padding:8px;color:#173552;cursor:pointer}
+body[data-industry="real-estate"] .studio-property.selected{background:#EBF6FC;border-color:#4989BF;box-shadow:0 0 0 1px #4989BF}
+body[data-industry="real-estate"] .studio-property strong{display:block;font-size:12px}
+body[data-industry="real-estate"] .studio-property small{font-size:11px;display:block;margin-top:6px}
+body[data-industry="real-estate"] .studio-property-media{width:88px;height:65px;flex-shrink:0;overflow:hidden;background:linear-gradient(140deg,#BBD5E5,#244C70)}
+body[data-industry="real-estate"] .studio-property-media img,body[data-industry="real-estate"] .studio-hero-image img,body[data-industry="real-estate"] .studio-report-cover img{display:block;width:100%;height:100%;object-fit:cover}
+body[data-industry="real-estate"] .studio-hero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.75fr);min-height:340px;background:#10263E;margin-bottom:15px}
+body[data-industry="real-estate"] .studio-hero-image{min-height:340px;position:relative;background:linear-gradient(135deg,#D6E4EF,#4A7393)}
+body[data-industry="real-estate"] .studio-photo-disclaimer{position:absolute;bottom:12px;left:12px;padding:7px 11px;background:#122943CE;color:#FFF;font-size:10px;border-radius:3px}
+body[data-industry="real-estate"] .studio-hero-copy{padding:28px;color:#fff;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px}
+body[data-industry="real-estate"] .studio-hero-copy h2{color:#fff;font-size:clamp(20px,2.7vw,32px);margin:0}
+body[data-industry="real-estate"] .studio-hero-copy p{color:#DCECF5;font-size:12px}
+body[data-industry="real-estate"] .studio-hero-copy .btn.alt{background:transparent;border-color:#83B7D9;color:#E3F2FB}
+body[data-industry="real-estate"] .studio-price{font:700 29px 'Space Grotesk',sans-serif;color:#fff}
+body[data-industry="real-estate"] .studio-featuregrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;color:#E0EBF7;font-size:12px;width:100%}
+body[data-industry="real-estate"] .studio-featuregrid span{border-bottom:1px solid #FFFFFF2C;padding-bottom:8px}
+body[data-industry="real-estate"] .studio-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0 22px}
+body[data-industry="real-estate"] .studio-metrics>div{padding:19px;background:#fff;border:1px solid #D8E3ED;display:flex;flex-direction:column;gap:8px}
+body[data-industry="real-estate"] .studio-metrics span{font-size:12px;color:#57718B}
+body[data-industry="real-estate"] .studio-metrics strong{font-size:clamp(22px,2.7vw,34px);color:#153C61;font-family:'Space Grotesk',sans-serif}
+body[data-industry="real-estate"] .studio-columns{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:18px;align-items:start}
+body[data-industry="real-estate"] .studio-chart{width:100%;height:auto;max-height:250px;margin:15px 0 9px}
+body[data-industry="real-estate"] .studio-week-editor{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+body[data-industry="real-estate"] .studio-insight{padding:13px 0;border-top:1px solid #DDE9F2}
+body[data-industry="real-estate"] .studio-insight strong{font-size:13px;color:#20527E}
+body[data-industry="real-estate"] .studio-insight p{font-size:12px;margin:6px 0}
+body[data-industry="real-estate"] .studio-insight small{font-size:11px;display:block;color:#627E96}
+body[data-industry="real-estate"] .studio-report-cta{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:25px 30px;margin:25px 0;background:linear-gradient(110deg,#18334F,#326A98)}
+body[data-industry="real-estate"] .studio-report-cta h2{color:#fff}
+body[data-industry="real-estate"] .studio-report-cta p{color:#DCECF5;font-size:12px;margin:5px 0}
+body[data-industry="real-estate"] .studio-report-cta .btn{background:#B3DDF5;border-color:#B3DDF5;color:#153C61;white-space:nowrap}
+body[data-industry="real-estate"] .studio-report-controls{padding:20px;border:1px solid #C2DCEA;background:#EBF5FB;margin-top:25px}
+body[data-industry="real-estate"] .studio-report-options{display:flex;flex-wrap:wrap;gap:14px;margin:15px 0}
+body[data-industry="real-estate"] .studio-report-options label{font-size:12px;font-weight:700;color:#305C81;display:flex;align-items:center;gap:7px;cursor:pointer}
+body[data-industry="real-estate"] .studio-print-report{background:#fff;max-width:850px;margin:16px auto 30px;padding:42px 46px;border:1px solid #CCDDE9;box-shadow:0 8px 24px #15395B12;color:#1B3854}
+body[data-industry="real-estate"] .studio-print-report h2{font-size:30px;margin:20px 0 7px}
+body[data-industry="real-estate"] .studio-print-report h3{font-size:17px;border-bottom:1px solid #DBE5EE;padding-bottom:9px}
+body[data-industry="real-estate"] .studio-report-top{display:flex;justify-content:space-between;gap:10px;color:#32668D;font-size:10px;letter-spacing:.12em}
+body[data-industry="real-estate"] .studio-report-intro{font-size:13px;color:#6C8196;margin-bottom:18px}
+body[data-industry="real-estate"] .studio-report-cover{height:275px;background:linear-gradient(125deg,#D6E6F2,#739BBB);overflow:hidden}
+body[data-industry="real-estate"] .studio-report-caption{font-size:10px;color:#778DA2}
+body[data-industry="real-estate"] .studio-report-price{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0}
+body[data-industry="real-estate"] .studio-report-price strong{font-size:27px}
+body[data-industry="real-estate"] .studio-report-price span{font-size:12px}
+body[data-industry="real-estate"] .studio-print-report section{margin:25px 0}
+body[data-industry="real-estate"] .studio-report-kpis{display:flex;gap:16px;margin:12px 0}
+body[data-industry="real-estate"] .studio-report-kpis>div{flex:1;padding:13px;background:#F1F6FA}
+body[data-industry="real-estate"] .studio-report-kpis strong{display:block;font-size:24px}
+body[data-industry="real-estate"] .studio-report-kpis small{font-size:10px}
+body[data-industry="real-estate"] .studio-print-report footer{border-top:1px solid #D4E0E9;padding-top:12px;font-size:10px;color:#6C8196;margin-top:28px}
+@media(max-width:1050px){body[data-industry="real-estate"] .studio-hero,body[data-industry="real-estate"] .studio-columns{grid-template-columns:1fr}body[data-industry="real-estate"] .studio-hero-image{height:340px;min-height:0}body[data-industry="real-estate"] .studio-hero-copy{padding:24px}}
+@media(max-width:740px){body[data-industry="real-estate"] .studio-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}body[data-industry="real-estate"] .studio-week-editor{grid-template-columns:repeat(2,minmax(0,1fr))}body[data-industry="real-estate"] .studio-report-cta{flex-direction:column;align-items:flex-start}body[data-industry="real-estate"] .studio-print-report{padding:20px}body[data-industry="real-estate"] .studio-report-cover{height:190px}body[data-industry="real-estate"] .studio-report-kpis{flex-wrap:wrap}body[data-industry="real-estate"] .studio-report-kpis>div{min-width:35%}}
+@media print {
+ @page{size:letter;margin:13mm}
+ body.studio-printing{background:white!important}
+ body.studio-printing .shell,body.studio-printing .sidebar,body.studio-printing .topbar,body.studio-printing .studio-report-controls{display:none!important}
+ body.studio-printing #studio-report-anchor{display:block!important}
+ body.studio-printing .studio-print-report{display:block!important;position:static!important;box-shadow:none!important;border:0!important;padding:0!important;max-width:none!important;margin:0!important}
+ body.studio-printing .studio-print-report .studio-report-cover{height:220px!important}
+ body.studio-printing .studio-print-report section{break-inside:avoid}
+ body.studio-printing .studio-print-report h2,body.studio-printing .studio-print-report h3{color:#152D49!important}
+}
