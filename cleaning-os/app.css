@@ -317,3 +317,15 @@ body[data-industry="cleaning"] .jobboard .lane:nth-child(5){background:#E9F6EF}
 .wb-two textarea,.wb-two input,.wb-two select{max-width:100%}
 @media(max-width:1080px){.wb-two{grid-template-columns:1fr}.wb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.wb-hero{grid-template-columns:1fr;padding:25px}.wb-hero-mark{min-height:110px}.wb-hero-mark strong{font-size:48px}.wb-filterrow{grid-template-columns:1fr}.wb-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}.wb-tabs button{white-space:nowrap}.wb-home-promo{flex-direction:column;align-items:start}.wb-bar-row{grid-template-columns:94px minmax(0,1fr) 26px}.wb-metrics>div{padding:14px}}
+
+
+.wb-segment-thresholds{margin:16px 0;padding:15px;border-radius:12px;background:#F0F8F5;border:1px solid #D9EAE3}
+.wb-segment-thresholds>strong{display:block;font-size:12px;margin-bottom:12px;color:#236B66}
+.wb-segment-thresholds>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.wb-segment-thresholds label{font-size:10px;color:#416E67;font-weight:700}
+.wb-segment-thresholds input{margin-top:5px;width:100%;padding:8px;background:white;border:1px solid #BBD9CE;border-radius:7px}
+.wb-booking{width:125px;display:block;margin:3px 0;padding:7px;border-radius:6px;border:1px solid #BCD8CE;font-size:11px}
+.wb-book-date{width:125px;display:block;margin:3px 0;padding:6px;border-radius:6px;border:1px solid #BCD8CE;font-size:11px}
+.wb-response{max-width:110px;padding:6px;font-size:11px;border:1px solid #BCD8CE}
+.wb-import .pill{align-self:center}
+@media(max-width:750px){.wb-segment-thresholds>div{grid-template-columns:repeat(2,minmax(0,1fr))}}
