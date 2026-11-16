@@ -1,0 +1,12 @@
+/* Real Estate OS demo refinements, layered over shared Industry OS styling */
+body[data-industry="real-estate"] .card{box-shadow:0 5px 20px #1b382407}
+body[data-industry="real-estate"] .grid .card{min-height:140px}
+body[data-industry="real-estate"] .two.section{align-items:start}
+body[data-industry="real-estate"] .notice{max-width:1100px}
+body[data-industry="real-estate"] .line label{font-size:13px;line-height:1.45}
+body[data-industry="real-estate"] input[type=checkbox]{accent-color:#366c49;cursor:pointer}
+body[data-industry="real-estate"] textarea{display:block;width:100%;min-height:120px;padding:12px;border:1px solid #bfcfc0;background:#fff;color:#233b2c;font:14px 'DM Sans',sans-serif;margin-top:8px;resize:vertical}
+body[data-industry="real-estate"] select{border:1px solid #c0d2bf;color:#244b35;padding:8px;max-width:220px;background:#fff}
+body[data-industry="real-estate"] button:focus-visible,body[data-industry="real-estate"] input:focus-visible,body[data-industry="real-estate"] select:focus-visible{outline:2px solid #4e8260;outline-offset:2px}
+@media(max-width:900px){body[data-industry="real-estate"] .two.section{grid-template-columns:1fr}}
+@media(max-width:600px){body[data-industry="real-estate"] .grid{grid-template-columns:1fr 1fr}body[data-industry="real-estate"] .grid .card{min-height:115px}body[data-industry="real-estate"] .metric{font-size:26px}body[data-industry="real-estate"] .line{align-items:flex-start;flex-wrap:wrap}}
