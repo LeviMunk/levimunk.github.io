@@ -254,7 +254,7 @@ body[data-industry="real-estate"] .studio-print-report footer{border-top:1px sol
 @media print {
  @page{size:letter;margin:13mm}
  body.studio-printing{background:white!important}
- body.studio-printing .shell,body.studio-printing .sidebar,body.studio-printing .topbar,body.studio-printing .studio-report-controls{display:none!important}
+ body.studio-printing .shell{display:block!important;height:auto!important}\n body.studio-printing .sidebar,body.studio-printing .topbar,body.studio-printing .studio-report-controls,body.studio-printing .footnote{display:none!important}\n body.studio-printing .workspace{overflow:visible!important}\n body.studio-printing .content{max-width:none!important;padding:0!important;margin:0!important}\n body.studio-printing #view > :not(#studio-report-anchor){display:none!important}
  body.studio-printing #studio-report-anchor{display:block!important}
  body.studio-printing .studio-print-report{display:block!important;position:static!important;box-shadow:none!important;border:0!important;padding:0!important;max-width:none!important;margin:0!important}
  body.studio-printing .studio-print-report .studio-report-cover{height:220px!important}
