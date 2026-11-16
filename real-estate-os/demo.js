@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const $=s=>document.querySelector(s),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c])),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),id=()=>Math.floor(Date.now()+Math.random()*1000000);
+const $=s=>document.querySelector(s),escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n),id=()=>Math.floor(Date.now()+Math.random()*1000000);
 const initial=()=>({
  leads:[
  {id:1,name:'Jordan Ellis',source:'Website',stage:'New inquiry',value:410000,owner:'Alex',days:1,notes:'Interested in a 3-bedroom home'},
