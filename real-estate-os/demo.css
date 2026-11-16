@@ -10,3 +10,50 @@ body[data-industry="real-estate"] select{border:1px solid #c0d2bf;color:#244b35;
 body[data-industry="real-estate"] button:focus-visible,body[data-industry="real-estate"] input:focus-visible,body[data-industry="real-estate"] select:focus-visible{outline:2px solid #4e8260;outline-offset:2px}
 @media(max-width:900px){body[data-industry="real-estate"] .two.section{grid-template-columns:1fr}}
 @media(max-width:600px){body[data-industry="real-estate"] .grid{grid-template-columns:1fr 1fr}body[data-industry="real-estate"] .grid .card{min-height:115px}body[data-industry="real-estate"] .metric{font-size:26px}body[data-industry="real-estate"] .line{align-items:flex-start;flex-wrap:wrap}}
+
+/* Real Estate OS visual product demo additions */
+.reos-hero{background:linear-gradient(115deg,#17372b,#315b43);color:#fff;padding:26px 30px;margin:0 0 20px;display:flex;justify-content:space-between;align-items:center;gap:20px;overflow:hidden;position:relative}
+.reos-hero:after{content:"";width:250px;height:250px;border:1px solid #ffffff32;border-radius:50%;position:absolute;right:-60px;top:-120px;box-shadow:0 0 0 35px #ffffff0a,0 0 0 75px #ffffff06;pointer-events:none}
+.reos-hero h2{font-size:27px;margin:3px 0;color:white}
+.reos-hero p{color:#d1e7d4;margin:0;max-width:620px;font-size:13px}
+.reos-hero .eyebrow{color:#b9dfb0}
+.reos-maplayout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);gap:17px;align-items:start}
+.reos-map{height:455px;background:#e4ece2;position:relative;overflow:hidden;border:1px solid #c8d4c7}
+.reos-map #reos-leaflet{height:100%;width:100%;z-index:1}
+.reos-map .reos-mapfallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;font-size:13px;color:#536b57;background:linear-gradient(145deg,#e6ede4,#d7e1d5)}
+.reos-mapaside .line{cursor:pointer;padding:16px 3px}
+.reos-mapaside .line:hover{background:#eff5ec}
+.reos-mapaside .line.selected{background:#e5f0e4;padding-left:8px}
+.reos-pin{background:#1e5237;color:#fff;border:2px solid white;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;font-weight:800;box-shadow:0 3px 9px #21362555;cursor:pointer}
+.reos-pin.active{background:#bfe4a2;color:#173a24;transform:scale(1.15)}
+.reos-pick{border:0;text-align:left;background:transparent;color:inherit;cursor:pointer;width:100%;font:inherit}
+.reos-kanban{display:flex;gap:12px;overflow-x:auto;padding:6px 0 18px;align-items:stretch}
+.reos-col{background:#e9efe7;border:1px solid #d0decd;min-width:215px;width:225px;flex-shrink:0;padding:13px;min-height:330px}
+.reos-col h3{font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.reos-deal{background:#fffefa;border:1px solid #d2ded0;padding:13px;margin-bottom:10px;cursor:grab;box-shadow:0 2px 5px #2037220d}
+.reos-deal:active{cursor:grabbing}
+.reos-deal strong{font-size:13px;display:block}.reos-deal small{display:block;margin:5px 0}
+.reos-deal select{width:100%;margin-top:8px;max-width:unset!important;font-size:11px!important}
+.reos-col.over{background:#d5e7d3;outline:2px dashed #548960;outline-offset:-4px}
+.reos-workflow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:stretch;padding:24px 8px}
+.reos-step{position:relative;background:#fffefa;border:1px solid #d0dfce;padding:20px 12px;text-align:center;min-height:155px}
+.reos-step:not(:last-child):after{content:"→";position:absolute;right:-23px;top:43%;font-size:23px;color:#5b9a71;font-weight:bold}
+.reos-step-num{width:30px;height:30px;border-radius:50%;background:#dfeadd;color:#284c33;display:grid;place-items:center;margin:0 auto 12px;font-size:12px;font-weight:700}
+.reos-step strong{font-size:13px;display:block}
+.reos-step p{font-size:12px;margin:9px 0 0}
+.reos-step.completed{border-color:#4f996a;background:#eef8ea}
+.reos-step.completed .reos-step-num{background:#427f52;color:white}
+.reos-chart{height:205px;width:100%;display:block}
+.reos-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#536b5c}
+.reos-legend i{display:inline-block;width:9px;height:9px;background:#56906c;margin-right:5px;border-radius:50%}
+.reos-mini{font:700 10px 'DM Sans',system-ui,sans-serif;fill:#728575}
+.reos-feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.reos-feature{background:#fffefa;border:1px solid #d5dfd2;padding:17px}
+.reos-feature strong{display:block;font-size:13px;margin:7px 0}
+.reos-feature p{font-size:12px}
+.reos-activity{padding:10px 12px;background:#e9f3e7;border-left:3px solid #55966a;margin-top:14px;font-size:12px}
+.reos-workflow-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.reos-map .leaflet-container{font-family:'DM Sans',system-ui,sans-serif}
+.reos-map .leaflet-popup-content{font-size:13px}
+@media(max-width:1050px){.reos-maplayout,.reos-workflow-layout{grid-template-columns:1fr}.reos-feature-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:740px){.reos-hero{padding:22px}.reos-hero h2{font-size:21px}.reos-map{height:340px}.reos-workflow{display:flex;overflow-x:auto}.reos-step{min-width:160px}.reos-feature-row{grid-template-columns:1fr}}
