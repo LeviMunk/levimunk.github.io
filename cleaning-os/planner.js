@@ -60,7 +60,7 @@ const a=visits[i],b=visits[j];if(a.date===b.date&&a.crew===b.crew&&!a.skipped&&!
 const skipped=visits.filter(v=>v.skipped),gross=visits.filter(v=>!v.skipped).reduce((x,v)=>x+moneyParse(v.price),0);
 let cards='<div class="clean-week-grid">'+Array.from({length:7},(_,i)=>{const d=addDays(weekStart,i),key=dateKey(d),v=filtered.filter(x=>x.date===key);
 return '<div class="clean-day"><div class="clean-day-title"><strong>'+dayLabels[i]+'</strong><small>'+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</small></div>'+v.map(x=>{
-const c=s.clients.find(c=>c.id===x.clientId);const check=conflicts.some(pair=>pair.some(y=>y.visitId===x.visitId));const stage=x.skipped?'Skipped':(x.status||p.execution?.[x.visitId]?.status||'Scheduled');
+const c=s.clients.find(c=>c.id===x.clientId);const check=conflicts.some(pair=>pair.some(y=>String(y.visitId||y.id)===String(x.visitId||x.id)));const stage=x.skipped?'Skipped':(x.status||p.execution?.[x.visitId]?.status||'Scheduled');
 return '<button type="button" class="clean-visit '+(x.skipped?'skipped':'')+(check?' conflict':'')+'" '+(x.planned===false?'data-job="'+H(x.id)+'"':'data-plan-visit="'+H(x.visitId)+'"')+'><strong>'+H(c?.name||'Client')+'</strong><small>'+timeLabel(x.time)+' · '+H(x.crew)+'</small><small>'+H(x.service)+' · '+USD(x.price)+'</small><span class="clean-visit-status">'+H(stage)+'</span>'+(x.skipped?'<span class="clean-tag">Skipped</span>':check?'<span class="clean-tag warning">Crew overlap</span>':'')+'</button>'}).join('')+(v.length?'':'<div class="clean-empty">No scheduled visits</div>')+'</div>'}).join('')+'</div>';
 const selected=p.selected?visits.find(x=>x.visitId===p.selected):null;
 const options=all(s,p.weekOffset);
