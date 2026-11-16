@@ -1,0 +1,95 @@
+/* Real Estate OS: Midnight Navy + Ice Blue
+ * Scoped theme layer; shared Industry OS styling and all other demos remain unchanged.
+ * Palette: navy #101C2F, slate #233954, ice #4989BF, mist #DCECF5, canvas #F7F9FC.
+ */
+body[data-industry="real-estate"]{
+  --ink:#15253B;--sidebar:#101C2F;--accent:#A5D5F3;
+  --bg:#F7F9FC;--border:#D8E3ED;--muted:#62778F;
+  color:var(--ink);background:var(--bg);
+}
+body[data-industry="real-estate"] .sidebar{background:#101C2F;color:#EFF7FC;box-shadow:6px 0 24px #0C203012}
+body[data-industry="real-estate"] .brand,
+body[data-industry="real-estate"] .sidebottom{border-color:#354A66}
+body[data-industry="real-estate"] .brand b{color:#A5D5F3}
+body[data-industry="real-estate"] .subbrand{color:#AFC4D9}
+body[data-industry="real-estate"] .navlabel{color:#9DB4CD}
+body[data-industry="real-estate"] .navbtn{color:#BED0E3}
+body[data-industry="real-estate"] .navbtn:hover,
+body[data-industry="real-estate"] .navbtn.active{background:#233954;border-left-color:#85C8F0;color:#FFFFFF}
+body[data-industry="real-estate"] .navbtn.locked{color:#A9BCD0}
+body[data-industry="real-estate"] .navbtn .lock{opacity:.9}
+body[data-industry="real-estate"] .sidebottom a{color:#C3E4F5}
+body[data-industry="real-estate"] .sidebottom a:hover{color:#FFFFFF}
+body[data-industry="real-estate"] .workspace{background:#F7F9FC}
+body[data-industry="real-estate"] .topbar{background:#FFFFFF;border-bottom-color:#D8E3ED}
+body[data-industry="real-estate"] .topbar strong{color:#192D49}
+body[data-industry="real-estate"] h1,
+body[data-industry="real-estate"] h2,
+body[data-industry="real-estate"] h3{color:#162B47}
+body[data-industry="real-estate"] p{color:#5D7189}
+body[data-industry="real-estate"] .eyebrow{color:#3C76A6}
+body[data-industry="real-estate"] .card,
+body[data-industry="real-estate"] .lockedcard,
+body[data-industry="real-estate"] .dialog{background:#FFFFFF;border-color:#D8E3ED;box-shadow:0 6px 20px #18365309}
+body[data-industry="real-estate"] .statname{color:#54718D}
+body[data-industry="real-estate"] .metric{color:#183759}
+body[data-industry="real-estate"] .caption,
+body[data-industry="real-estate"] .footnote{color:#667C93}
+body[data-industry="real-estate"] .line{border-color:#E2EAF2}
+body[data-industry="real-estate"] th{color:#627B94}
+body[data-industry="real-estate"] td,
+body[data-industry="real-estate"] th{border-bottom-color:#E4ECF4}
+body[data-industry="real-estate"] .pill{background:#E4F2FB;color:#275E8D}
+body[data-industry="real-estate"] .notice{background:#E8F3FA;border-left-color:#4989BF;color:#2B5477}
+body[data-industry="real-estate"] .btn{background:#285D8E;border-color:#285D8E;color:#FFFFFF}
+body[data-industry="real-estate"] .btn:hover{background:#1F4C77;border-color:#1F4C77}
+body[data-industry="real-estate"] .btn.alt{background:#FFFFFF;border-color:#ADCADF;color:#285D8E}
+body[data-industry="real-estate"] .btn.alt:hover{background:#EAF4FA;border-color:#4989BF}
+body[data-industry="real-estate"] .field{color:#3F5874}
+body[data-industry="real-estate"] .field input,
+body[data-industry="real-estate"] .field select,
+body[data-industry="real-estate"] textarea,
+body[data-industry="real-estate"] select{background:#FFFFFF;border-color:#BCD0E1;color:#233954}
+body[data-industry="real-estate"] input[type=checkbox]{accent-color:#397DB1}
+body[data-industry="real-estate"] button:focus-visible,
+body[data-industry="real-estate"] input:focus-visible,
+body[data-industry="real-estate"] select:focus-visible,
+body[data-industry="real-estate"] textarea:focus-visible{outline:3px solid #72B9EB;outline-offset:2px}
+body[data-industry="real-estate"] .tabs .tab{background:#EFF6FA;border-color:#CBDFED;color:#315D86}
+body[data-industry="real-estate"] .tabs .tab.active{background:#285D8E;color:#FFFFFF}
+body[data-industry="real-estate"] .lockcircle{background:#E4F0F8;color:#326B9A}
+body[data-industry="real-estate"] .overlay{background:#0C182BC4}
+body[data-industry="real-estate"] .dialog{border-color:#B2CADC;box-shadow:0 22px 80px #081C38A0}
+body[data-industry="real-estate"] .editorlink{color:#286A9D}
+body[data-industry="real-estate"] .success{color:#24795F}
+body[data-industry="real-estate"] .error{color:#B34545}
+body[data-industry="real-estate"] .reos-hero{background:linear-gradient(115deg,#101C2F 0%,#233954 65%,#31658E 100%);color:#FFFFFF}
+body[data-industry="real-estate"] .reos-hero h2{color:#FFFFFF}
+body[data-industry="real-estate"] .reos-hero p{color:#DCECF5}
+body[data-industry="real-estate"] .reos-hero .eyebrow{color:#A5D5F3}
+body[data-industry="real-estate"] .reos-hero .pill{background:#DCECF5;color:#173B5D}
+body[data-industry="real-estate"] .reos-map{background:#E3EDF5;border-color:#BDD1E1}
+body[data-industry="real-estate"] .reos-map .reos-mapfallback{color:#365775;background:linear-gradient(145deg,#EAF4FB,#DCECF5)}
+body[data-industry="real-estate"] .reos-mapaside .line:hover{background:#F0F6FB}
+body[data-industry="real-estate"] .reos-mapaside .line.selected{background:#E6F3FB}
+body[data-industry="real-estate"] .reos-pin{background:#245C89;box-shadow:0 3px 9px #1B405B55}
+body[data-industry="real-estate"] .reos-pin.active{background:#9BD5F3;color:#102B49}
+body[data-industry="real-estate"] .reos-col{background:#EEF4F9;border-color:#D3E1ED}
+body[data-industry="real-estate"] .reos-deal{background:#FFFFFF;border-color:#D5E2ED;box-shadow:0 2px 5px #1836530D}
+body[data-industry="real-estate"] .reos-col.over{background:#DAECFA;outline-color:#4989BF}
+body[data-industry="real-estate"] .reos-step{background:#FFFFFF;border-color:#CFDFEC}
+body[data-industry="real-estate"] .reos-step:not(:last-child):after{color:#4989BF}
+body[data-industry="real-estate"] .reos-step-num{background:#DCECF5;color:#285D8E}
+body[data-industry="real-estate"] .reos-step.completed{background:#EBF7FD;border-color:#4989BF}
+body[data-industry="real-estate"] .reos-step.completed .reos-step-num{background:#2A78B0;color:#FFFFFF}
+body[data-industry="real-estate"] .reos-feature{background:#FFFFFF;border-color:#D8E3ED}
+body[data-industry="real-estate"] .reos-activity{background:#E8F4FB;border-left-color:#4989BF}
+body[data-industry="real-estate"] .reos-legend i{background:#4989BF}
+body[data-industry="real-estate"] .reos-mini{fill:#69819A}
+body[data-industry="real-estate"] .reos-legend{color:#526D86}
+body[data-industry="real-estate"] .reos-chart{color:#4989BF}
+body[data-industry="real-estate"] .reos-deal:focus-within{border-color:#4989BF}
+@media(max-width:740px){
+ body[data-industry="real-estate"] .sidebar{box-shadow:16px 0 45px #0D233B72}
+ body[data-industry="real-estate"] .mobilemenu{border-color:#C9DBE9;background:#F1F7FC;color:#173B5D}
+}
