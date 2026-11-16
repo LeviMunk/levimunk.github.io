@@ -255,3 +255,65 @@ body[data-industry="cleaning"] .jobboard .lane:nth-child(5){background:#E9F6EF}
 @media(max-width:1080px){.journey-layout{grid-template-columns:1fr}.journey-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.journey-hero{grid-template-columns:1fr;padding:25px}.journey-hero-mark{display:none}.journey-promo{flex-direction:column;align-items:flex-start}.journey-report-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.journey-result{padding:20px}}
 @media(max-width:440px){.journey-room-grid{grid-template-columns:1fr}.journey-kpis>div{padding:13px}.journey-kpis strong{font-size:18px}}
+
+
+/* Customer Win-Back · revenue-first retention studio */
+.wb-hero{background:linear-gradient(118deg,#104452,#116B72 73%,#1B8C81);border-radius:21px;padding:34px;display:grid;grid-template-columns:1fr 190px;align-items:center;gap:25px;color:white;box-shadow:0 16px 38px #15595E1C;margin:20px 0}
+.wb-hero h1{color:white;line-height:1.08;max-width:700px;font-size:clamp(30px,3.6vw,47px);margin:12px 0 14px}
+.wb-hero p{color:#D5EFEB;max-width:640px}
+.wb-eyebrow{font-size:10px;color:#B8EFE3;letter-spacing:.15em;font-weight:800}
+.wb-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.wb-hero .btn{background:#D7F7EC;border-color:#D7F7EC;color:#155456}
+.wb-hero .btn.alt{background:transparent;color:white;border-color:#8AC6C1}
+.wb-hero-mark{display:flex;align-items:center;justify-content:center;flex-direction:column;min-height:160px;border:1px solid #A7E2D960;background:#FFFFFF12;border-radius:19px;text-align:center}
+.wb-hero-mark strong{font:700 68px 'Space Grotesk',sans-serif}
+.wb-hero-mark small{color:#DEF7F1;font-size:12px}
+.wb-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.wb-metrics>div{border:1px solid #D9E8E5;background:white;border-radius:15px;padding:18px;min-width:0;box-shadow:0 7px 20px #145F5710}
+.wb-metrics span{display:block;font-size:11px;color:#6A8A86}
+.wb-metrics strong{display:block;font:700 clamp(21px,2.7vw,30px) 'Space Grotesk',sans-serif;color:#14565A;margin-top:8px;overflow-wrap:anywhere}
+.wb-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #D7E8E4;margin-bottom:22px;padding-bottom:8px}
+.wb-tabs button{border:0;border-radius:9px;background:transparent;color:#517779;padding:11px 15px;font-size:12px;font-weight:700}
+.wb-tabs button:hover{background:#E5F4EF}
+.wb-tabs button.active{background:#146A69;color:white}
+.wb-two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr);gap:17px;align-items:start}
+.wb-process{display:flex;gap:13px;align-items:center;padding:12px 0;border-bottom:1px solid #E3EFEC}
+.wb-process:last-child{border:0}
+.wb-process>span{flex:0 0 auto;display:grid;place-items:center;width:auto;min-width:32px;height:32px;padding:0 8px;border-radius:10px;background:#E2F5EC;color:#1B8077;font-weight:800;font-size:12px}
+.wb-process strong{font-size:12px;font-weight:700}
+.wb-import{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:15px 0}
+.wb-import .field{flex:1;min-width:170px}
+.wb-filterrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin:12px 0}
+.wb-filterrow .field{margin:0}
+.wb-audience-numbers{padding:14px;background:#E8F7F2;border-radius:11px;font-size:12px;color:#276E6C}
+.wb-audience-numbers strong{font-size:20px;color:#0F655E}
+.wb-scroll{overflow:auto;max-width:100%}
+.wb-scroll table{min-width:650px}
+.wb-scroll td{vertical-align:middle}
+.wb-scroll td small{display:block;font-size:10px;margin-top:5px}
+.wb-flag{display:inline-block;border-radius:99px;font-size:10px;font-weight:800;padding:5px 9px;white-space:nowrap}
+.wb-flag.yes{background:#E0F6E9;color:#206F56}
+.wb-flag.no{background:#F4EEEA;color:#996246}
+.wb-campaign-item{display:flex;flex-direction:column;align-items:start;gap:5px;width:100%;border:1px solid #E0EBE8;background:#FAFDFC;border-radius:10px;padding:13px;margin:8px 0;color:#214B51;text-align:left}
+.wb-campaign-item.active{background:#E4F6EF;border-color:#51B6A6}
+.wb-campaign-item strong{font-size:13px}
+.wb-campaign-item span{font-size:11px;color:#627E7A}
+.wb-preview{margin:20px 0 0;background:#F1F8F5;border-radius:12px;padding:17px;border:1px solid #D6E9E0}
+.wb-preview h3{margin:12px 0}
+.wb-preview p{white-space:pre-wrap;overflow-wrap:anywhere}
+.wb-funnel{margin:15px 0}
+.wb-bar-row{display:grid;grid-template-columns:126px minmax(0,1fr) 35px;align-items:center;gap:10px;padding:9px 0;font-size:11px}
+.wb-bar-row>div{height:9px;background:#E8F1EE;border-radius:20px;overflow:hidden}
+.wb-bar-row>div>i{display:block;height:100%;background:linear-gradient(90deg,#198D89,#8BDFC9);border-radius:20px}
+.wb-bar-row strong{text-align:right}
+.wb-insight{margin:12px 0;padding:15px;border-radius:11px;background:#F0F8F5;border-left:3px solid #1D9990}
+.wb-insight strong{color:#185F5D;font-size:13px}
+.wb-insight p{margin:5px 0;font-size:12px}
+.wb-amount{width:86px;min-width:75px;padding:6px;font-size:11px;border:1px solid #BDD8D3;border-radius:6px}
+.wb-disclaimer{font-size:11px;color:#69847F;margin:25px 0;padding:14px;border:1px solid #D5E8E1;border-radius:11px;background:#F5FBF8}
+.wb-home-promo{display:flex;justify-content:space-between;align-items:center;gap:17px;background:linear-gradient(110deg,#E2F6F0,#F3FBF8);border:1px solid #CBEADD;border-radius:16px;padding:23px 25px}
+.wb-home-promo h2{margin:7px 0;font-size:22px}.wb-home-promo p{margin:0}
+.wb-home-promo .btn{white-space:nowrap}
+.wb-two textarea,.wb-two input,.wb-two select{max-width:100%}
+@media(max-width:1080px){.wb-two{grid-template-columns:1fr}.wb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.wb-hero{grid-template-columns:1fr;padding:25px}.wb-hero-mark{min-height:110px}.wb-hero-mark strong{font-size:48px}.wb-filterrow{grid-template-columns:1fr}.wb-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}.wb-tabs button{white-space:nowrap}.wb-home-promo{flex-direction:column;align-items:start}.wb-bar-row{grid-template-columns:94px minmax(0,1fr) 26px}.wb-metrics>div{padding:14px}}
