@@ -182,3 +182,17 @@ body.clean-printing .os-report-metrics>div,body.clean-printing .os-report-tr.hea
 body.clean-printing .os-report-thumb{height:125px}
 body.clean-printing .os-report-metrics strong{font-size:21px}
 }
+
+
+/* Distinct, accessible stage treatments */
+body[data-industry="cleaning"] .job.job-scheduled{border-left-color:#5D9BBB}
+body[data-industry="cleaning"] .job.job-route{border-left-color:#7669AC}
+body[data-industry="cleaning"] .job.job-cleaning{border-left-color:#14978D}
+body[data-industry="cleaning"] .job.job-quality{border-left-color:#D4A24D}
+body[data-industry="cleaning"] .job.job-completed{border-left-color:#50A285}
+body[data-industry="cleaning"] .job .os-status{margin:0 0 9px}
+body[data-industry="cleaning"] .jobboard .lane:nth-child(1){background:#EEF5FC}
+body[data-industry="cleaning"] .jobboard .lane:nth-child(2){background:#F2EFFB}
+body[data-industry="cleaning"] .jobboard .lane:nth-child(3){background:#E8F7F3}
+body[data-industry="cleaning"] .jobboard .lane:nth-child(4){background:#FFF8E9}
+body[data-industry="cleaning"] .jobboard .lane:nth-child(5){background:#E9F6EF}
