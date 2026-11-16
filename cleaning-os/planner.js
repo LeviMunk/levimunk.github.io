@@ -35,7 +35,7 @@ function all(s,offset){
 const p=ensure(s),start=monday(addDays(new Date(),offset*7)),out=[];
 for(const plan of p.plans){
 const anchor=fromKey(plan.start);
-for(let k=-56;k<=56;k++){
+for(let k=0;k<=140;k++){
 const date=addDays(anchor,k);if(date<anchor)continue;
 const days=Math.round((date-anchor)/86400000);
 const weekDay=(date.getDay()+6)%7;
