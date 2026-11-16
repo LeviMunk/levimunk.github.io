@@ -32,3 +32,18 @@
 @media(max-width:1250px){.clean-week-grid{display:flex}.clean-day{flex:0 0 178px}}
 @media(max-width:850px){.clean-week-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.clean-week-grid{display:flex}.clean-day{flex:0 0 175px}.clean-week-controls .row{width:100%}.clean-week-controls strong{font-size:12px}.clean-week-metrics>div{padding:12px}}
+
+
+/* Cleaner run sheet and exception triage */
+.clean-run-visit{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #DBE8E8}
+.clean-run-visit:first-child{border-top:1px solid #DBE8E8}
+.clean-run-visit strong{display:block;color:#174D59;font-size:13px}
+.clean-run-visit small{display:block;font-size:11px;margin-top:5px}
+.clean-run-visit>div:last-child{display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0}
+.clean-exception{border-left:3px solid #D18A5C;background:#FFF5EF;padding:13px 14px;margin:10px 0}
+.clean-exception strong{font-size:13px;color:#75462F}
+.clean-exception p{font-size:12px;margin:5px 0 0;color:#765C50}
+.clean-visit-status{display:inline-block;background:#E1F5F2;color:#096E71;border-radius:4px;padding:3px 6px;font-size:10px;font-weight:700;margin-top:7px}
+.clean-labor{margin-top:16px}
+.clean-labor .callout{line-height:1.6}
+@media(max-width:600px){.clean-run-visit{align-items:flex-start}.clean-run-visit>div:last-child{align-items:flex-end}.clean-run-visit .btn{padding:8px 10px;font-size:11px}}
