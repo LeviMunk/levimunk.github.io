@@ -63,7 +63,25 @@ $('#app').innerHTML='<div class="shell"><aside class="side"><div class="brand lc
 +'<details class="os-nav-more" id="os-nav-more"><summary>All tools <span>⌄</span></summary><div class="os-nav-sub">'
 +[['planner','Weekly Planner'],['clients','Clients & Homes'],['jobs','Jobs & Checklists'],['schedule','Dispatch Board'],['runsheet','Cleaner Run Sheet'],['pricing','Estimates & Pricing'],['insights','Business Insights'],['report','Weekly Report'],['journey','Guided Demo'],['winback','Revive Workspace'],['customize','Customize'],['modules','More Add-ons']].map(([id,name])=>'<button data-page="'+id+'"><span>'+window.CleaningVisual.icon(navIcons[id]||'sparkle',18)+'</span>'+name+'</button>').join('')
 +'</div></details>'+'</nav><div class="sidebottom"><a href="../industry-os/">← Industry OS Hub</a><a href="/">↗ Levi Munk Portfolio</a></div></aside><div class="work"><div class="topbar"><div class="row"><button class="mobilemenu" id="menu" aria-label="Toggle navigation" aria-expanded="false">☰</button><div><strong>Workspace Overview</strong><br><small>Seven connected business modules</small></div></div><div class="top-right"><span class="pill">DEMO MODE</span><a href="https://github.com/LeviMunk/levimunk.github.io/tree/main/cleaning-os" target="_blank" rel="noopener" class="link" style="font-size:12px">GitHub ↗</a></div></div><main class="content" id="view"></main></div></div>';
-function render(){const expanded=$('#os-nav-more')?.open||false;const c=$('#view');c.innerHTML=(views[page]||dashboard)()+'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>';document.querySelectorAll('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false')});const more=$('#os-nav-more');if(more)more.open=expanded||['schedule','runsheet','pricing','insights','report','journey','customize','modules'].includes(page);$('.side').classList.remove('open');$('#menu').setAttribute('aria-expanded','false')}
+function render(){
+const expanded=$('#os-nav-more')?.open||false;
+const content=$('#view');
+try{
+const view=(views[page]||dashboard)();
+content.innerHTML=view+'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>';
+}catch(error){
+console.error('CleaningOS view render failed',page,error);
+const failedPage=page;
+page='dashboard';
+try{content.innerHTML='<div class="card lc-render-error" role="alert"><h2>We couldn\'t open '+esc(failedPage)+'.</h2><p>Your existing demo data has not been erased. Try opening the section again, or reset the fictional workspace if the problem continues.</p><button class="btn" data-page="dashboard">Return to Command Center</button></div>'+dashboard();}
+catch(fallbackError){console.error('CleaningOS fallback failed',fallbackError);content.innerHTML='<div class="card lc-render-error" role="alert"><h2>Unable to load this view</h2><p>The browser retained your demo data. Reload the page to retry.</p></div>';}
+}finally{
+document.querySelectorAll('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false')});
+const more=$('#os-nav-more');if(more)more.open=expanded||['schedule','runsheet','pricing','insights','report','journey','customize','modules','winback'].includes(page);
+$('.side')?.classList.remove('open');
+$('#menu')?.setAttribute('aria-expanded','false');
+}
+}
 function go(x){page=x;render();$('.work').scrollIntoView({block:'start'})}
 $('#menu').onclick=()=>{const open=!$('.side').classList.contains('open');$('.side').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',String(open))};
 $('#app').addEventListener('click',async e=>{
