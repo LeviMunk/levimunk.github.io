@@ -8,10 +8,10 @@
   <meta name="description" content="JobOS: private prospecting and follow-up workspace.">
   <title>JobOS | Private Workspace</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=jobos-research-20261117b">
-  <script defer src="./app.js?v=jobos-research-20261117b"></script>
+  <link rel="stylesheet" href="./styles.css?v=jobos-four-v04-20261117">
+  <script defer src="./app.js?v=jobos-four-v04-20261117"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
-  <script defer src="./cloud.js?v=jobos-research-20261117b"></script>
+  <script defer src="./cloud.js?v=jobos-four-v04-20261117"></script>
 </head>
 <body>
   <div id="app-shell" class="shell" hidden>
@@ -21,9 +21,10 @@
       <nav id="navigation" class="nav">
         <button type="button" data-view="overview" class="nav-item active"><span class="nav-symbol">◫</span> Dashboard</button>
         <button type="button" data-view="intake" class="nav-item"><span class="nav-symbol">⇥</span> Intake & Approvals</button>
-        <div class="workspace-label nav-group-label">YOUR THREE WORKSPACES</div>
+        <div class="workspace-label nav-group-label">YOUR FOUR WORKSPACES</div>
         <button type="button" data-view="career" class="nav-item"><span class="nav-symbol">▣</span> Employment</button>
-        <button type="button" data-view="business" class="nav-item"><span class="nav-symbol">↗</span> Business Development</button>
+        <button type="button" data-view="careeroutreach" class="nav-item"><span class="nav-symbol">◎</span> Career Outreach</button>
+        <button type="button" data-view="business" class="nav-item"><span class="nav-symbol">↗</span> MunkOS</button>
         <button type="button" data-view="networking" class="nav-item"><span class="nav-symbol">◎</span> Networking</button>
         <div class="workspace-label nav-group-label">TOOLS & ACTIVITY</div>
         <button type="button" data-view="queue" class="nav-item"><span class="nav-symbol">✉</span> Messages <span id="nav-ready" class="nav-count">0</span></button>
@@ -42,10 +43,10 @@
         <div class="top-actions"><span class="private-pill"><span class="status-dot"></span> PRIVATE · ENCRYPTED</span><button id="add-top" class="button button-primary" type="button">+ Add opportunity</button></div>
       </header>
       <main class="content" id="main-content" tabindex="-1">
-        <div class="page-heading"><div><div class="eyebrow" id="eyebrow">THURSDAY, NOVEMBER 12</div><h1 id="page-title">Every opportunity, one place<span class="lime-dot">.</span></h1><p id="page-subtitle">Employment, business development, and professional relationships in one command center.</p></div><button type="button" id="add-main" class="button button-secondary">New prospect <span>↗</span></button></div>
+        <div class="page-heading"><div><div class="eyebrow" id="eyebrow">THURSDAY, NOVEMBER 12</div><h1 id="page-title">Every opportunity, one place<span class="lime-dot">.</span></h1><p id="page-subtitle">Employment, career outreach, MunkOS clients, and networking in one place.</p></div><button type="button" id="add-main" class="button button-secondary">New prospect <span>↗</span></button></div>
         <div id="view-root" aria-live="polite"></div>
       </main>
-      <footer class="footer"><span>JOBOS <b>v0.3</b></span><span>Encrypted local vault · Optional Supabase sync · Back up regularly</span></footer>
+      <footer class="footer"><span>JOBOS <b>v0.4</b></span><span>Encrypted local vault · Optional Supabase sync · Back up regularly</span></footer>
     </div>
   </div>
 
@@ -60,11 +61,11 @@
   <dialog id="record-modal" class="modal"><form id="record-form" method="dialog"><div class="modal-head"><div><div class="eyebrow">OPPORTUNITY RECORD</div><h2 id="record-title">New opportunity</h2></div><button type="button" class="close-modal" data-close="record-modal" aria-label="Close">×</button></div>
     <div class="form-grid">
       <label class="field">Business / organization <em>*</em><input required maxlength="150" name="name" placeholder="e.g., Poppy Bakery"></label>
-      <label class="field">Category<select name="type"><option value="Business">Business prospect</option><option value="Career">Career / recruiter</option><option value="Networking">Professional networking</option><option value="Collaboration">Collaboration</option></select></label>
+      <label class="field">Category<select name="type"><option value="Business">MunkOS client prospect</option><option value="Career">Career / recruiter</option><option value="Career Outreach">Career outreach / speculative opportunities</option><option value="Networking">Professional networking</option><option value="Collaboration">Collaboration</option></select></label>
       <label class="field">Industry / focus<input maxlength="120" name="industry" list="industry-suggestions" placeholder="Select or type an industry"></label><datalist id="industry-suggestions"><option value="Restaurants"><option value="Bakeries"><option value="Pizza / Wings"><option value="Food & Beverage"><option value="Marketing Agencies"><option value="Manufacturing"><option value="Retail"><option value="Professional Services"><option value="Home Services"><option value="Healthcare"><option value="Education"><option value="SaaS / Technology"><option value="Arts & Crafts"><option value="Finance"></datalist>
       <label class="field">Location<input maxlength="120" name="location" placeholder="Milwaukee, WI"></label>
-      <label class="field">Contact person<input maxlength="120" name="person" placeholder="If verified"></label>
-      <label class="field">Preferred channel<select name="channel"><option value="Email">Email</option><option value="LinkedIn">LinkedIn</option><option value="Instagram">Instagram</option><option value="Other">Other</option></select></label>
+      <label class="field">Verified hiring manager / business contact<input maxlength="120" name="person" placeholder="If verified"></label>
+      <label class="field">Outreach channel<select name="channel"><option value="Email">Email</option><option value="LinkedIn">LinkedIn</option><option value="Instagram">Instagram</option><option value="Other">Other</option></select></label>
       <label class="field">Email<input type="email" name="email" maxlength="254" placeholder="Publicly verified email"></label>
       <label class="field">Profile / social URL<input type="url" name="profile" maxlength="500" placeholder="https://www.linkedin.com/in/..."></label>
       <label class="field">Business website<input type="url" name="website" maxlength="500" placeholder="https://..."></label>
@@ -87,6 +88,7 @@
       <label class="field business-field">Opportunity evidence URL<input type="url" name="painEvidenceUrl" maxlength="500" placeholder="Source documenting the observation"></label>
       <label class="field">Portfolio concept URL<input type="url" name="concept" maxlength="500" placeholder="https://..."></label>
     </div>
+    <label class="field full-field careeroutreach-field">Employment outreach angle<input name="employmentPitch" maxlength="500" placeholder="What value would you offer this organization?"></label>
     <label class="field full-field">Why this opportunity?<textarea name="angle" maxlength="1200" rows="2" placeholder="Specific verified compliment or outreach angle"></textarea></label>
     <label class="field full-field business-field">Pain point hypothesis (not a proven claim)<textarea name="painHypothesis" maxlength="1400" rows="2" placeholder="Example: repeat-service reminders may help improve rebookings, subject to validation"></textarea></label>
     <label class="field full-field career-field">Application package notes / requirements<textarea name="packageNotes" maxlength="1400" rows="2" placeholder="Tailoring requirements, recruiter approach, application details"></textarea></label>
