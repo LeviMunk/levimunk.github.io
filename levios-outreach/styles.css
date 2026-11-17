@@ -40,3 +40,8 @@
 /* Low-friction Pass feedback */
 .pass-controls{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}.pass-controls select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px;font-size:11px;max-width:160px}.pass-controls button{border-color:#485366}
 @media(max-width:700px){.pass-controls select{max-width:175px}}
+
+/* Private research-inbox preview and import diagnostics */
+.research-preview-panel{margin:0 0 20px;border-color:var(--line);padding:20px}.research-preview-panel .card-head{display:flex;align-items:center;gap:14px;justify-content:space-between}.research-preview-panel .card-head h2{font-size:17px}.research-preview-panel .inline-actions{margin-top:15px}
+.research-preview-list{display:grid;gap:0;margin:13px 0}.research-preview-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.research-preview-item strong{display:block;font-size:14px;margin-bottom:5px}.research-preview-item .lead-meta{font-size:11px;line-height:1.6}.research-preview-item .button{flex-shrink:0}
+@media(max-width:700px){.research-preview-item{align-items:flex-start;flex-direction:column}.research-preview-panel .card-head{align-items:flex-start;flex-direction:column}}
