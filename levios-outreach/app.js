@@ -199,7 +199,7 @@
   const workspaceRecords = view => state.records.filter(r=>view==='business'?['Business','Collaboration'].includes(r.type):r.type===workspaceType(view));
 
   const MIN_JOB_SCORE=75;
-  const jobMeetsThreshold=rec=>rec.type!=='Career'||rankOpportunity(rec).score>=MIN_JOB_SCORE;
+  const jobMeetsThreshold=rec=>rec.type!=='Career'||(!['high','workday'].includes(rec.applicationFriction)&&rankOpportunity(rec).score>=MIN_JOB_SCORE);
   const firstName=full=>String(full||'').trim().split(/\s+/)[0]||'';
   function businessDraft(rec){
     const company=String(rec.name||'this business').trim(),contact=firstName(rec.person);
@@ -216,7 +216,8 @@
   }
   function recruiterDraft(rec){
     if(rec.type!=='Career'||!rec.appliedDate||!rec.person||!['official','public-profile'].includes(rec.contactVerified))return null;
-    const channel=rec.channel==='LinkedIn'&&safeUrl(rec.profile)?'LinkedIn':rec.channel==='Email'&&validMail(rec.email)?'Email':validMail(rec.email)?'Email':safeUrl(rec.profile)?'LinkedIn':null;
+    const verifiedEmail=rec.contactVerified==='official'&&validMail(rec.email),verifiedLinkedIn=rec.contactVerified==='public-profile'&&safeUrl(rec.profile);
+    const channel=rec.channel==='LinkedIn'&&verifiedLinkedIn?'LinkedIn':rec.channel==='Email'&&verifiedEmail?'Email':verifiedEmail?'Email':verifiedLinkedIn?'LinkedIn':null;
     if(!channel)return null;
     const greet=firstName(rec.person),role=rec.jobTitle||'the open position';
     if(channel==='LinkedIn')return {channel,subject:'',draft:'Hi '+greet+', I just applied for the '+role+' role at '+rec.name+'. My background spans marketing analytics, operations, and automation. I’d welcome the chance to connect. Thanks, Levi'};
@@ -241,8 +242,8 @@
   function packageCard(rec){
     const step=readiness(rec),career=rec.type==='Career',general=rec.type==='Career Outreach',rank=rankOpportunity(rec);
     const link=(url,label)=>safeUrl(url)?'<a class="button button-secondary button-small" href="'+escapeHtml(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>':'';
-    const emailLink=['official','public-profile'].includes(rec.contactVerified)&&validMail(rec.email)?'<a class="button button-secondary button-small" href="mailto:'+encodeURIComponent(rec.email)+'">Verified email ↗</a>':'';
-    const contact=career&&rec.person&&['official','public-profile'].includes(rec.contactVerified)&&(validMail(rec.email)||safeUrl(rec.profile));
+    const emailLink=rec.contactVerified==='official'&&validMail(rec.email)?'<a class="button button-secondary button-small" href="mailto:'+encodeURIComponent(rec.email)+'">Verified email ↗</a>':'';
+    const contact=career&&rec.person&&((rec.contactVerified==='official'&&validMail(rec.email))||(rec.contactVerified==='public-profile'&&safeUrl(rec.profile)));
     const recruiterSearch=career&&!contact?'<a class="button button-secondary button-small" href="https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(rec.name+' recruiter talent acquisition marketing')+'" target="_blank" rel="noopener noreferrer">Find contact (unverified) ↗</a>':'';
     const resources=career?link(rec.jobUrl,'Apply on employer site')+link(rec.resumeUrl,'ATS resume')+link(rec.coverLetterUrl,'Cover letter')+(contact?(rec.profile?link(rec.profile,'Recruiter LinkedIn'):'')+emailLink:'')+recruiterSearch:link(rec.painEvidenceUrl,'Evidence')+link(rec.concept,'MunkOS concept');
     const applied=career&&['Applied','Recruiter Screen','Interview','Offer'].includes(rec.stage);
