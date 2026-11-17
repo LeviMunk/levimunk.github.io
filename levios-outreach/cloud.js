@@ -8,6 +8,16 @@
   let client=null, user=null, remote=null, revision=0, linked=false, saving=false, pending=false, timer=0, message="";
   let gmailReady=false, gmailConnected=false;
   let researchImporting=false, researchMessage="Research Inbox: checking";
+  let stagedPreview=[];
+  function publishPreview(records=stagedPreview){
+    stagedPreview=records;
+    window.JobOSResearchPreview={
+      records:stagedPreview,
+      state:!user?'signed_out':!window.LeviOutreachIsUnlocked?.()?'locked':!linked?'unlinked':'linked',
+      message:researchMessage
+    };
+    window.JobOSRefreshInbox?.();
+  }
   const $=id=>document.getElementById(id);
   const vault=()=>{try{return JSON.parse(localStorage.getItem(VAULT)||"null")}catch{return null}};
   const valid=v=>!!(v&&v.version===1&&v.salt&&v.iv&&v.ciphertext);
@@ -94,7 +104,7 @@
       if(user&&user.email?.toLowerCase()!==OWNER){await client.auth.signOut();user=null;throw Error("Owner email required")}
       if(user)await readRemote();
       refreshUI();
-      if(user)await syncResearchBatches();
+      if(user)await syncResearchBatches();else publishPreview([]);
       if(user)await syncPassedFeedback();
     }catch(e){status("Error: "+e.message);refreshUI();}
   }
@@ -149,7 +159,8 @@
         .eq("user_id",user.id).eq("status","queued")
         .order("created_at",{ascending:true}).limit(20);
       if(error)throw Error(error.message);
-      if(!data?.length){researchMessage="Research Inbox: all researched batches processed";refreshUI();return}
+      if(!data?.length){researchMessage="Research Inbox: no queued batches";publishPreview([]);refreshUI();return}
+      publishPreview(data.flatMap(b=>Array.isArray(b.payload?.records)?b.payload.records:[]).slice(0,50));
       if(!window.LeviOutreachIsUnlocked?.()){
         researchMessage="Research Inbox: "+data.length+" pending batch(es), automatically imported after vault unlock";
         refreshUI();return;
@@ -177,9 +188,10 @@
         leads+=report.added;strategies+=report.strategiesAdded;skipped+=report.skipped;processed++;
       }
       researchMessage="Research Inbox: "+leads+" leads + "+strategies+" strategies imported from "+processed+" batch(es); "+skipped+" duplicates/invalid skipped. No emails sent.";
+      if(processed)publishPreview([]);
     }catch(e){
       researchMessage="Research Inbox: "+e.message+". No emails were sent; queued batches remain available if sync failed.";
-    }finally{researchImporting=false;refreshUI();}
+    }finally{researchImporting=false;publishPreview();refreshUI();}
   }
 
   async function restore(){
@@ -241,9 +253,10 @@
         if(remote&&!confirm("Replace existing cloud snapshot with this device? Confirm your encrypted backup is saved."))return;
         if(remote&&!confirm("This may overwrite another device's data. Continue?"))return;
         await upload(true);
+        await syncResearchBatches();
       }else if(id==="cloud-restore")await restore();
-      else if(id==="cloud-refresh"){await readRemote();status("Cloud status refreshed.");}
-      else if(id==="cloud-logout"){await client.auth.signOut();user=null;remote=null;linked=false;gmailReady=false;gmailConnected=false;localStorage.removeItem(LINK);status("Signed out. Local vault unchanged.")}
+      else if(id==="cloud-refresh"){await readRemote();await syncResearchBatches();status("Cloud and research inbox refreshed.");}
+      else if(id==="cloud-logout"){await client.auth.signOut();user=null;remote=null;linked=false;gmailReady=false;gmailConnected=false;localStorage.removeItem(LINK);publishPreview([]);status("Signed out. Local vault unchanged.")}
       else if(id==="gmail-status"){await checkGmail();}
       else if(id==="gmail-authorize"){if(!gmailReady)throw Error("Google OAuth is not configured yet. Follow the Google OAuth setup link.");const r=await gmail("authorize");if(!r.authorizeUrl)throw Error("Google authorization unavailable");location.assign(r.authorizeUrl);}
       else if(id==="gmail-test"){
@@ -292,11 +305,17 @@
   }
   window.LeviCloud={
     onLocalWrite(){if(linked&&user){schedule();syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))}},
-    onVaultOpen(){refreshUI();syncResearchBatches().catch(e=>status("Research Inbox: "+e.message));syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))},onLock(){refreshUI()},
+    onVaultOpen(){publishPreview();refreshUI();syncResearchBatches().catch(e=>status("Research Inbox: "+e.message));syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))},onLock(){refreshUI()},
     async createDraft(rec){return createDraft(rec)},
     async reviewReplies(records){if(!gmailConnected)throw Error("Connect Gmail first.");return gmail("reviewReplies",{records});},
     isGmailConnected(){return gmailConnected},
-    isConnected(){return !!(linked&&user)}
+    isConnected(){return !!(linked&&user)},
+    async refreshResearch(){
+      if(!user){document.getElementById('cloud-open')?.click();throw Error('Sign in to Cloud & Gmail first.');}
+      await syncResearchBatches();
+      if(!linked){document.getElementById('cloud-open')?.click();}
+      return {pending:stagedPreview.length,linked};
+    }
   };
   start().catch(e=>status("Error: "+e.message));
 })();
