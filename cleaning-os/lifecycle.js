@@ -33,7 +33,26 @@ const stages=[
 ['reengage','Revive','Customer reactivation & recovered revenue','refresh-cw'],
 ['intelligence','Nexus','Intelligence & strategic insights','brain-circuit']];
 const seed=()=>({website:{headline:'A little more sparkle. A lot less stress.',subtitle:'Reliable residential cleaning with a personal touch.',cta:'Request a free quote'},leads:[{id:9001,name:'Riley Warren',source:'Website',service:'Deep clean',status:'New'},{id:9002,name:'Emerson Cole',source:'Google Business Profile',service:'Standard clean',status:'Contacted'},{id:9003,name:'Taylor Quinn',source:'Referral',service:'Move-out clean',status:'Quoted'}],feedback:[{id:1,name:'Jordan Ellis',rating:5,note:'Reliable and easy to schedule.'},{id:2,name:'Morgan Taylor',rating:3,note:'Would appreciate a more accurate arrival window.'}],campaigns:['Spring home refresh','Neighborhood homeowner checklist']});
-function ensure(state){if(!state.lifecycle||typeof state.lifecycle!=='object')state.lifecycle=seed();return state.lifecycle}
+function ensure(state){
+const defaults=seed();
+if(!state.lifecycle||typeof state.lifecycle!=='object'||Array.isArray(state.lifecycle))state.lifecycle=defaults;
+const l=state.lifecycle;
+if(!l.website||typeof l.website!=='object'||Array.isArray(l.website))l.website={...defaults.website};
+else for(const [key,value] of Object.entries(defaults.website))if(typeof l.website[key]!=='string')l.website[key]=value;
+if(!Array.isArray(l.leads))l.leads=defaults.leads;
+else l.leads=l.leads.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)).map((x,i)=>({
+...x,
+id:x.id??(900000+i),
+name:typeof x.name==='string'&&x.name.trim()?x.name:'Unnamed inquiry',
+source:typeof x.source==='string'?x.source:'Manual',
+service:typeof x.service==='string'?x.service:'Standard clean',
+status:['New','Contacted','Quoted','Booked','Lost'].includes(x.status)?x.status:'New'
+}));
+if(!Array.isArray(l.feedback))l.feedback=defaults.feedback;
+else l.feedback=l.feedback.filter(x=>x&&typeof x==='object').map(x=>({...x,name:typeof x.name==='string'?x.name:'Sample customer',rating:Math.max(0,Math.min(5,Number(x.rating)||0)),note:typeof x.note==='string'?x.note:''}));
+if(!Array.isArray(l.campaigns))l.campaigns=defaults.campaigns;
+return l
+}
 function btn(label,id){return '<button class="btn alt" data-action="goto:'+id+'">'+label+' →</button>'}
 function tiles(data){return '<div class="lc-tiles">'+data.map(x=>'<article class="lc-tile"><small>'+esc(x[0])+'</small><h3>'+esc(x[1])+'</h3><p>'+esc(x[2])+'</p>'+(x[3]?btn('Open tool',x[3]):'<span class="lc-muted">Concept preview</span>')+'</article>').join('')+'</div>'}
 function header(i){const x=stages[i];return '<div class="lc-header lc-header-'+x[0]+'"><div class="lc-header-backdrop" aria-hidden="true"></div>'+focusArt(x[0],'header')+'<div class="lc-header-inner"><span class="lc-number">'+String(i+1).padStart(2,'0')+'</span><div><div class="eyebrow">'+(i>=5?'PREMIUM EXTENSION':'THE CUSTOMER LIFECYCLE')+'</div><h1>'+x[1]+'</h1><p>'+x[2]+'</p></div></div><span class="lc-header-side">'+(i>=5?'BEYOND THE BASICS':'ONE CONNECTED WORKSPACE')+'</span></div>'}
