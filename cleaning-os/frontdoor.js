@@ -8,7 +8,32 @@ const templates=[
 ['Booking confirmation draft','Hi {{first_name}}, thanks for choosing us for {{service}}. We will confirm the appointment details and service preferences with you.'],
 ['Seasonal service note','Hi {{first_name}}, planning a home refresh? We can discuss {{service}} options that fit your needs.']
 ];
-function ensure(s){const base=window.CleaningLifecycle.ensure(s);if(!base.frontdoor||typeof base.frontdoor!=='object')base.frontdoor={tab:'website',emailDrafts:[],events:[],websiteSettings:{serviceArea:'Fox Cities, Wisconsin',contactCTA:'Request a quote'}};for(const lead of base.leads){if(!Array.isArray(lead.conversation))lead.conversation=[{at:'Demo record',source:'Customer',text:'Interested in '+(lead.service||'home cleaning')+'; please share the available options.'}];if(!lead.onboarding||typeof lead.onboarding!=='object')lead.onboarding={checked:[],notes:'',clientId:null,jobId:null};if(!Number.isFinite(Number(lead.estimate)))lead.estimate=0;}return base.frontdoor}
+function ensure(s){
+const base=window.CleaningLifecycle.ensure(s);
+if(!base.frontdoor||typeof base.frontdoor!=='object'||Array.isArray(base.frontdoor))base.frontdoor={};
+const store=base.frontdoor;
+if(!['website','conversations','campaigns','onboarding'].includes(store.tab))store.tab='website';
+if(!Array.isArray(store.emailDrafts))store.emailDrafts=[];
+else store.emailDrafts=store.emailDrafts.filter(x=>x&&typeof x==='object');
+if(!Array.isArray(store.events))store.events=[];
+if(!store.websiteSettings||typeof store.websiteSettings!=='object')store.websiteSettings={serviceArea:'Fox Cities, Wisconsin',contactCTA:'Request a quote'};
+for(const person of base.leads){
+if(!Array.isArray(person.conversation))person.conversation=[];
+person.conversation=person.conversation.filter(x=>x&&typeof x==='object').map(x=>({
+at:typeof x.at==='string'?x.at:'Recorded note',
+source:typeof x.source==='string'?x.source:'Team',
+text:typeof x.text==='string'?x.text:''
+}));
+if(!person.conversation.length)person.conversation=[{at:'Demo record',source:'Customer',text:'Interested in '+person.service+'; please share the available options.'}];
+if(!person.onboarding||typeof person.onboarding!=='object'||Array.isArray(person.onboarding))person.onboarding={};
+const onboard=person.onboarding;
+if(!Array.isArray(onboard.checked))onboard.checked=[];
+onboard.checked=[...new Set(onboard.checked.map(Number).filter(i=>Number.isInteger(i)&&i>=0&&i<tasks.length))].sort((a,b)=>a-b);
+if(typeof onboard.notes!=='string')onboard.notes='';
+if(!Number.isFinite(Number(person.estimate)))person.estimate=0;
+}
+return store
+}
 function lead(s,id){ensure(s);return s.lifecycle.leads.find(x=>String(x.id)===String(id))}
 function view(s){const store=ensure(s),leads=s.lifecycle.leads,active=leads.filter(x=>x.status!=='Booked'&&x.status!=='Lost').length,booked=leads.filter(x=>x.status==='Booked').length;
 const tabs=[['website','Website'],['conversations','Conversations'],['campaigns','Email Campaigns'],['onboarding','Onboarding']];
