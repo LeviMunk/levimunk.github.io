@@ -51,3 +51,11 @@
 .research-preview-draft{margin:9px 0 5px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025);max-width:680px}.research-preview-draft b{font-size:11px;color:var(--text)}.research-preview-draft p{white-space:pre-wrap;line-height:1.55;font-size:11px;color:var(--muted);margin:8px 0}.research-preview-draft small{font-size:10px;color:var(--muted)}
 .package-draft{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0;line-height:1.55}.package-draft>strong{display:block;margin-bottom:5px}.package-draft p{font-size:12px;white-space:pre-wrap;line-height:1.6}
 @media(max-width:880px){.package-row .row-actions{justify-content:flex-start}}
+
+/* Outreach production usability: suggested drafts remain accessible without a recipient */
+.draft-subject{padding:9px 12px;border:1px solid var(--line);border-bottom:0;border-radius:9px 9px 0 0;font-size:12px;color:var(--text)}
+.opportunity .draft-preview{white-space:pre-wrap;line-height:1.65;overflow-wrap:anywhere;min-height:90px}
+.opportunity .card-foot{display:flex;gap:8px;flex-wrap:wrap}.opportunity .card-foot .button{white-space:normal}
+.held-jobs-panel{margin:16px 0;padding:18px}.held-jobs-panel summary{cursor:pointer;font-weight:700}.held-jobs-panel .job-row{border-top:1px solid var(--line)}
+.package-row .row-actions{flex-wrap:wrap}.package-row .draft-preview p{white-space:pre-wrap}
+@media(max-width:780px){.opportunity .card-foot{flex-direction:column}.opportunity .card-foot .button{width:100%}}
