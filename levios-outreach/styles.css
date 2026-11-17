@@ -31,3 +31,8 @@
 .funnel-step{padding:12px 6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;text-align:center;min-width:0}
 .funnel-step strong{display:block;font:800 25px var(--display);margin-bottom:5px}.funnel-step span{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
 @media(max-width:800px){.funnel-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.package-row .row-actions{flex-wrap:wrap}}
+
+/* JobOS local-first opportunity scoring */
+.score-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0;padding:8px 10px;background:#101f2a;border:1px solid var(--line);border-radius:9px}.score-wrap strong{font:800 18px var(--display);color:var(--bright)}.score-wrap small{font-size:10px;color:var(--muted)}.score-wrap span{display:block;flex-basis:100%;font-size:10px;color:var(--muted);line-height:1.5}
+.intake-research{margin-top:18px}.intake-research summary{cursor:pointer;font-size:14px;font-weight:700}.intake-research .intake-item{border-bottom:1px solid var(--line)}.intake-item .quiet-link{font-size:11px}.intake-item .inline-actions{flex-wrap:wrap}
+.package-row .score-wrap{max-width:460px}.package-row .row-actions{flex-wrap:wrap;justify-content:flex-end}
