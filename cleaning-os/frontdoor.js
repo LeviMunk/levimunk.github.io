@@ -14,7 +14,7 @@ if(!base.frontdoor||typeof base.frontdoor!=='object'||Array.isArray(base.frontdo
 const store=base.frontdoor;
 if(!['website','conversations','campaigns','onboarding'].includes(store.tab))store.tab='website';
 if(!Array.isArray(store.emailDrafts))store.emailDrafts=[];
-else store.emailDrafts=store.emailDrafts.filter(x=>x&&typeof x==='object');
+else store.emailDrafts=store.emailDrafts.filter(x=>x&&typeof x==='object').map((x,i)=>({...x,id:x.id??(Date.now()+i),name:typeof x.name==='string'?x.name:'Untitled draft',subject:typeof x.subject==='string'?x.subject:'',message:typeof x.message==='string'?x.message:'',status:'Draft'}));
 if(!Array.isArray(store.events))store.events=[];
 if(!store.websiteSettings||typeof store.websiteSettings!=='object')store.websiteSettings={serviceArea:'Fox Cities, Wisconsin',contactCTA:'Request a quote'};
 for(const person of base.leads){
