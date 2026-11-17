@@ -43,7 +43,7 @@
   const workdaysFrom = (start,amount) => {let d=new Date(`${start}T12:00:00`),left=amount;while(left>0){d.setDate(d.getDate()+1);if(d.getDay()!==0&&d.getDay()!==6)left--;}return isoLocal(d);};
   const isActive = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&!['Closed','Won','Rejected','Withdrawn'].includes(r.stage);
   const isDue = r => isActive(r)&&r.followup&&r.followup<=today();
-  const isReady = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&r.draft?.trim()&&!['Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed'].includes(r.stage);
+  const isReady = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&(r.type!=='Career'||jobMeetsThreshold(r))&&r.draft?.trim()&&!['Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed'].includes(r.stage);
   const isSent = rec => state.activities.some(a=>a.recordId===rec.id&&a.kind==='sent');
   const isReply = rec => state.activities.some(a=>a.recordId===rec.id&&a.kind==='replied');
   const humanReplyEvent = rec => state.activities.find(a=>a.recordId===rec.id&&a.kind==='replied');
@@ -528,10 +528,11 @@ async function saveStrategy(e){
     // Preserve verified record type. The server gate permits only sourced Career and Business research.
     // Always strip outbound fields: research is never a send, application, or message approval.
     const rows=pack.records.map(r=>{
-      if(!r||!['Business','Career'].includes(r.type))throw Error('Unsupported research record category.');
+      if(!r||!['Business','Career','Career Outreach'].includes(r.type))throw Error('Unsupported research record category.');
       if(!safeUrl(r.sourceUrl)||!r.researchDate)throw Error('Research source or date missing.');
       if(r.type==='Career'&&(!safeUrl(r.jobUrl)||r.verification!=='official-site'))throw Error('Career posting missing a verified source.');
-      return {...r,stage:r.type==='Career'?'Discovered':'Researched',draft:'',subject:'',cc:'',followup:''};
+      if(r.type==='Career Outreach'&&(!safeUrl(r.profile)||r.contactVerified!=='public-profile'||!r.person))throw Error('Career Outreach requires a named public professional contact.');
+      return {...r,stage:r.type==='Career'?'Discovered':'Researched',channel:r.type==='Career Outreach'?'LinkedIn':r.channel,draft:'',subject:'',cc:'',followup:''};
     });
     return mergeImport(rows,pack.strategies||[],{automatic:true});
   };
