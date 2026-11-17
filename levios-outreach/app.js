@@ -43,7 +43,7 @@
   const workdaysFrom = (start,amount) => {let d=new Date(`${start}T12:00:00`),left=amount;while(left>0){d.setDate(d.getDate()+1);if(d.getDay()!==0&&d.getDay()!==6)left--;}return isoLocal(d);};
   const isActive = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&!['Closed','Won','Rejected','Withdrawn'].includes(r.stage);
   const isDue = r => isActive(r)&&r.followup&&r.followup<=today();
-  const isReady = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&(r.type!=='Career'||jobMeetsThreshold(r))&&r.draft?.trim()&&!['Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed'].includes(r.stage);
+  const isReady = r => !r.optedOut&&r.intakeReview!=='passed'&&r.intakeReview!=='rejected'&&(r.type!=='Career'||jobMeetsThreshold(r)||!!r.appliedDate)&&r.draft?.trim()&&!['Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed'].includes(r.stage);
   const isSent = rec => state.activities.some(a=>a.recordId===rec.id&&a.kind==='sent');
   const isReply = rec => state.activities.some(a=>a.recordId===rec.id&&a.kind==='replied');
   const humanReplyEvent = rec => state.activities.find(a=>a.recordId===rec.id&&a.kind==='replied');
@@ -263,7 +263,7 @@
   function workspace(view){
     const records=workspaceRecords(view), previous=filter.type;
     filter.type=view==='business'?'All':workspaceType(view);
-    const list=records.filter(r=>!isPassed(r)&&(r.type!=='Career'||jobMeetsThreshold(r))&&[r.name,r.jobTitle,r.location,r.person,r.email,r.notes,r.angle].join(' ').toLowerCase().includes(filter.query.toLowerCase())).sort(opportunitySort);
+    const list=records.filter(r=>!isPassed(r)&&(r.type!=='Career'||jobMeetsThreshold(r)||!!r.appliedDate)&&[r.name,r.jobTitle,r.location,r.person,r.email,r.notes,r.angle].join(' ').toLowerCase().includes(filter.query.toLowerCase())).sort(opportunitySort);
     const sent=list.filter(isSent).length,due=list.filter(isDue).length;
     const career=view==='career',business=view==='business',careerOutreach=view==='careeroutreach';
     const stages=career?['Discovered','Saved','Researched','Draft Ready','Applied','Contacted','Recruiter Screen','Interview','Offer','Rejected','Withdrawn','Closed']:careerOutreach?stageFor('Career Outreach'):business?['Discovered','Researched','Draft Ready','Contacted','Responded','Interested','Meeting Booked','Proposal','Won','Closed']:['Discovered','Researched','Draft Ready','Contacted','Responded','Interested','Meeting Booked','Closed'];
