@@ -433,8 +433,14 @@ async function saveStrategy(e){
   window.LeviOutreachImportResearchPack=async(pack)=>{
     if(!state)throw Error('Unlock the encrypted workspace first.');
     if(!pack||!Array.isArray(pack.records)||pack.records.length>50||!(pack.strategies===undefined||Array.isArray(pack.strategies)))throw Error('Invalid research inbox batch.');
-    // Import only public business research. Do not mark as contacted or create an email draft.
-    const rows=pack.records.map(r=>({...r,type:'Business',stage:'Researched',draft:'',subject:'',cc:'',followup:''}));
+    // Preserve verified record type. The server gate permits only sourced Career and Business research.
+    // Always strip outbound fields: research is never a send, application, or message approval.
+    const rows=pack.records.map(r=>{
+      if(!r||!['Business','Career'].includes(r.type))throw Error('Unsupported research record category.');
+      if(!safeUrl(r.sourceUrl)||!r.researchDate)throw Error('Research source or date missing.');
+      if(r.type==='Career'&&(!safeUrl(r.jobUrl)||r.verification!=='official-site'))throw Error('Career posting missing a verified source.');
+      return {...r,stage:r.type==='Career'?'Discovered':'Researched',draft:'',subject:'',cc:'',followup:''};
+    });
     return mergeImport(rows,pack.strategies||[],{automatic:true});
   };
   window.LeviOutreachCreateTestProspect=async()=>{
