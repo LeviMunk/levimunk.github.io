@@ -23,3 +23,11 @@
 .intake-banner{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:18px 0 3px;padding:18px 20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}.intake-banner>div{display:grid;gap:5px}.intake-banner strong{font:800 16px var(--display)}.intake-banner span{font-size:12px;color:var(--muted)}
 .intake-intro{margin:20px 0}.intake-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:start}.intake-lane{min-width:0}.intake-lane>.card-head{margin-bottom:7px}.intake-lane .card-head h2{font-size:15px}.intake-item{border-top:1px solid var(--line);padding:16px 0;display:flex;flex-direction:column;gap:12px}.intake-item strong{display:block;font-size:13px;overflow-wrap:anywhere}.intake-item .lead-meta{overflow-wrap:anywhere;line-height:1.5}.intake-item .inline-actions{gap:6px}.intake-item .button{white-space:normal}
 @media(max-width:1230px){.intake-grid{grid-template-columns:1fr 1fr}}@media(max-width:790px){.intake-grid{grid-template-columns:1fr}.intake-banner{align-items:flex-start;flex-direction:column}.intake-item{gap:8px}}
+
+/* JobOS work packages and conversion funnels */
+.business-field[hidden],.career-field[hidden]{display:none!important}
+.package-row{align-items:flex-start}.package-links{margin-top:10px;gap:7px}.package-links .button{font-size:11px}
+.funnel-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:18px 0}
+.funnel-step{padding:12px 6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;text-align:center;min-width:0}
+.funnel-step strong{display:block;font:800 25px var(--display);margin-bottom:5px}.funnel-step span{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+@media(max-width:800px){.funnel-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.package-row .row-actions{flex-wrap:wrap}}
