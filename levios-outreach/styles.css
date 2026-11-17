@@ -15,3 +15,6 @@
 
 /* JobOS job intake */
 .job-discovery{margin:12px 0 22px}.job-discovery .card-head{margin-bottom:10px}.job-list{display:grid;gap:0}.job-row{display:flex;gap:18px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:17px 0}.job-row .row-actions{flex-wrap:wrap;justify-content:flex-end}.job-row strong{font-size:14px;display:block;margin-bottom:6px}@media(max-width:750px){.job-row{align-items:flex-start;flex-direction:column;gap:10px}.job-row .row-actions{justify-content:flex-start;margin-left:0}}
+
+/* JobOS action dashboard and contextual record forms */
+.career-field[hidden]{display:none!important}.action-group-heading{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:13px 0 8px;margin:8px 0 3px}.action-group-heading:first-of-type{margin-top:0}
