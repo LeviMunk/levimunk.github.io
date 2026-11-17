@@ -469,6 +469,22 @@ async function saveStrategy(e){
     navigate('queue');
     return saved;
   };
+  // Export only minimal negative signals for owner-only research suppression when cloud sync is active.
+  // Never export resumes, message content, emails, or the encrypted vault to the research feedback table.
+  window.LeviOutreachPassedFeedback=()=>{
+    if(!state)return [];
+    const out=[];
+    for(const r of state.records.filter(x=>x.intakeReview==='passed')){
+      let key='';
+      if(r.type==='Career'&&safeUrl(r.jobUrl)){
+        const u=new URL(r.jobUrl);key='career|'+u.origin.toLowerCase()+u.pathname.replace(/\/$/,'').toLowerCase();
+      }else if(r.type==='Business'&&safeUrl(r.website)){
+        const u=new URL(r.website);key='business|'+r.name.trim().toLowerCase()+'|'+u.hostname.toLowerCase().replace(/^www\./,'');
+      }
+      if(key)out.push({opportunity_key:key,reason:String(r.passReason||'Not a fit').slice(0,120),category:r.type,updated_at:r.passAt||new Date().toISOString()});
+    }
+    return out;
+  };
   window.LeviOutreachTrackedEmails=()=>state?[...new Set(state.records.filter(r=>r.email&&isSent(r)).map(r=>r.email))]:[];
   setAuthMode();
 })();
