@@ -95,6 +95,7 @@
       if(user)await readRemote();
       refreshUI();
       if(user)await syncResearchBatches();
+      if(user)await syncPassedFeedback();
     }catch(e){status("Error: "+e.message);refreshUI();}
   }
   async function upload(force=false){
@@ -121,6 +122,24 @@
   // Research batches are server-staged public business information. Only a signed-in owner
   // with an unlocked, revision-linked vault can automatically merge and encrypt them.
   // Acknowledgement occurs only AFTER a successful encrypted Supabase revision save.
+  // Owner-only negative feedback, never credentials or private message bodies.
+  let feedbackSyncing=false;
+  async function syncPassedFeedback(){
+    if(feedbackSyncing||!client||!user||!linked||!window.LeviOutreachIsUnlocked?.())return;
+    const entries=window.LeviOutreachPassedFeedback?.()||[];
+    if(!entries.length)return;
+    feedbackSyncing=true;
+    try{
+      for(let i=0;i<entries.length;i+=50){
+        const batch=entries.slice(i,i+50).map(x=>({
+          user_id:user.id,opportunity_key:x.opportunity_key,reason:x.reason,
+          category:x.category,updated_at:x.updated_at
+        }));
+        const {error}=await client.from("outreach_research_feedback").upsert(batch,{onConflict:"user_id,opportunity_key"});
+        if(error)throw Error(error.message);
+      }
+    }finally{feedbackSyncing=false;}
+  }
   async function syncResearchBatches(){
     if(researchImporting||!client||!user)return;
     researchImporting=true;
@@ -272,8 +291,8 @@
     history.replaceState(null,"",clean.pathname+clean.search+clean.hash);
   }
   window.LeviCloud={
-    onLocalWrite(){if(linked&&user)schedule()},
-    onVaultOpen(){refreshUI();syncResearchBatches().catch(e=>status("Research Inbox: "+e.message))},onLock(){refreshUI()},
+    onLocalWrite(){if(linked&&user){schedule();syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))}},
+    onVaultOpen(){refreshUI();syncResearchBatches().catch(e=>status("Research Inbox: "+e.message));syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))},onLock(){refreshUI()},
     async createDraft(rec){return createDraft(rec)},
     async reviewReplies(records){if(!gmailConnected)throw Error("Connect Gmail first.");return gmail("reviewReplies",{records});},
     isGmailConnected(){return gmailConnected},
