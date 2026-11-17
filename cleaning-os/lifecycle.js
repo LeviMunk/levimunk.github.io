@@ -40,14 +40,16 @@ const l=state.lifecycle;
 if(!l.website||typeof l.website!=='object'||Array.isArray(l.website))l.website={...defaults.website};
 else for(const [key,value] of Object.entries(defaults.website))if(typeof l.website[key]!=='string')l.website[key]=value;
 if(!Array.isArray(l.leads))l.leads=defaults.leads;
-else l.leads=l.leads.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)).map((x,i)=>({
-...x,
-id:x.id??(900000+i),
-name:typeof x.name==='string'&&x.name.trim()?x.name:'Unnamed inquiry',
-source:typeof x.source==='string'?x.source:'Manual',
-service:typeof x.service==='string'?x.service:'Standard clean',
-status:['New','Contacted','Quoted','Booked','Lost'].includes(x.status)?x.status:'New'
-}));
+else {
+l.leads=l.leads.filter(x=>x&&typeof x==='object'&&!Array.isArray(x));
+l.leads.forEach((x,i)=>{
+if(x.id==null)x.id=900000+i;
+if(typeof x.name!=='string'||!x.name.trim())x.name='Unnamed inquiry';
+if(typeof x.source!=='string')x.source='Manual';
+if(typeof x.service!=='string')x.service='Standard clean';
+if(!['New','Contacted','Quoted','Booked','Lost'].includes(x.status))x.status='New';
+});
+}
 if(!Array.isArray(l.feedback))l.feedback=defaults.feedback;
 else l.feedback=l.feedback.filter(x=>x&&typeof x==='object').map(x=>({...x,name:typeof x.name==='string'?x.name:'Sample customer',rating:Math.max(0,Math.min(5,Number(x.rating)||0)),note:typeof x.note==='string'?x.note:''}));
 if(!Array.isArray(l.campaigns))l.campaigns=defaults.campaigns;
