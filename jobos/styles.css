@@ -131,3 +131,8 @@
 .munkos-social-copy{margin:12px 0;padding:12px 15px;border-radius:10px;background:var(--panel2)}
 .munkos-social-copy strong{font-size:12px}
 .munkos-social-copy p{white-space:pre-wrap;line-height:1.6;font-size:12px;margin:8px 0}
+
+/* Action-only Employment and MunkOS workspaces */
+.compact-workspace .page-heading{margin-bottom:22px}
+.compact-workspace .page-heading .eyebrow,.compact-workspace .page-heading p{display:none}
+.compact-workspace .page-heading h1{margin-bottom:0}
