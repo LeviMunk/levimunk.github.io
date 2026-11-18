@@ -96,7 +96,7 @@
       if(!validMail(existing.email)&&validMail(source.email)){existing.email=source.email;existing.channel='Email';changed=true;}
       if(!verifiedSocialUrl(existing.profile)&&verifiedSocialUrl(source.profile)){existing.profile=source.profile;changed=true;}
       if(existing.offerModule?.includes('CleaningOS')){existing.offerModule='Custom Revenue Dashboard';changed=true;}
-      const legacy=!!existing.draft?.includes('I build practical tools for smaller companies through');
+      const legacy=!!existing.draft?.includes('I build practical tools for smaller companies through')||!!existing.draft?.includes('I build simple, custom dashboards that help business owners spot missed sales');
       if((!existing.draft||legacy)&&!existing.messageApprovedAt){
         const draft=businessDraft(existing);
         if(existing.draft!==draft.draft||existing.subject!==draft.subject){existing.draft=draft.draft;existing.subject=draft.subject;changed=true;}
@@ -240,19 +240,61 @@
     }catch{return '';}
   };
   const munkosContactReady=r=>r.type!=='Business'||validMail(r.email)||!!verifiedSocialUrl(r.profile);
+  function businessPitch(rec){
+    const name=String(rec.name||'').toLowerCase(),industry=String(rec.industry||'').toLowerCase();
+    if(name.includes('bowtie carpet'))return {
+      hook:'I saw that BowTie focuses on carpet cleaning.',
+      idea:'A simple dashboard could show which estimates turn into booked jobs, when past customers might be ready for another cleaning, and which services bring people back.',
+      social:'I saw BowTie does carpet cleaning. I build simple dashboards to track quotes that turn into jobs and when past customers might be ready to book again.'
+    };
+    if(name.includes('sparkling spaces'))return {
+      hook:'I noticed Sparkling Spaces works with rentals, realtors, and commercial properties.',
+      idea:'A dashboard could help track repeat property managers, which jobs bring in the most work, and which past clients may need another clean.',
+      social:'I noticed you work with rentals, realtors, and commercial spaces. I build dashboards to track repeat property clients and which jobs bring in work.'
+    };
+    if(name.includes('queen of cleaning'))return {
+      hook:'I saw that Queen of Cleaning offers both regular home cleaning and specialty cleaning.',
+      idea:'A dashboard could show which one-time jobs turn into regular customers, which services get booked most, and who might be worth following up with.',
+      social:'I noticed you do regular and specialty cleaning. I build dashboards to see which one-time jobs turn into repeat customers and who to follow up with.'
+    };
+    if(name.includes('suntastic'))return {
+      hook:'I came across Suntastic Home Cleaning in Kaukauna.',
+      idea:'A dashboard could help track new cleaning requests, which customers book again, and when to send a friendly reminder to past clients.',
+      social:'I came across Suntastic in Kaukauna. I build dashboards for tracking new requests, repeat cleanings, and follow-ups with past customers.'
+    };
+    if(/carpet|upholstery|floor care/.test(name+' '+industry))return {
+      hook:'I noticed you offer carpet or floor-cleaning services.',
+      idea:'A dashboard could track estimates, bookings, and when past customers might be ready for another cleaning.',
+      social:'I build dashboards that track carpet-cleaning estimates, booked jobs, and when customers might need service again.'
+    };
+    if(/rental|property|commercial|real estate/.test(name+' '+industry+' '+String(rec.angle||'').toLowerCase()))return {
+      hook:'I noticed you work with properties and cleaning jobs.',
+      idea:'A dashboard could show which property contacts bring repeat work, which quotes turn into jobs, and which services get requested most.',
+      social:'I build dashboards for property-service businesses to track repeat clients, quotes, and booked jobs.'
+    };
+    if(/clean|maid|janitor|housekeep/.test(name+' '+industry))return {
+      hook:'I noticed you offer cleaning services in the Fox Valley.',
+      idea:'A dashboard could track quote requests, regular bookings, and past customers who might be ready to book another clean.',
+      social:'I build dashboards for cleaning businesses to track quotes, regular bookings, and past-customer follow-ups.'
+    };
+    return {
+      hook:'I came across your business while looking at Fox Valley service companies.',
+      idea:'A simple dashboard could show which inquiries turn into customers, which customers return, and what brings in the most work.',
+      social:'I build dashboards for service businesses to track inquiries, repeat customers, and what actually brings in work.'
+    };
+  }
   function businessDraft(rec){
-    const name=String(rec.name||'your business').trim();
+    const name=String(rec.name||'your business').trim(),pitch=businessPitch(rec);
     const greeting=firstName(rec.person)?'Hi '+firstName(rec.person)+',':'Hi '+name+' team,';
     return {
-      subject:'Quick idea for '+name,
-      draft:greeting+'\n\nI\'m local to the Fox Valley and came across '+name+'. I build simple, custom dashboards that help business owners spot missed sales, follow up with past customers, and see what\'s actually bringing in work.\n\nThe idea is to make more from the leads and customers you already have before spending more money on ads.\n\nWould it be okay if I sent over a quick example?\n\nLevi'
+      subject:'An idea for '+name,
+      draft:greeting+'\n\n'+pitch.hook+'\n\nI build simple, custom dashboards for business owners. '+pitch.idea+'\n\nIt\'s about getting more from work you already have instead of spending more on ads.\n\nWould you be open to seeing a quick example?\n\nLevi'
     };
   }
   function businessSocialDraft(rec){
-    const greeting=firstName(rec.person)?'Hey '+firstName(rec.person)+'!':'Hey!';
-    return greeting+' I build simple dashboards for local businesses to spot missed sales, bring old customers back, and see what works without spending more on ads. Would it be okay if I sent over a quick example for '+String(rec.name||'your business')+'? - Levi';
+    const pitch=businessPitch(rec);
+    return (firstName(rec.person)?'Hey '+firstName(rec.person)+'! ':'Hey! ')+pitch.social+' The idea is to get more from existing customers before spending more on ads. Want me to send a quick example? - Levi';
   }
-
   function generalEmploymentDraft(rec){
     const greet=firstName(rec.person)?'Hi '+firstName(rec.person)+',':'Hello '+rec.name+' team,';
     const pitch=String(rec.employmentPitch||'marketing analytics, business operations, and process improvement').trim().slice(0,350);
@@ -335,7 +377,7 @@
     const r=findRecord(selectedRecordId);
     if(!r)return '<div class="card"><p>That record is not available.</p><button class="button button-secondary" data-action="detailback">Back</button></div>';
     const career=r.type==='Career',suggested=career?null:r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):null;
-    const legacyBusiness=r.type==='Business'&&!r.messageApprovedAt&&!!r.draft?.includes('I build practical tools for smaller companies through');
+    const legacyBusiness=r.type==='Business'&&!r.messageApprovedAt&&(!!r.draft?.includes('I build practical tools for smaller companies through')||!!r.draft?.includes('I build simple, custom dashboards that help business owners spot missed sales'));
     const draft=legacyBusiness?businessDraft(r).draft:r.draft||suggested?.draft||'',subject=r.subject||suggested?.subject||'';
     const verifiedContact=!!r.person&&((r.contactVerified==='official'&&validMail(r.email))||(r.contactVerified==='public-profile'&&!!safeUrl(r.profile)));
     const source=safeUrl(career?r.jobUrl:r.sourceUrl||r.website);
