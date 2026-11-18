@@ -333,7 +333,10 @@
     const pending=career.filter(r=>!r.appliedDate).sort(opportunitySort);
     const drafts=active.filter(r=>r.type!=='Career'&&!isSent(r)).sort(opportunitySort);
     const actions=[...due.slice(0,3),...pending.slice(0,4),...drafts.slice(0,5)].filter((r,i,a)=>a.findIndex(x=>x.id===r.id)===i).slice(0,8);
-    return '<div class="simple-metrics">'+metricCard('Jobs to review',pending.length,'Verified 75+ listings')+metricCard('Messages sent',active.filter(isSent).length,'Confirmed')+metricCard('Replies',active.filter(isReply).length,'Tracked responses')+metricCard('Follow-ups',due.length,'Due now')+'</div>'+
+    const feed=window.JobOSResearchPreview;
+    const staged=Array.isArray(feed?.records)?feed.records.filter(r=>r.type!=='Career'||jobMeetsThreshold(r)):[];
+    const waiting=staged.length?'<section class="simple-new-inbox card"><div><div class="eyebrow">NEW RESEARCH</div><h2>'+staged.length+' opportunities found for you</h2><p>'+staged.filter(r=>r.type==='Career').length+' qualifying jobs · '+staged.filter(r=>r.type==='Business').length+' MunkOS prospects · Ready to bring into your workspace</p></div><button class="button button-primary" data-action="researchsync">Add to JobOS</button></section>':'';
+    return waiting+'<div class="simple-metrics">'+metricCard('Jobs to review',pending.length,'Verified 75+ listings')+metricCard('Messages sent',active.filter(isSent).length,'Confirmed')+metricCard('Replies',active.filter(isReply).length,'Tracked responses')+metricCard('Follow-ups',due.length,'Due now')+'</div>'+
       '<div class="simple-section"><div class="simple-section-head"><h2>Your next actions</h2><span>'+actions.length+' opportunities</span></div>'+
       (actions.length?'<div class="simple-list">'+actions.map(simplifiedCard).join('')+'</div>':'<div class="card simple-empty"><h3>Nothing requiring action yet</h3><p>Open a workspace to review contacts, or see research updates below.</p></div>')+'</div>'+
       '<div class="simple-workspaces">'+group.map(([label,view])=>'<button data-nav="'+view+'" class="simple-workspace-tile"><strong>'+label+'</strong><span>'+workspaceRecords(view).filter(r=>!isPassed(r)).length+' tracked →</span></button>').join('')+'</div>'+
