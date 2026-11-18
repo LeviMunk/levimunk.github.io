@@ -157,7 +157,7 @@ function message(rec,channel='LinkedIn'){
   return greet+' '+(applied?'I just applied for':'I am interested in')+' the '+p.title+' role at '+organization+'. My background is in marketing performance reporting, operations, and cross-team coordination. I would welcome the chance to connect. Thanks, Levi';
  }
  return {subject:(applied?'Application submitted: ':'Interested in: ')+p.title,
- body:greet+'\n\n'+(applied?'I recently submitted my application for':'I am planning to apply for')+' the '+p.title+' position at '+organization+'. My background combines marketing performance reporting, operations, and customer-lifecycle coordination. I would appreciate the opportunity to connect with the team responsible for this opening.\n\nThank you,\nLevi Van Stappen'};
+ body:'Hello recruiting team,\n\n'+(applied?'I recently submitted my application for':'I am planning to apply for')+' the '+p.title+' position at '+organization+'. My background combines marketing performance reporting, operations, and customer-lifecycle coordination. I would appreciate the opportunity to connect with the team responsible for this opening.\n\nThank you,\nLevi Van Stappen'};
 }
 window.JobOSDocuments={has:rec=>!!keyFor(rec),save,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
 })();
