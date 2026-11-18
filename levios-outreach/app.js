@@ -520,7 +520,26 @@
   function contacts(){const rows=filtered();return `${toolbar()}<div class="card"><div class="card-head"><h2>${rows.length} opportunit${rows.length===1?'y':'ies'}</h2><button class="button button-secondary button-small" data-action="import">Import JSON / CSV</button></div>${rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Organization</th><th>Category</th><th>Channel</th><th>Stage</th><th>Next follow-up</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${escapeHtml(r.name)}</strong><span class="table-muted">${escapeHtml(r.person||r.location||r.industry||'No contact added')}</span></td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(r.channel)}</td><td><span class="badge ${stageBadge(r.stage)}">${escapeHtml(r.stage)}</span></td><td>${escapeHtml(formatted(r.followup))}</td><td><button data-action="edit" data-id="${r.id}" class="table-link">Open ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('No opportunities match','Try changing your filters or adding a new prospect.',true)}</div>`;}
   function pipeline(){const records=filtered();return `${toolbar()}<p class="section-intro">Every stage is set deliberately. Drafts and replies never silently move an opportunity.</p><div class="pipeline">${STAGES.map(s=>{const list=records.filter(r=>r.stage===s);return `<section class="pipeline-column"><h3>${escapeHtml(s)} <span class="subtle">${list.length}</span></h3>${list.map(r=>`<button class="pipeline-card" data-action="edit" data-id="${r.id}"><strong>${escapeHtml(r.name)}</strong><span>${escapeHtml(r.type)} · ${escapeHtml(r.channel)}</span></button>`).join('')||'<p class="pipeline-muted">No records</p>'}</section>`;}).join('')}</div>`;}
   function followups(){const active=state.records.filter(r=>isActive(r)&&r.followup).sort((a,b)=>a.followup.localeCompare(b.followup));const due=active.filter(isDue);const upcoming=active.filter(r=>!isDue(r));const segment=(items,title)=>`<div class="card">${cardHead(`${title} · ${items.length}`,null)}${items.length?items.map(r=>`<div class="lead-row"><div class="avatar">◷</div><div class="lead-info"><div class="lead-name">${escapeHtml(r.name)}</div><div class="lead-meta">${escapeHtml(formatted(r.followup))} · ${escapeHtml(r.stage)} · ${escapeHtml(r.channel)}</div></div><button class="button button-secondary button-small" data-action="edit" data-id="${r.id}">Open</button><button class="button button-ghost button-small" data-action="snooze" data-id="${r.id}">+5 days</button></div>`).join(''):empty('Nothing to follow up on','Follow-up dates are scheduled after you confirm a send, or can be entered manually.',false)}</div>`;return `<p class="section-intro">LeviOS reminds you; it never sends an automatic follow-up. Replied, won and closed opportunities are excluded when appropriate.</p><div class="main-grid"><div>${segment(due,'Due now')}</div><div>${segment(upcoming,'Upcoming')}</div></div>`;}
-function replyReviewPanel(){
+  let careerInboxItems=[],careerInboxError='',careerInboxWorking=false,careerInboxCheckedAt='';
+  function careerInboxPanel(){
+    const entries=careerInboxItems.map(m=>{
+      const open='https://mail.google.com/mail/u/0/#all/'+encodeURIComponent(m.threadId);
+      return '<div class="lead-row"><div class="lead-info"><strong>'+escapeHtml(m.subject||'(No subject)')+'</strong><div class="lead-meta">'+escapeHtml(m.from)+' · '+escapeHtml(timeFormatted(m.receivedAt))+(m.companyMatch?' · possible employer match: '+escapeHtml(m.companyMatch):' · employer not confirmed')+'</div></div><a href="'+escapeHtml(open)+'" class="button button-secondary button-small" target="_blank" rel="noopener noreferrer">Review in Gmail ↗</a></div>';
+    }).join('');
+    return '<details class="simple-secondary"><summary>Gmail · interview and recruiter review'+(careerInboxItems.length?' ('+careerInboxItems.length+')':'')+'</summary><p class="small subtle">Checks recent incoming message subject lines and sender metadata. Possible matches need your review. Job stages are never changed automatically.</p><button class="button button-secondary button-small" data-action="scancareerinbox" '+(careerInboxWorking?'disabled':'')+'>'+(careerInboxWorking?'Checking Gmail…':'Check Gmail for interview messages')+'</button>'+(careerInboxError?'<p class="error">'+escapeHtml(careerInboxError)+'</p>':'')+(careerInboxCheckedAt?'<p class="small subtle">Last checked: '+escapeHtml(careerInboxCheckedAt)+'</p>':'')+(entries||'<p class="small subtle">No candidate messages loaded. Connect Gmail from Cloud & Gmail if needed.</p>')+'</details>';
+  }
+  async function scanCareerInbox(){
+    if(careerInboxWorking||!state)return;
+    careerInboxWorking=true;careerInboxError='';render();
+    try{
+      if(!window.LeviCloud?.reviewCareerInbox)throw Error('Gmail career review is unavailable. Refresh JobOS.');
+      const jobs=state.records.filter(r=>r.type==='Career').map(r=>({id:r.id,name:r.name})).slice(0,100);
+      const result=await window.LeviCloud.reviewCareerInbox(jobs);
+      careerInboxItems=Array.isArray(result.candidates)?result.candidates:[];careerInboxCheckedAt=new Date().toLocaleString();
+    }catch(e){careerInboxError=e.message||'Could not check Gmail';}
+    finally{careerInboxWorking=false;render();}
+  }
+  function replyReviewPanel(){
   const eligible=state.records.filter(r=>r.channel==='Email'&&isSent(r)&&!isReply(r)&&!r.optedOut&&r.email?.toLowerCase()!=='levivanstap@gmail.com');
   const groups=replyReviewResult?.reviewed||[];
   const rows=groups.map(g=>{
