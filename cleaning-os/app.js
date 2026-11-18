@@ -74,7 +74,7 @@ content.innerHTML=view+'<p class="footer">All client names, home details, appoin
 console.error('CleaningOS view render failed',page,error);
 const failedPage=page;
 page='dashboard';
-try{content.innerHTML='<div class="card lc-render-error" role="alert"><h2>We couldn\'t open '+esc(failedPage)+'.</h2><p>Your existing demo data has not been erased. Try opening the section again, or reset the fictional workspace if the problem continues.</p><button class="btn" data-page="dashboard">Return to Command Center</button></div>'+dashboard();}
+try{content.innerHTML='<div class="card lc-render-error" role="alert"><h2>This workspace could not open.</h2><p>The '+esc(failedPage)+' view encountered an error. Your example data is unchanged. You can return to Command Center and try again.</p><button class="btn" data-page="dashboard">Return to Command Center</button></div>'+dashboard();}
 catch(fallbackError){console.error('CleaningOS fallback failed',fallbackError);content.innerHTML='<div class="card lc-render-error" role="alert"><h2>Unable to load this view</h2><p>The browser retained your demo data. Reload the page to retry.</p></div>';}
 }finally{
 document.querySelectorAll('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false')});
@@ -83,9 +83,18 @@ $('.side')?.classList.remove('open');
 $('#menu')?.setAttribute('aria-expanded','false');
 }
 }
-function go(x){page=x;render();$('.work').scrollIntoView({block:'start'})}
+function go(x){
+if(!Object.prototype.hasOwnProperty.call(views,x))x='dashboard';
+const side=$('.side');if(side)side.classList.remove('open');
+const menu=$('#menu');if(menu)menu.setAttribute('aria-expanded','false');
+page=x;
+render();
+try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){try{window.scrollTo(0,0)}catch(_){}}
+}
 $('#menu').onclick=()=>{const open=!$('.side').classList.contains('open');$('.side').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',String(open))};
 $('#app').addEventListener('click',async e=>{
+const navigation=e.target.closest('[data-page]');
+if(navigation){e.preventDefault();go(navigation.dataset.page);return}
 const ftab=e.target.closest('[data-fd-tab]');if(ftab){state.lifecycle.frontdoor.tab=ftab.dataset.fdTab;save();render();return}
 const fl=e.target.closest('[data-fd-lead]');if(fl){state.lifecycle.frontdoor.selectedLead=fl.dataset.fdLead;save();render();return}
 const fs=e.target.closest('[data-fd-start-onboard]');if(fs){state.lifecycle.frontdoor.selectedLead=fs.dataset.fdStartOnboard;state.lifecycle.frontdoor.tab='onboarding';save();render();return}
@@ -109,7 +118,7 @@ if(e.target.closest('[data-os-print]')){document.body.classList.add('clean-print
 const visit=e.target.closest('[data-plan-visit]');if(visit){window.CleaningPlanner.select(state,visit.dataset.planVisit);save();render();return}
 const weekly=e.target.closest('[data-planner-week]');if(weekly){window.CleaningPlanner.week(state,Number(weekly.dataset.plannerWeek));save();render();return}
 if(e.target.closest('[data-planner-close]')){state.planner.selected=null;save();render();return}
-const nav=e.target.closest('[data-page]');if(nav){go(nav.dataset.page);return}const jb=e.target.closest('[data-job]');if(jb){activeJob=jb.dataset.job;go('jobs');return}const el=e.target.closest('[data-action]');if(!el)return;const act=el.dataset.action;if(act.startsWith('goto:'))go(act.slice(5));else if(act.startsWith('job:')){activeJob=act.slice(4);go('jobs')}else if(act.startsWith('complete:')){const j=jobs().find(x=>x.id===Number(act.slice(9)));{const result=window.CleaningOperations.change(state,act.slice(9),'status','Completed');if(result.ok){save();render()}else alert(result.reason||'Unable to complete job.')}}else if(act.startsWith('unlock:')){const n=Number(act.slice(7));const feature=extras[n];if(feature){if(!state.modules.includes(n))state.modules.push(n);save();alert(feature[0]+' is an optional future module. Interest saved in this browser. No integration or payment was activated.');render()}}else if(act==='reset'&&confirm('Restore all CleaningOS fictional example data?')){state=seed();activeJob='';window.CleaningOperations.ensure(state);window.CleaningJourney.ensure(state);window.CleaningWinback.ensure(state);window.CleaningLifecycle.ensure(state);window.CleaningFrontDoor.ensure(state);window.CleaningWinback.loadDemo(state);save();go('dashboard')}});
+const jb=e.target.closest('[data-job]');if(jb){activeJob=jb.dataset.job;go('jobs');return}const el=e.target.closest('[data-action]');if(!el)return;const act=el.dataset.action;if(act.startsWith('goto:'))go(act.slice(5));else if(act.startsWith('job:')){activeJob=act.slice(4);go('jobs')}else if(act.startsWith('complete:')){const j=jobs().find(x=>x.id===Number(act.slice(9)));{const result=window.CleaningOperations.change(state,act.slice(9),'status','Completed');if(result.ok){save();render()}else alert(result.reason||'Unable to complete job.')}}else if(act.startsWith('unlock:')){const n=Number(act.slice(7));const feature=extras[n];if(feature){if(!state.modules.includes(n))state.modules.push(n);save();alert(feature[0]+' is an optional future module. Interest saved in this browser. No integration or payment was activated.');render()}}else if(act==='reset'&&confirm('Restore all CleaningOS fictional example data?')){state=seed();activeJob='';window.CleaningOperations.ensure(state);window.CleaningJourney.ensure(state);window.CleaningWinback.ensure(state);window.CleaningLifecycle.ensure(state);window.CleaningFrontDoor.ensure(state);window.CleaningWinback.loadDemo(state);save();go('dashboard')}});
 $('#app').addEventListener('change',async e=>{const x=e.target;
 if(x.matches('[data-fd-followup]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdFollowup);if(l){l.followUpDate=x.value;save();render()}return}
 if(x.matches('[data-fd-status]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdStatus);if(l){l.status=x.value;save();render()}return}
