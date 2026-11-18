@@ -191,6 +191,21 @@
       rec.draft=revised.draft;rec.subject=revised.subject;rec.updatedAt=new Date().toISOString();updatedCleaningDrafts++;
     }
     if(updatedCleaningDrafts){await writeVault();activity('','cleaning-draft-update',updatedCleaningDrafts+' untouched cleaning outreach drafts refreshed');await writeVault();}
+    // Refresh only older, automatically generated post-application recruiter drafts.
+    // Never replace an edited, approved, or already-sent message.
+    let refreshedApplicationNotes=0;
+    for(const rec of state.records){
+      if(rec.type!=='Career'||!rec.appliedDate||!rec.draft||rec.messageApprovedAt||isSent(rec))continue;
+      if(state.activities.some(a=>a.recordId===rec.id&&a.kind==='draft-revision'))continue;
+      const oldAutoEmail=rec.draft.includes('I just applied for the ')&&rec.draft.includes('My work has been a mix of marketing, reporting, and keeping operations moving');
+      const oldAutoLinkedIn=rec.draft.includes('I just applied for the ')&&rec.draft.includes('Would love to connect! - Levi');
+      if(!oldAutoEmail&&!oldAutoLinkedIn)continue;
+      const next=recruiterDraft(rec);
+      if(!next||next.channel!==rec.channel)continue;
+      rec.subject=next.subject;rec.draft=next.draft;rec.updatedAt=new Date().toISOString();refreshedApplicationNotes++;
+    }
+    if(refreshedApplicationNotes){activity('','recruiter-draft-refresh',refreshedApplicationNotes+' untouched post-application recruiter drafts refreshed');await writeVault();}
+
     $('vault-pass').value='';$('vault-confirm').value='';
     $('unlock-screen').hidden=true;$('app-shell').hidden=false;
     lastActivityAt=Date.now();navigate('overview');try{await importStarterResearch();}catch(e){starterFeedStatus='error';starterFeedError=e.message||String(e);console.warn('Starter research not loaded:',e.message);notify('Job research feed could not load: '+starterFeedError);render();}window.LeviCloud?.onVaultOpen?.();
