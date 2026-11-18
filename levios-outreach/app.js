@@ -99,7 +99,7 @@
       if(!validMail(existing.email)&&validMail(source.email)){existing.email=source.email;existing.channel='Email';changed=true;}
       if(!verifiedSocialUrl(existing.profile)&&verifiedSocialUrl(source.profile)){existing.profile=source.profile;changed=true;}
       if(existing.offerModule?.includes('CleaningOS')){existing.offerModule='Custom Revenue Dashboard';changed=true;}
-      const legacy=!!existing.draft?.includes('I build practical tools for smaller companies through')||!!existing.draft?.includes('I build simple, custom dashboards that help business owners spot missed sales');
+      const legacy=!!existing.draft?.includes('I build practical tools for smaller companies through')||!!existing.draft?.includes('I build simple, custom dashboards that help business owners spot missed sales')||!!existing.draft?.includes('I am building a simple tool that shows which requests turn into jobs')||!!existing.draft?.includes('It is not meant to replace your booking system or add another complicated app.');
       if((!existing.draft||legacy)&&!existing.messageApprovedAt){
         const draft=businessDraft(existing);
         if(existing.draft!==draft.draft||existing.subject!==draft.subject){existing.draft=draft.draft;existing.subject=draft.subject;changed=true;}
@@ -136,7 +136,7 @@
       if(rec.type!=='Business'||!isCleaningBusiness(rec)||isSent(rec)||rec.messageApprovedAt||rec.optedOut)continue;
       if(state.activities.some(a=>a.recordId===rec.id&&a.kind==='draft-revision'))continue;
       const oldTemplate=String(rec.draft||'');
-      if(oldTemplate&&!oldTemplate.includes('I build simple, custom dashboards for business owners.')&&!oldTemplate.includes('I build practical tools for smaller companies through')&&!oldTemplate.includes('I build simple, custom dashboards that help business owners spot missed sales'))continue;
+      if(oldTemplate&&!oldTemplate.includes('I build simple, custom dashboards for business owners.')&&!oldTemplate.includes('I build practical tools for smaller companies through')&&!oldTemplate.includes('I build simple, custom dashboards that help business owners spot missed sales')&&!oldTemplate.includes('I am building a simple tool that shows which requests turn into jobs')&&!oldTemplate.includes('It is not meant to replace your booking system or add another complicated app.'))continue;
       const revised=businessDraft(rec);
       if(rec.draft===revised.draft&&rec.subject===revised.subject)continue;
       rec.draft=revised.draft;rec.subject=revised.subject;rec.updatedAt=new Date().toISOString();updatedCleaningDrafts++;
@@ -289,10 +289,11 @@
     };
   }
   function businessDraft(rec){
-    const name=String(rec.name||'your business').trim(),p=businessPitch(rec);
+    const name=String(rec.name||'your business').trim(),cleaning=isCleaningBusiness(rec);
     const greeting=firstName(rec.person)?'Hi '+firstName(rec.person)+',':'Hi '+name+' team,';
-    return {subject:isCleaningBusiness(rec)?'Quick idea for '+name:'An idea for '+name,
-      draft:greeting+'\n\n'+p.hook+'\n\n'+p.idea+'\n\nIt is not meant to replace your booking system or add another complicated app. The goal is to make it easier to spot work worth following up on without spending more on ads.\n\nIf you are interested in seeing a demo, I would be happy to send a link or walk you through it on a quick video call.\n\nLevi'};
+    const intro=cleaning?'I build easy-to-use dashboards for cleaning services to track the full client journey, from the first inquiry and booking to the cleaning itself and keeping clients engaged over time.':'I build easy-to-use dashboards for service businesses to track customers from first inquiry through repeat bookings.';
+    const outcome=cleaning?'The goal is to spot potential revenue gaps while understanding which services and follow-ups keep clients coming back.':'The goal is to spot missed opportunities and see what keeps customers coming back.';
+    return {subject:'A dashboard idea for '+name,draft:greeting+'\n\n'+intro+'\n\n'+outcome+'\n\nThe dashboard is designed to work alongside the tools you already use, where integrations are available, and bring important metrics and next steps into one place.\n\nIf you are interested in seeing a demo, I would be happy to send a link or walk you through it on a quick video call.\n\nLevi'};
   }
   function businessSocialDraft(rec){
     const p=businessPitch(rec);
@@ -342,13 +343,7 @@
       (window.JobOSDocuments?.has(rec)?'<button class="button button-primary button-small" data-action="downloadkit" data-id="'+escapeHtml(rec.id)+'">Download both PDFs</button><button class="button button-secondary button-small" data-action="pdfresume" data-id="'+escapeHtml(rec.id)+'">Resume PDF</button><button class="button button-secondary button-small" data-action="pdfcover" data-id="'+escapeHtml(rec.id)+'">Cover letter PDF</button>':'<span class="small subtle">PDF package not prepared yet</span>')+
       (!applied?'<button class="button button-secondary button-small" data-action="applied" data-id="'+escapeHtml(rec.id)+'">Confirm applied</button>':'')+
       (applied&&contact?'<button class="button button-secondary button-small" data-action="recruiterdraft" data-id="'+escapeHtml(rec.id)+'">Recruiter message</button>':''):
-      (!rec.draft&&suggested?'<button class="button button-primary button-small" data-action="savedraft" data-id="'+escapeHtml(rec.id)+'">Save suggested draft</button>':'')+
-      (rec.draft&&!messageIsApproved(rec)?'<button class="button button-primary button-small" data-action="approvequick" data-id="'+escapeHtml(rec.id)+'">Approve message</button>':'')+
-      (draft?'<button class="button button-secondary button-small" data-action="copydraft" data-id="'+escapeHtml(rec.id)+'">Copy</button>':'')+
-      (draft&&rec.channel==='Email'?'<button class="button button-secondary button-small" data-action="opencompose" data-id="'+escapeHtml(rec.id)+'">Open Gmail compose</button>':'')+
-      (rec.draft&&messageIsApproved(rec)&&validMail(rec.email)&&rec.channel==='Email'?'<button class="button button-secondary button-small" data-action="gmaildraft" data-id="'+escapeHtml(rec.id)+'">Create Gmail draft</button>':'')+
-      (((rec.type==='Career Outreach'&&rec.contactVerified==='official')||rec.type==='Business')&&validMail(rec.email)?'<button class="button button-secondary button-small" data-action="emailoutreach" data-id="'+escapeHtml(rec.id)+'">Email outreach</button>':'')+
-      (rec.draft&&!isSent(rec)?'<button class="button button-secondary button-small" data-action="confirmsent" data-id="'+escapeHtml(rec.id)+'">I sent it</button>':'');
+      (!isSent(rec)&&validMail(rec.email)?'<button class="button button-primary button-small" data-action="opencompose" data-id="'+escapeHtml(rec.id)+'">Open Draft</button>':'<span class="small subtle">'+(isSent(rec)?'Already sent':'Email contact needed')+'</span>');
     return '<article class="job-row package-row"><div class="lead-info"><strong>'+escapeHtml(rec.jobTitle||rec.name)+'</strong><div class="lead-meta">'+escapeHtml(rec.name)+' · '+escapeHtml(rec.type)+' · '+escapeHtml(rec.stage)+'</div><div class="lead-meta">'+escapeHtml(step.name)+(career?' · Friction: '+escapeHtml(rec.applicationFriction||'Unverified'):'')+'</div>'+
       (career?'<div class="lead-meta">'+(contact?'Verified contact: '+escapeHtml(rec.person):'Hiring contact not verified')+'</div>':'')+
       (rec.offerModule?'<div class="lead-meta">Offer: '+escapeHtml(rec.offerModule)+'</div>':'')+
@@ -359,7 +354,7 @@
     const career=r.type==='Career',title=escapeHtml(r.jobTitle||r.name),score=rankOpportunity(r).score;
     const sub=career?[r.name,r.location,r.salary||'Pay undisclosed']:[r.industry||r.type,r.location,r.stage];
     const status=career?(r.appliedDate?'Applied · follow-up '+(r.followup||'not scheduled'):window.JobOSDocuments?.has(r)?'Application kit ready':r.resumeUrl?'Materials linked':'Package not prepared yet'):isSent(r)?'Sent':r.type==='Business'?(validMail(r.email)?'Email ready':safeUrl(r.profile)?'Social ready':'Contact research needed'):r.draft?.trim()?'Draft ready':'Suggested message ready';
-    return '<article class="simple-opportunity"><div class="simple-opportunity-main"><div class="simple-opportunity-top"><strong>'+title+'</strong>'+(career?'<span class="simple-score">'+score+'/100</span>':'')+'</div><p>'+escapeHtml(sub.filter(Boolean).join(' · '))+'</p><small>'+escapeHtml(status)+'</small></div><div class="simple-opportunity-actions"><button class="button button-primary button-small" data-action="opendetail" data-id="'+escapeHtml(r.id)+'">'+(career?'View job':'Review')+'</button>'+(career&&safeUrl(r.sourceUrl||r.jobUrl)?'<a class="button button-secondary button-small" href="'+escapeHtml(safeUrl(r.sourceUrl||r.jobUrl))+'" target="_blank" rel="noopener noreferrer">Research source ↗</a>':'')+(career?'<button class="button button-secondary button-small" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button>':'')+'<button class="button button-secondary button-small" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></article>';
+    return '<article class="simple-opportunity"><div class="simple-opportunity-main"><div class="simple-opportunity-top"><strong>'+title+'</strong>'+(career?'<span class="simple-score">'+score+'/100</span>':'')+'</div><p>'+escapeHtml(sub.filter(Boolean).join(' · '))+'</p><small>'+escapeHtml(status)+'</small></div><div class="simple-opportunity-actions">'+(!career&&!isSent(r)&&validMail(r.email)?'<button class="button button-primary button-small" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Draft</button>':!career&&isSent(r)?'<span class="small subtle">Sent</span>':'<button class="button button-primary button-small" data-action="opendetail" data-id="'+escapeHtml(r.id)+'">'+(career?'View job':'Review')+'</button>')+''+(career&&safeUrl(r.sourceUrl||r.jobUrl)?'<a class="button button-secondary button-small" href="'+escapeHtml(safeUrl(r.sourceUrl||r.jobUrl))+'" target="_blank" rel="noopener noreferrer">Research source ↗</a>':'')+(career?'<button class="button button-secondary button-small" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button>':'')+'<button class="button button-secondary button-small" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></article>';
   }
   function starterJobsPanel(){
     const publicJobs=starterFeedRecords.filter(r=>r.type==='Career'&&jobMeetsThreshold(r));
@@ -404,16 +399,14 @@
     const r=findRecord(selectedRecordId);
     if(!r)return '<div class="card"><p>That record is not available.</p><button class="button button-secondary" data-action="detailback">Back</button></div>';
     const career=r.type==='Career',suggested=career?null:r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):null;
-    const legacyBusiness=r.type==='Business'&&!r.messageApprovedAt&&(!!r.draft?.includes('I build practical tools for smaller companies through')||!!r.draft?.includes('I build simple, custom dashboards that help business owners spot missed sales'));
+    const legacyBusiness=r.type==='Business'&&!r.messageApprovedAt&&!isSent(r)&&(!!r.draft?.includes('I am building a simple tool that shows which requests turn into jobs')||!!r.draft?.includes('It is not meant to replace your booking system or add another complicated app.'));
     const draft=legacyBusiness?businessDraft(r).draft:r.draft||suggested?.draft||'',subject=r.subject||suggested?.subject||'';
     const verifiedContact=!!r.person&&((r.contactVerified==='official'&&validMail(r.email))||(r.contactVerified==='public-profile'&&!!safeUrl(r.profile)));
     const source=safeUrl(career?r.jobUrl:r.sourceUrl||r.website);
-    const contactPanel=r.type==='Business'?'<section class="munkos-contact"><div class="eyebrow">HOW TO REACH THEM</div>'+
-      (validMail(r.email)?'<div class="munkos-contact-line"><strong>To:</strong> <span>'+escapeHtml(r.email)+'</span></div>':'')+
-      (verifiedSocialUrl(r.profile)?'<div class="munkos-contact-line"><strong>Social:</strong> <a href="'+escapeHtml(safeUrl(r.profile))+'" target="_blank" rel="noopener noreferrer">Verified social profile ↗</a></div><div class="munkos-social-copy"><strong>Short DM draft</strong><p>'+escapeHtml(businessSocialDraft(r))+'</p></div>':'')+
-      '<div class="simple-primary-actions">'+(validMail(r.email)?'<button class="button button-primary" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Gmail with To filled in</button>':'')+
-      (verifiedSocialUrl(r.profile)?'<button class="button button-secondary" data-action="opensocial" data-id="'+escapeHtml(r.id)+'">Copy DM & open social</button>':'')+'</div></section>':'';
-
+    const contactPanel=r.type==='Business'?'<section class="munkos-contact"><div class="eyebrow">CONTACT</div>'+
+      (validMail(r.email)?'<div class="munkos-contact-line"><strong>To:</strong> <span>'+escapeHtml(r.email)+'</span></div>':'<p class="small subtle">A verified email is needed before Open Draft is available.</p>')+
+      (verifiedSocialUrl(r.profile)?'<div class="munkos-contact-line"><strong>Social:</strong> <a href="'+escapeHtml(safeUrl(r.profile))+'" target="_blank" rel="noopener noreferrer">Verified social profile ↗</a></div>':'')+
+      '</section>':'';
     const link=(url,label)=>safeUrl(url)?'<a class="button button-secondary" href="'+escapeHtml(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>':'';
     let actions='';
     if(career){
@@ -422,14 +415,9 @@
         (!r.appliedDate?'<button class="button button-secondary" data-action="applied" data-id="'+escapeHtml(r.id)+'">I applied</button>':'')+
         (r.appliedDate&&verifiedContact?'<button class="button button-secondary" data-action="recruiterdraft" data-id="'+escapeHtml(r.id)+'">Message recruiter</button>':'');
     }else{
-      actions=(!r.draft?.trim()?'<button class="button button-primary" data-action="savedraft" data-id="'+escapeHtml(r.id)+'">Use this draft</button>':!messageIsApproved(r)?'<button class="button button-primary" data-action="approvequick" data-id="'+escapeHtml(r.id)+'">Approve message</button>':
-        r.channel==='Email'?'<button class="button button-primary" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open email in Gmail</button>':
-        '<button class="button button-primary" data-action="copyopen" data-id="'+escapeHtml(r.id)+'">Copy & open social</button>')+
-        (draft?'<button class="button button-secondary" data-action="copydraft" data-id="'+escapeHtml(r.id)+'">Copy</button>':'')+
-        (r.draft?.trim()&&!isSent(r)?'<button class="button button-secondary" data-action="confirmsent" data-id="'+escapeHtml(r.id)+'">I sent it</button>':'')+
-        (r.draft?.trim()&&messageIsApproved(r)&&r.channel==='Email'&&validMail(r.email)?'<button class="button button-secondary" data-action="gmaildraft" data-id="'+escapeHtml(r.id)+'">Save Gmail draft</button>':'')+
-        ((r.type==='Career Outreach'&&r.contactVerified==='official'&&validMail(r.email))||(r.type==='Business'&&validMail(r.email))?'<button class="button button-secondary" data-action="emailoutreach" data-id="'+escapeHtml(r.id)+'">Email outreach · Gmail</button>':'')+
-        (r.type==='Career Outreach'&&!validMail(r.email)?'<span class="small subtle">Email outreach unavailable until a real contact address is verified.</span>':'');
+      actions=isSent(r)?'<span class="small subtle">Already moved to Sent Outreach.</span>':
+        validMail(r.email)?'<button class="button button-primary" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Draft</button>':
+        '<span class="small subtle">Verified email needed before Open Draft.</span>';
     }
     const recruiter=career?window.JobOSDocuments?.recruiter(r):null;
     const recruiterPanel=career&&recruiter?'<section class="job-recruiter"><div class="eyebrow">RECRUITER OUTREACH</div><h3>'+escapeHtml(recruiter.name||'Hiring team contact')+'</h3><p class="small subtle">'+escapeHtml(recruiter.note||'A role-specific recruiter is not confirmed.')+'</p>'+
@@ -457,7 +445,7 @@
     const cards=items.slice(0,15).map(r=>{
       const target=safeUrl(r.type==='Career'?r.jobUrl||r.sourceUrl:r.sourceUrl||r.website);
       const details=[r.name,r.location,r.type==='Career'?(r.salary||'Pay not listed'):(r.industry||'MunkOS prospect')].filter(Boolean);
-      return '<div class="research-preview-item"><div class="lead-info"><strong>'+escapeHtml(r.type==='Career'?r.jobTitle||r.name:r.name)+'</strong><div class="lead-meta">'+escapeHtml(details.join(' · '))+'</div><div class="lead-meta">Queued in Research Inbox · Not yet imported</div>'+(r.type==='Business'?'<div class="research-preview-draft"><b>Prepared draft preview:</b> '+escapeHtml(businessDraft(r).subject)+'<p>'+escapeHtml(businessDraft(r).draft.slice(0,280))+'</p><small>Sync to edit, approve, and create a Gmail draft once a real email is verified.</small></div>':'')+'</div>'+(target?'<a class="button button-secondary button-small" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(target)+'">Source ↗</a>':'')+'</div>';
+      return '<div class="research-preview-item"><div class="lead-info"><strong>'+escapeHtml(r.type==='Career'?r.jobTitle||r.name:r.name)+'</strong><div class="lead-meta">'+escapeHtml(details.join(' · '))+'</div><div class="lead-meta">Queued in Research Inbox · Not yet imported</div>'+(r.type==='Business'?'<div class="research-preview-draft"><b>Prepared draft preview:</b> '+escapeHtml(businessDraft(r).subject)+'<p>'+escapeHtml(businessDraft(r).draft.slice(0,280))+'</p><small>Open Draft pre-fills Gmail, then moves the contact to Sent on your instruction. A real email is required.</small></div>':'')+'</div>'+(target?'<a class="button button-secondary button-small" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(target)+'">Source ↗</a>':'')+'</div>';
     }).join('');
     return '<section class="card research-preview-panel"><div class="card-head"><h2>Research Inbox · '+filteredAll.length+' qualified waiting</h2><button class="button button-primary button-small" data-action="researchsync">Sync opportunities</button></div><p class="small subtle">'+escapeHtml(notice)+(belowThreshold?' · '+belowThreshold+' job(s) held below 75.':'')+(stillResearching?' · '+stillResearching+' business contacts need email/social research.':'')+'</p>'+(items.length?'<div class="research-preview-list">'+cards+'</div>':all.length&&scope!=='all'?'<p class="small subtle">No queued items in this workspace. '+all.length+' waiting overall.</p>':'')+'<button class="button button-secondary button-small" data-action="researchsetup">Cloud & Gmail settings</button></section>';
   }
@@ -495,23 +483,17 @@
     const proposedSubject=prepared?r.subject:(r.type==='Business'?businessDraft(r).subject:r.type==='Career Outreach'?generalEmploymentDraft(r).subject:'');
     const available=!!destinationFor(r),already=isSent(r),approved=isApproved(r)&&messageIsApproved(r);
     const email=r.channel==='Email',needsRecipient=email&&!validMail(r.email);
-    const status=!prepared?'Draft suggested · save or edit before approving':!approved?'Draft saved · awaiting your approval':'Approved draft · ready to open';
+    const status=already?'Sent':validMail(r.email)?'Ready for Gmail':'Verified recipient needed';
     return '<article class="card opportunity"><div class="top"><div><div class="eyebrow">'+escapeHtml(r.type)+' · '+escapeHtml(r.channel)+'</div><h3>'+escapeHtml(r.name)+'</h3><p class="subtitle">'+escapeHtml([r.industry,r.location].filter(Boolean).join(' · ')||'No location added')+'</p></div><span class="badge '+stageBadge(r.stage)+'">'+escapeHtml(r.stage)+'</span></div>'+
       (r.sourceUrl?'<p class="small subtle">Research source: <a target="_blank" rel="noopener noreferrer" href="'+escapeHtml(safeUrl(r.sourceUrl)||'#')+'">View evidence ↗</a></p>':'')+
       '<p class="small subtle">'+escapeHtml(status)+'</p>'+
       (proposedSubject?'<div class="draft-subject"><strong>Subject:</strong> '+escapeHtml(proposedSubject)+'</div>':'')+
       '<div class="draft-preview">'+escapeHtml(preview||'No draft prepared yet. Open this opportunity to add one.')+'</div>'+
       '<div class="card-foot">'+
-      (!prepared&&preview?'<button class="button button-primary button-small" data-action="savedraft" data-id="'+escapeHtml(r.id)+'">Save suggested draft</button>':'')+
-      (prepared&&!approved?'<button class="button button-primary button-small" data-action="approvequick" data-id="'+escapeHtml(r.id)+'">Approve message</button>':'')+
-      (preview?'<button class="button button-secondary button-small" data-action="copydraft" data-id="'+escapeHtml(r.id)+'">Copy message</button>':'')+
-      (prepared&&approved&&email&&validMail(r.email)?'<button class="button button-primary button-small" data-action="gmaildraft" data-id="'+escapeHtml(r.id)+'">Create Gmail draft</button>':'')+
-      (preview&&email?'<button class="button button-secondary button-small" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Gmail compose</button>':'')+
-      (prepared&&approved&&!email&&available?'<button class="button button-secondary button-small" data-action="copyopen" data-id="'+escapeHtml(r.id)+'">Copy & open '+escapeHtml(r.channel)+'</button>':'')+
-      '<button class="button button-secondary button-small" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button>'+
-      (prepared&&!already?'<button class="button button-secondary button-small" data-action="confirmsent" data-id="'+escapeHtml(r.id)+'">I sent it</button>':'')+
+      (!already&&validMail(r.email)?'<button class="button button-primary button-small" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Draft</button>':'')+
+      (!validMail(r.email)?'<span class="small subtle">Email address needed</span>':'')+
       '</div>'+
-      (needsRecipient?'<p class="small subtle">No verified recipient yet. Copy or open the draft with an empty To field, then find and enter a real address yourself. JobOS cannot send to an unknown person.</p>':'')+
+      (needsRecipient?'<p class="small subtle">No verified recipient yet. Open Draft is disabled until a real address is found.</p>':'')+
       (!available&&!email?'<p class="small subtle">Add a verified professional profile URL before opening the social conversation.</p>':'')+
       '</article>';
   }
@@ -673,18 +655,28 @@ async function saveStrategy(e){
     try{await navigator.clipboard.writeText(text);notify('Draft copied. This did not record a send.');}
     catch{notify('Clipboard permission denied. Select and copy the text shown in the card.');}
   }
-  function openGmailComposer(id){
-    const r=findRecord(id);if(!r||r.optedOut||isPassed(r))return;
-    if(r.channel!=='Email')return notify('Choose Email as the contact channel first.');
-    if(r.type==='Business'&&!validMail(r.email))return notify('No verified To address found. This prospect is held for contact research.');
-    const proposed=r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):{subject:r.subject||'',draft:r.draft||''};
-    const subject=r.subject||proposed.subject,body=r.draft||proposed.draft;
-    if(!body.trim())return notify('No email draft is available yet.');
-    let url='https://mail.google.com/mail/?view=cm&fs=1';
-    if(validMail(r.email))url+='&to='+encodeURIComponent(r.email);
-    url+='&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-    window.open(url,'_blank','noopener,noreferrer');
-    notify(validMail(r.email)?'Gmail compose opened. This has not been sent.':'Gmail compose opened with an empty recipient. Add a real verified address before sending.');
+  async function openGmailComposer(id){
+    const r=findRecord(id);if(!r||r.optedOut||isPassed(r)||isSent(r))return;
+    if(!validMail(r.email))return notify('A real recipient email is required before opening a draft.');
+    if(r.type==='Career Outreach'&&r.contactVerified!=='official')return notify('A verified email is required for career outreach.');
+    const suggested=r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):{subject:'',draft:''};
+    const subject=(r.subject||suggested.subject||'').trim(),body=(r.draft||suggested.draft||'').trim();
+    if(!subject||!body)return notify('Recipient, subject, and message are required.');
+    const url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(r.email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    const win=window.open(url,'_blank');
+    if(!win)return notify('Gmail popup blocked. Allow popups and try again; outreach has not been recorded.');
+    try{win.opener=null;}catch{}
+    // The user has explicitly directed that clicking Open Draft counts as their confirmation of sending.
+    // Gmail delivery cannot be verified by this local browser application.
+    const now=new Date().toISOString();
+    if(!r.draft){r.draft=body;r.subject=subject;}
+    activity(r.id,'sent','User confirmed send intent by opening prefilled Gmail draft',body,{channel:'Email',subject,recipient:r.email,assumedFromOpenDraft:true,verifiedDelivery:false,strategyId:r.strategyId||'',variant:r.variant||'',industry:r.industry||'',wordCount:body.split(/\s+/).length});
+    if(['Discovered','Researched','Draft Ready'].includes(r.stage))r.stage='Contacted';
+    if(!r.followup)r.followup=workdaysFrom(today(),5);
+    r.updatedAt=now;
+    if(activeView==='detail')navigate(detailReturnView||'business');
+    await persist();
+    notify('Draft opened. Outreach moved to Sent and follow-up tracking started.');
   }
   function openVerifiedOutreachEmail(id){
     const r=findRecord(id);
