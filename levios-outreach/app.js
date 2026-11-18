@@ -378,8 +378,9 @@
   function stagedResearchPanel(scope='all'){
     const data=window.JobOSResearchPreview||{records:[],state:'signed_out'};
     const all=Array.isArray(data.records)?data.records:[];
-    const filteredAll=all.filter(r=>r.type!=='Career'||jobMeetsThreshold(r));
+    const filteredAll=all.filter(r=>(r.type!=='Career'||jobMeetsThreshold(r))&&munkosContactReady(r));
     const belowThreshold=all.filter(r=>r.type==='Career'&&!jobMeetsThreshold(r)).length;
+    const stillResearching=all.filter(r=>r.type==='Business'&&!munkosContactReady(r)).length;
     const items=scope==='career'?filteredAll.filter(r=>r.type==='Career'):scope==='business'?filteredAll.filter(r=>r.type==='Business'):scope==='careeroutreach'?filteredAll.filter(r=>r.type==='Career Outreach'):filteredAll;
     const notice=data.state==='unlinked'?'Cloud vault not linked: research is staged but not imported. Open Cloud & Gmail to resolve safely.':data.state==='locked'?'Unlock your existing encrypted vault to import.':data.state==='signed_out'?'Sign in under Cloud & Gmail to load your private research queue.':data.message||'Research inbox ready.';
     const cards=items.slice(0,15).map(r=>{
@@ -387,10 +388,10 @@
       const details=[r.name,r.location,r.type==='Career'?(r.salary||'Pay not listed'):(r.industry||'MunkOS prospect')].filter(Boolean);
       return '<div class="research-preview-item"><div class="lead-info"><strong>'+escapeHtml(r.type==='Career'?r.jobTitle||r.name:r.name)+'</strong><div class="lead-meta">'+escapeHtml(details.join(' · '))+'</div><div class="lead-meta">Queued in Research Inbox · Not yet imported</div>'+(r.type==='Business'?'<div class="research-preview-draft"><b>Prepared draft preview:</b> '+escapeHtml(businessDraft(r).subject)+'<p>'+escapeHtml(businessDraft(r).draft.slice(0,280))+'</p><small>Sync to edit, approve, and create a Gmail draft once a real email is verified.</small></div>':'')+'</div>'+(target?'<a class="button button-secondary button-small" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(target)+'">Source ↗</a>':'')+'</div>';
     }).join('');
-    return '<section class="card research-preview-panel"><div class="card-head"><h2>Research Inbox · '+filteredAll.length+' qualified waiting</h2><button class="button button-primary button-small" data-action="researchsync">Sync opportunities</button></div><p class="small subtle">'+escapeHtml(notice)+(belowThreshold?' · '+belowThreshold+' job(s) held below 75.':'')+'</p>'+(items.length?'<div class="research-preview-list">'+cards+'</div>':all.length&&scope!=='all'?'<p class="small subtle">No queued items in this workspace. '+all.length+' waiting overall.</p>':'')+'<button class="button button-secondary button-small" data-action="researchsetup">Cloud & Gmail settings</button></section>';
+    return '<section class="card research-preview-panel"><div class="card-head"><h2>Research Inbox · '+filteredAll.length+' qualified waiting</h2><button class="button button-primary button-small" data-action="researchsync">Sync opportunities</button></div><p class="small subtle">'+escapeHtml(notice)+(belowThreshold?' · '+belowThreshold+' job(s) held below 75.':'')+(stillResearching?' · '+stillResearching+' business contacts need email/social research.':'')+'</p>'+(items.length?'<div class="research-preview-list">'+cards+'</div>':all.length&&scope!=='all'?'<p class="small subtle">No queued items in this workspace. '+all.length+' waiting overall.</p>':'')+'<button class="button button-secondary button-small" data-action="researchsetup">Cloud & Gmail settings</button></section>';
   }
   function overview(){
-    const active=state.records.filter(r=>!isPassed(r)),career=active.filter(r=>r.type==='Career'&&(jobMeetsThreshold(r)||!!r.appliedDate)),due=active.filter(isDue);
+    const active=state.records.filter(r=>!isPassed(r)),career=active.filter(r=>r.type==='Career'&&(jobMeetsThreshold(r)||!!r.appliedDate)),due=active.filter(r=>isDue(r)&&munkosContactReady(r));
     const group=[['Employment','career'],['Career Outreach','careeroutreach'],['MunkOS','business'],['Networking','networking']];
     const pending=career.filter(r=>!r.appliedDate).sort((a,b)=>Number(window.JobOSDocuments?.has(b))-Number(window.JobOSDocuments?.has(a))||opportunitySort(a,b));
     const drafts=active.filter(r=>r.type!=='Career'&&!isSent(r)&&munkosContactReady(r)).sort(opportunitySort);
