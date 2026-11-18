@@ -109,3 +109,8 @@
 .simple-extra-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-top:1px solid var(--line)}
 @media(max-width:1050px){.simple-metrics,.simple-workspaces{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.simple-metrics,.simple-workspaces{grid-template-columns:repeat(2,minmax(0,1fr))}.simple-opportunity{align-items:stretch;flex-direction:column;padding:15px}.simple-opportunity-actions{justify-content:flex-start}.simple-detail{padding:20px}.simple-workspace-heading{flex-direction:column}}
+
+/* Fresh researched items are visible on the dashboard, not buried in More tools */
+.simple-new-inbox{padding:22px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+.simple-new-inbox h2{font:700 21px var(--display);margin:5px 0}.simple-new-inbox p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}.simple-new-inbox .button{flex-shrink:0}
+@media(max-width:650px){.simple-new-inbox{flex-direction:column;align-items:start}}
