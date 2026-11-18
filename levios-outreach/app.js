@@ -306,7 +306,7 @@
     const link=(url,label)=>safeUrl(url)?'<a class="button button-secondary" href="'+escapeHtml(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>':'';
     let actions='';
     if(career){
-      actions=(window.JobOSDocuments?.has(r)?'<button class="button button-primary" data-action="downloadkit" data-id="'+escapeHtml(r.id)+'">Download complete application kit</button><button class="button button-secondary" data-action="pdfresume" data-id="'+escapeHtml(r.id)+'">Resume PDF</button><button class="button button-secondary" data-action="pdfcover" data-id="'+escapeHtml(r.id)+'">Cover letter PDF</button>':'<span class="simple-status">Tailored PDFs not yet prepared for this job</span>')+
+      actions=(window.JobOSDocuments?.has(r)?'<button class="button button-primary" data-action="downloadkit" data-id="'+escapeHtml(r.id)+'">Download both PDFs</button><button class="button button-secondary" data-action="pdfresume" data-id="'+escapeHtml(r.id)+'">Resume PDF</button><button class="button button-secondary" data-action="pdfcover" data-id="'+escapeHtml(r.id)+'">Cover letter PDF</button>':'<span class="simple-status">Tailored PDFs not yet prepared for this job</span>')+
         link(r.jobUrl,'Open application')+
         (!r.appliedDate?'<button class="button button-secondary" data-action="applied" data-id="'+escapeHtml(r.id)+'">I applied</button>':'')+
         (r.appliedDate&&verifiedContact?'<button class="button button-secondary" data-action="recruiterdraft" data-id="'+escapeHtml(r.id)+'">Message recruiter</button>':'');
@@ -557,13 +557,13 @@ async function saveStrategy(e){
   async function markSent(){const r=findRecord(pendingSendId);if(!r)return;if(r.optedOut){$('confirm-modal').close();pendingSendId=null;return notify('Do not contact: this prospect opted out.');}$('confirm-modal').close();const now=new Date().toISOString();activity(r.id,'sent',`${r.channel} message confirmed sent`,r.draft,{strategyId:r.strategyId||'',variant:r.variant||'',industry:r.industry||'',wordCount:(r.draft||'').trim().split(/\s+/).filter(Boolean).length,subject:r.subject||'',ccCount:r.cc?r.cc.split(',').filter(Boolean).length:0,channel:r.channel});if(['Discovered','Researched','Draft Ready'].includes(r.stage))r.stage='Contacted';if(!r.followup)r.followup=workdaysFrom(today(),5);r.updatedAt=now;pendingSendId=null;await persist();notify('Send recorded. Follow-up scheduled if needed.');}
   async function downloadApplicationKit(id){
     const r=findRecord(id);if(!r||r.type!=='Career')return;
-    if(!window.JobOSDocuments?.has(r))return notify('No finished application kit is available for this job.');
+    if(!window.JobOSDocuments?.has(r))return notify('No prepared resume and cover letter are available for this job.');
     try{
-      const name=await window.JobOSDocuments.kit(r);
-      activity(r.id,'downloaded-application-kit','Resume, cover letter, and outreach notes downloaded','',{jobTitle:r.jobTitle||'',file:name});
+      const names=await window.JobOSDocuments.downloadBoth(r);
+      activity(r.id,'downloaded-documents','Separate resume and cover letter PDFs downloaded','',{jobTitle:r.jobTitle||'',files:names.join(', ')});
       await persist();
-      notify('Application kit downloaded. Apply using the employer website, then confirm submission here.');
-    }catch(error){notify('Application kit download failed: '+error.message);}
+      notify('Both PDFs downloaded. If only one appears, allow multiple downloads for JobOS and click again.');
+    }catch(error){notify('PDF downloads failed: '+error.message);}
   }
   async function downloadJobPDF(id,kind){
     const r=findRecord(id);if(!r||r.type!=='Career')return;
