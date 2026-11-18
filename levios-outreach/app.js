@@ -24,6 +24,7 @@
   const $ = id => document.getElementById(id);
   let state = null, encryptionKey = null, salt = null, selectedRecordId = null, detailReturnView = 'overview', activeView = 'overview', editingId = null, pendingSendId = null, editingStrategyId = null, pendingReplyRecord = null, pendingReplyEvidence = null;
   let replyReviewResult = null, replyReviewError = '', replyReviewWorking = false;
+  let starterFeedRecords=[],starterFeedStatus='not_checked',starterFeedError='',starterFeedLastChecked='';
   let filter = {query:'', type:'All', stage:'All'};
   let lastActivityAt = Date.now();
   const encoder = new TextEncoder(), decoder = new TextDecoder();
@@ -81,11 +82,13 @@
   async function importStarterResearch(){
     // The feed contains only public employer listings and business websites; no personal vault data.
     // Importing is local, encrypted, deduplicated and never constitutes a sent message or application.
-    const resp=await fetch('./research-feed.json?v=munkos-contactable-20261118',{cache:'no-store',signal:AbortSignal.timeout(7000)});
+    starterFeedStatus='loading';starterFeedError='';
+    const resp=await fetch('./research-feed.json?v=jobos-feed-retry-20261118',{cache:'no-store',signal:AbortSignal.timeout(10000)});
     if(!resp.ok)throw Error('Research feed unavailable: HTTP '+resp.status);
     const feed=await resp.json();
     if(feed?.version!==1||!Array.isArray(feed.records)||feed.records.length>30)throw Error('Research feed format invalid.');
     const sanitized=feed.records.filter(r=>r&&['Business','Career'].includes(r.type)&&r.verification==='official-site'&&safeUrl(r.sourceUrl)&&r.researchDate);
+    starterFeedRecords=sanitized;starterFeedStatus='loaded';starterFeedLastChecked=new Date().toLocaleString();
     // Repair contact details in already-imported records: duplicate prevention must not block
     // public email/social enrichment. Preserve any user-entered contacts and edited/sent drafts.
     let repaired=0;
@@ -107,7 +110,9 @@
       }
     }
     if(repaired){activity('','research-enriched',repaired+' existing MunkOS records enriched with verified public contact details');await persist();}
-    return mergeImport(sanitized,[],{automatic:true});
+    const report=await mergeImport(sanitized,[],{automatic:true});
+    render();
+    return report;
   }
   async function openVault(passphrase){
     const stored=localStorage.getItem(STORAGE_KEY);
@@ -139,7 +144,7 @@
     if(updatedCleaningDrafts){await writeVault();activity('','cleaning-draft-update',updatedCleaningDrafts+' untouched cleaning outreach drafts refreshed');await writeVault();}
     $('vault-pass').value='';$('vault-confirm').value='';
     $('unlock-screen').hidden=true;$('app-shell').hidden=false;
-    lastActivityAt=Date.now();navigate('overview');try{await importStarterResearch();}catch(e){console.warn('Starter research not loaded:',e.message);}window.LeviCloud?.onVaultOpen?.();
+    lastActivityAt=Date.now();navigate('overview');try{await importStarterResearch();}catch(e){starterFeedStatus='error';starterFeedError=e.message||String(e);console.warn('Starter research not loaded:',e.message);notify('Job research feed could not load: '+starterFeedError);render();}window.LeviCloud?.onVaultOpen?.();
   }
   function lockVault(){state=null;encryptionKey=null;salt=null;pendingSendId=null;editingId=null;$('app-shell').hidden=true;$('unlock-screen').hidden=false;setAuthMode();window.LeviCloud?.onLock?.();}
   async function persist(){await writeVault();render();window.LeviCloud?.onLocalWrite?.();}
@@ -356,6 +361,18 @@
     const status=career?(r.appliedDate?'Applied · follow-up '+(r.followup||'not scheduled'):window.JobOSDocuments?.has(r)?'Application kit ready':r.resumeUrl?'Materials linked':'Package not prepared yet'):isSent(r)?'Sent':r.type==='Business'?(validMail(r.email)?'Email ready':safeUrl(r.profile)?'Social ready':'Contact research needed'):r.draft?.trim()?'Draft ready':'Suggested message ready';
     return '<article class="simple-opportunity"><div class="simple-opportunity-main"><div class="simple-opportunity-top"><strong>'+title+'</strong>'+(career?'<span class="simple-score">'+score+'/100</span>':'')+'</div><p>'+escapeHtml(sub.filter(Boolean).join(' · '))+'</p><small>'+escapeHtml(status)+'</small></div><div class="simple-opportunity-actions"><button class="button button-primary button-small" data-action="opendetail" data-id="'+escapeHtml(r.id)+'">'+(career?'View job':'Review')+'</button>'+(career&&safeUrl(r.sourceUrl||r.jobUrl)?'<a class="button button-secondary button-small" href="'+escapeHtml(safeUrl(r.sourceUrl||r.jobUrl))+'" target="_blank" rel="noopener noreferrer">Research source ↗</a>':'')+(career?'<button class="button button-secondary button-small" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button>':'')+'<button class="button button-secondary button-small" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></article>';
   }
+  function starterJobsPanel(){
+    const newJobs=starterFeedRecords.filter(r=>r.type==='Career'&&jobMeetsThreshold(r)&&!state.records.some(saved=>saved.type==='Career'&&canonical(saved.jobUrl)===canonical(r.jobUrl)));
+    const recent=starterFeedRecords.filter(r=>r.type==='Career'&&jobMeetsThreshold(r));
+    const rows=newJobs.slice(0,12).map(r=>'<div class="lead-row"><div class="lead-info"><strong>'+escapeHtml(r.jobTitle||'Job')+'</strong><div class="lead-meta">'+escapeHtml([r.name,r.location,r.salary||'Pay not listed'].filter(Boolean).join(' · '))+'</div><div class="lead-meta">Public starter feed · Not yet in your encrypted JobOS vault</div></div><a class="button button-secondary button-small" href="'+escapeHtml(safeUrl(r.jobUrl))+'" target="_blank" rel="noopener noreferrer">View original job ↗</a></div>').join('');
+    const status=starterFeedStatus==='error'?'Starter feed error: '+starterFeedError:starterFeedStatus==='loading'?'Loading starter feed…':starterFeedStatus==='loaded'?recent.length+' qualified listing(s) in starter feed · '+newJobs.length+' not imported'+(starterFeedLastChecked?' · Checked '+starterFeedLastChecked:''):'Starter feed not checked yet.';
+    return '<section class="card" style="margin:16px 0"><div class="card-head"><h2>Job research & import</h2><button class="button button-primary button-small" data-action="retryjobfeed">Refresh & import jobs</button></div><p class="small subtle">'+escapeHtml(status)+'</p>'+(rows||'<p class="small subtle">There are no new jobs in the current starter feed. This does not mean there are no open positions elsewhere. Cloud Research Inbox is separate and may need sign-in and an unlocked, linked vault.</p>')+'</section>';
+  }
+  async function retryJobFeed(){
+    if(!state)return;
+    try{const report=await importStarterResearch();notify('Job feed refreshed: '+(report?.added||0)+' new opportunities imported. Existing and passed jobs were not overwritten.');}
+    catch(error){starterFeedStatus='error';starterFeedError=error.message||String(error);notify('Job feed refresh failed: '+starterFeedError);render();}
+  }
   function workspace(view){
     const records=workspaceRecords(view).filter(r=>!isPassed(r)).sort(opportunitySort);
     const career=view==='career',business=view==='business',careerOutreach=view==='careeroutreach',type=workspaceType(view);
@@ -372,7 +389,7 @@
       '<div class="simple-search"><input id="search-input" placeholder="Search..." aria-label="Search opportunities" value="'+escapeHtml(filter.query)+'"></div>'+
       (openOpportunities.length?'<div class="simple-list">'+openOpportunities.slice(0,50).map(simplifiedCard).join('')+'</div>':'<div class="card simple-empty"><h3>Nothing waiting here</h3><p>'+ (career?'No unapplied jobs above 75 are currently waiting for action.':'Research is being collected. You can add a contact manually.')+'</p></div>')+
       (career?'<details class="simple-secondary"><summary>Applied · '+appliedJobs.length+' job(s)</summary><p>Confirmed applications, with follow-up and interview details.</p>'+(appliedJobs.length?'<div class="simple-list">'+appliedJobs.map(simplifiedCard).join('')+'</div>':'<p>No applications confirmed yet.</p>')+'</details>':'')+
-      (career?careerInboxPanel():'')+
+      (career?starterJobsPanel()+careerInboxPanel():'')+
       (nearbyCleaning.length?'<details class="simple-secondary"><summary>Held for later · local or distance-unverified cleaning prospects ('+nearbyCleaning.length+')</summary><p>These prospects stay in your vault but are not part of the practice outreach queue. Research must establish they are at least 50 miles from Appleton.</p></details>':'')+
       (withoutContact.length?'<details class="simple-secondary"><summary>Still researching contact details ('+withoutContact.length+')</summary><p>These businesses are hidden from outreach until a public email address or genuine social profile is found.</p></details>':'')+
       (held.length?'<details class="simple-secondary"><summary>Other job research ('+held.length+')</summary><p>These leads are below the 75-point cutoff or missing information.</p>'+held.slice(0,20).map(simplifiedCard).join('')+'</details>':'')+
@@ -439,6 +456,16 @@
     }).join('');
     return '<section class="card research-preview-panel"><div class="card-head"><h2>Research Inbox · '+filteredAll.length+' qualified waiting</h2><button class="button button-primary button-small" data-action="researchsync">Sync opportunities</button></div><p class="small subtle">'+escapeHtml(notice)+(belowThreshold?' · '+belowThreshold+' job(s) held below 75.':'')+(stillResearching?' · '+stillResearching+' business contacts need email/social research.':'')+'</p>'+(items.length?'<div class="research-preview-list">'+cards+'</div>':all.length&&scope!=='all'?'<p class="small subtle">No queued items in this workspace. '+all.length+' waiting overall.</p>':'')+'<button class="button button-secondary button-small" data-action="researchsetup">Cloud & Gmail settings</button></section>';
   }
+  function vaultConnectionBanner(){
+    const total=state.records.length,career=state.records.filter(r=>r.type==='Career').length;
+    const cloudState=window.JobOSResearchPreview?.state||'unknown';
+    if(career>0)return '';
+    const message=total
+      ?'This browser vault has '+total+' saved record(s), but no career records. Jobs may be in another browser or cloud vault, or they may need to be imported.'
+      :'This browser vault has no saved opportunities. Previously imported cloud research does not automatically appear in a different or unlinked encrypted vault.';
+    const status=cloudState==='linked'?'Cloud reports linked. Check the research feed and refresh; do not overwrite your vault.':cloudState==='unlinked'?'Cloud is not linked to this browser vault. Restore or reconcile carefully using Cloud & Gmail.':cloudState==='signed_out'?'Sign in under Cloud & Gmail to check whether an existing encrypted backup is available.':cloudState==='locked'?'Unlock your existing encrypted vault to continue.':'Check Cloud & Gmail connection and backup status.';
+    return '<section class="card" style="margin:16px 0"><h2>No career jobs in this browser vault</h2><p>'+escapeHtml(message)+'</p><p class="small subtle">'+escapeHtml(status)+'</p><div class="inline-actions"><button class="button button-primary button-small" data-action="researchsetup">Cloud & Gmail · check existing vault</button><button class="button button-secondary button-small" data-action="retryjobfeed">Refresh public job feed</button></div><p class="small subtle">Do not reset your passphrase or replace a cloud vault without an encrypted backup. Importing public listings cannot restore private application history.</p></section>';
+  }
   function overview(){
     const active=state.records.filter(r=>!isPassed(r)),career=active.filter(r=>r.type==='Career'&&(jobMeetsThreshold(r)||!!r.appliedDate)),due=active.filter(r=>isDue(r)&&munkosContactReady(r));
     const group=[['Employment','career'],['Career Outreach','careeroutreach'],['MunkOS','business'],['Networking','networking']];
@@ -448,7 +475,7 @@
     const feed=window.JobOSResearchPreview;
     const staged=Array.isArray(feed?.records)?feed.records.filter(r=>(r.type!=='Career'||jobMeetsThreshold(r))&&cleaningFarEnough(r)):[];
     const waiting=staged.length?'<section class="simple-new-inbox card"><div><div class="eyebrow">NEW RESEARCH</div><h2>'+staged.length+' opportunities found for you</h2><p>'+staged.filter(r=>r.type==='Career').length+' qualifying jobs · '+staged.filter(r=>r.type==='Business').length+' MunkOS prospects · Ready to bring into your workspace</p></div><button class="button button-primary" data-action="researchsync">Add to JobOS</button></section>':'';
-    return waiting+'<div class="simple-metrics">'+metricCard('Jobs to review',pending.length,'Verified 75+ listings')+metricCard('Messages sent',active.filter(isSent).length,'Confirmed')+metricCard('Replies',active.filter(isReply).length,'Tracked responses')+metricCard('Follow-ups',due.length,'Due now')+'</div>'+
+    return waiting+vaultConnectionBanner()+starterJobsPanel()+'<div class="simple-metrics">'+metricCard('Jobs to review',pending.length,'Verified 75+ listings')+metricCard('Messages sent',active.filter(isSent).length,'Confirmed')+metricCard('Replies',active.filter(isReply).length,'Tracked responses')+metricCard('Follow-ups',due.length,'Due now')+'</div>'+
       '<div class="simple-section"><div class="simple-section-head"><h2>Your next actions</h2><span>'+actions.length+' opportunities</span></div>'+
       (actions.length?'<div class="simple-list">'+actions.map(simplifiedCard).join('')+'</div>':'<div class="card simple-empty"><h3>Nothing requiring action yet</h3><p>Open a workspace to review contacts, or see research updates below.</p></div>')+'</div>'+
       careerInboxPanel()+
@@ -767,7 +794,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
