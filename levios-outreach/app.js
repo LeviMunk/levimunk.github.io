@@ -81,11 +81,32 @@
   async function importStarterResearch(){
     // The feed contains only public employer listings and business websites; no personal vault data.
     // Importing is local, encrypted, deduplicated and never constitutes a sent message or application.
-    const resp=await fetch('./research-feed.json?v=jobos-populated-20261117',{cache:'no-store',signal:AbortSignal.timeout(7000)});
+    const resp=await fetch('./research-feed.json?v=munkos-contactable-20261118',{cache:'no-store',signal:AbortSignal.timeout(7000)});
     if(!resp.ok)throw Error('Research feed unavailable: HTTP '+resp.status);
     const feed=await resp.json();
     if(feed?.version!==1||!Array.isArray(feed.records)||feed.records.length>30)throw Error('Research feed format invalid.');
     const sanitized=feed.records.filter(r=>r&&['Business','Career'].includes(r.type)&&r.verification==='official-site'&&safeUrl(r.sourceUrl)&&r.researchDate);
+    // Repair contact details in already-imported records: duplicate prevention must not block
+    // public email/social enrichment. Preserve any user-entered contacts and edited/sent drafts.
+    let repaired=0;
+    for(const source of sanitized.filter(r=>r.type==='Business')){
+      const existing=state.records.find(r=>r.type==='Business'&&canonical(r.website||r.sourceUrl)===canonical(source.website||source.sourceUrl)&&r.name.toLowerCase()===source.name.toLowerCase());
+      if(!existing||isSent(existing)||existing.optedOut||isPassed(existing))continue;
+      let changed=false;
+      if(!validMail(existing.email)&&validMail(source.email)){existing.email=source.email;existing.channel='Email';changed=true;}
+      if(!verifiedSocialUrl(existing.profile)&&verifiedSocialUrl(source.profile)){existing.profile=source.profile;changed=true;}
+      if(existing.offerModule?.includes('CleaningOS')){existing.offerModule='Custom Revenue Dashboard';changed=true;}
+      const legacy=!!existing.draft?.includes('I build practical tools for smaller companies through');
+      if((!existing.draft||legacy)&&!existing.messageApprovedAt){
+        const draft=businessDraft(existing);
+        if(existing.draft!==draft.draft||existing.subject!==draft.subject){existing.draft=draft.draft;existing.subject=draft.subject;changed=true;}
+      }
+      if(changed){
+        existing.messageApprovedAt='';existing.approvedDraft='';existing.approvedDestination='';
+        existing.updatedAt=new Date().toISOString();repaired++;
+      }
+    }
+    if(repaired){activity('','research-enriched',repaired+' existing MunkOS records enriched with verified public contact details');await persist();}
     return mergeImport(sanitized,[],{automatic:true});
   }
   async function openVault(passphrase){
@@ -212,14 +233,26 @@
   const MIN_JOB_SCORE=75;
   const jobMeetsThreshold=rec=>rec.type!=='Career'||(!['high','workday'].includes(rec.applicationFriction)&&rankOpportunity(rec).score>=MIN_JOB_SCORE);
   const firstName=full=>String(full||'').trim().split(/\s+/)[0]||'';
+  const verifiedSocialUrl=value=>{
+    const target=safeUrl(value);if(!target)return '';
+    try{const u=new URL(target),host=u.hostname.toLowerCase().replace(/^www\./,'');
+      return ['instagram.com','facebook.com','linkedin.com'].includes(host)&&u.pathname.replaceAll('/','').length>1?target:'';
+    }catch{return '';}
+  };
+  const munkosContactReady=r=>r.type!=='Business'||validMail(r.email)||!!verifiedSocialUrl(r.profile);
   function businessDraft(rec){
-    const company=String(rec.name||'this business').trim(),contact=firstName(rec.person);
-    const greeting=contact?'Hi '+contact+',':'Hi '+company+' team,';
-    const industry=String(rec.industry||'local service').replace(/[\r\n]+/g,' ').slice(0,80);
-    const module=String(rec.offerModule||(/clean|maid|janitor|housekeep/i.test(industry)?'CleaningOS':'MunkOS')).replace(/[\r\n]+/g,' ').slice(0,95);
-    const idea=/clean|maid|janitor|housekeep/i.test(industry)?'simplifying repeat-booking reminders and follow-up with former customers':'making inquiries and customer follow-up easier to track';
-    return {subject:'Quick idea for '+company,draft:greeting+'\n\nI came across '+company+' while researching '+industry.toLowerCase()+' businesses. I build practical tools for smaller companies through '+module+'. One area I explore is '+idea+'.\n\nI don\'t know whether that is a priority for you, but would it be worth sending over a quick example?\n\nLevi'};
+    const name=String(rec.name||'your business').trim();
+    const greeting=firstName(rec.person)?'Hi '+firstName(rec.person)+',':'Hi '+name+' team,';
+    return {
+      subject:'Quick idea for '+name,
+      draft:greeting+'\n\nI\'m local to the Fox Valley and came across '+name+'. I build simple, custom dashboards that help business owners spot missed sales, follow up with past customers, and see what\'s actually bringing in work.\n\nThe idea is to make more from the leads and customers you already have before spending more money on ads.\n\nWould it be okay if I sent over a quick example?\n\nLevi'
+    };
   }
+  function businessSocialDraft(rec){
+    const greeting=firstName(rec.person)?'Hey '+firstName(rec.person)+'!':'Hey!';
+    return greeting+' I build simple dashboards for local businesses to spot missed sales, bring old customers back, and see what works without spending more on ads. Would it be okay if I sent over a quick example for '+String(rec.name||'your business')+'? - Levi';
+  }
+
   function generalEmploymentDraft(rec){
     const greet=firstName(rec.person)?'Hi '+firstName(rec.person)+',':'Hello '+rec.name+' team,';
     const pitch=String(rec.employmentPitch||'marketing analytics, business operations, and process improvement').trim().slice(0,350);
@@ -279,20 +312,22 @@
   function simplifiedCard(r){
     const career=r.type==='Career',title=escapeHtml(r.jobTitle||r.name),score=rankOpportunity(r).score;
     const sub=career?[r.name,r.location,r.salary||'Pay undisclosed']:[r.industry||r.type,r.location,r.stage];
-    const status=career?(r.appliedDate?'Applied · follow-up '+(r.followup||'not scheduled'):window.JobOSDocuments?.has(r)?'Application kit ready':r.resumeUrl?'Materials linked':'Package not prepared yet'):isSent(r)?'Sent':r.draft?.trim()?'Draft ready':'Suggested message ready';
+    const status=career?(r.appliedDate?'Applied · follow-up '+(r.followup||'not scheduled'):window.JobOSDocuments?.has(r)?'Application kit ready':r.resumeUrl?'Materials linked':'Package not prepared yet'):isSent(r)?'Sent':r.type==='Business'?(validMail(r.email)?'Email ready':safeUrl(r.profile)?'Social ready':'Contact research needed'):r.draft?.trim()?'Draft ready':'Suggested message ready';
     return '<article class="simple-opportunity"><div class="simple-opportunity-main"><div class="simple-opportunity-top"><strong>'+title+'</strong>'+(career?'<span class="simple-score">'+score+'/100</span>':'')+'</div><p>'+escapeHtml(sub.filter(Boolean).join(' · '))+'</p><small>'+escapeHtml(status)+'</small></div><div class="simple-opportunity-actions"><button class="button button-primary button-small" data-action="opendetail" data-id="'+escapeHtml(r.id)+'">'+(career?'View job':'Review')+'</button><button class="button button-secondary button-small" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></article>';
   }
   function workspace(view){
     const records=workspaceRecords(view).filter(r=>!isPassed(r)).sort(opportunitySort);
     const career=view==='career',business=view==='business',careerOutreach=view==='careeroutreach',type=workspaceType(view);
-    const qualified=records.filter(r=>!career||jobMeetsThreshold(r)||!!r.appliedDate);
+    const qualified=records.filter(r=>(!career||jobMeetsThreshold(r)||!!r.appliedDate)&&(!business||munkosContactReady(r)));
     const visible=qualified.filter(r=>[r.name,r.jobTitle,r.location,r.industry,r.person].join(' ').toLowerCase().includes(filter.query.toLowerCase()));
     const held=career?records.filter(r=>!jobMeetsThreshold(r)&&!r.appliedDate):[];
+    const withoutContact=business?records.filter(r=>!munkosContactReady(r)):[];
     const heading=career?'Jobs worth applying to':business?'Businesses to contact':careerOutreach?'Employers to approach':'People to connect with';
-    const explanation=career?'Jobs meeting your 75-point cutoff appear here.':'Each prospect has a suggested outreach message to review.';
+    const explanation=career?'Jobs meeting your 75-point cutoff appear here.':business?'Only businesses with a verified email or social profile appear here. Every email opens with the To field filled in.':'Each prospect has a suggested outreach message to review.';
     return '<div class="simple-workspace-heading"><div><h2>'+heading+'</h2><p>'+explanation+'</p></div><button class="button button-secondary button-small" data-action="new" data-type="'+escapeHtml(type)+'">+ Add</button></div>'+
       '<div class="simple-search"><input id="search-input" placeholder="Search..." aria-label="Search opportunities" value="'+escapeHtml(filter.query)+'"></div>'+
       (visible.length?'<div class="simple-list">'+visible.slice(0,50).map(simplifiedCard).join('')+'</div>':'<div class="card simple-empty"><h3>Nothing ready here yet</h3><p>'+ (career?'No verified jobs above 75 have been imported into your vault yet. Check research updates below.':'Research is being collected. You can add a contact manually.')+'</p></div>')+
+      (withoutContact.length?'<details class="simple-secondary"><summary>Still researching contact details ('+withoutContact.length+')</summary><p>These businesses are hidden from outreach until a public email address or genuine social profile is found.</p></details>':'')+
       (held.length?'<details class="simple-secondary"><summary>Other job research ('+held.length+')</summary><p>These leads are below the 75-point cutoff or missing information.</p>'+held.slice(0,20).map(simplifiedCard).join('')+'</details>':'')+
       '<details class="simple-secondary"><summary>Research updates and import tools</summary>'+stagedResearchPanel(career?'career':business?'business':careerOutreach?'careeroutreach':'all')+'</details>';
   }
@@ -300,9 +335,16 @@
     const r=findRecord(selectedRecordId);
     if(!r)return '<div class="card"><p>That record is not available.</p><button class="button button-secondary" data-action="detailback">Back</button></div>';
     const career=r.type==='Career',suggested=career?null:r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):null;
-    const draft=r.draft||suggested?.draft||'',subject=r.subject||suggested?.subject||'';
+    const legacyBusiness=r.type==='Business'&&!r.messageApprovedAt&&!!r.draft?.includes('I build practical tools for smaller companies through');
+    const draft=legacyBusiness?businessDraft(r).draft:r.draft||suggested?.draft||'',subject=r.subject||suggested?.subject||'';
     const verifiedContact=!!r.person&&((r.contactVerified==='official'&&validMail(r.email))||(r.contactVerified==='public-profile'&&!!safeUrl(r.profile)));
     const source=safeUrl(career?r.jobUrl:r.sourceUrl||r.website);
+    const contactPanel=r.type==='Business'?'<section class="munkos-contact"><div class="eyebrow">HOW TO REACH THEM</div>'+
+      (validMail(r.email)?'<div class="munkos-contact-line"><strong>To:</strong> <span>'+escapeHtml(r.email)+'</span></div>':'')+
+      (verifiedSocialUrl(r.profile)?'<div class="munkos-contact-line"><strong>Social:</strong> <a href="'+escapeHtml(safeUrl(r.profile))+'" target="_blank" rel="noopener noreferrer">Verified social profile ↗</a></div><div class="munkos-social-copy"><strong>Short DM draft</strong><p>'+escapeHtml(businessSocialDraft(r))+'</p></div>':'')+
+      '<div class="simple-primary-actions">'+(validMail(r.email)?'<button class="button button-primary" data-action="opencompose" data-id="'+escapeHtml(r.id)+'">Open Gmail with To filled in</button>':'')+
+      (verifiedSocialUrl(r.profile)?'<button class="button button-secondary" data-action="opensocial" data-id="'+escapeHtml(r.id)+'">Copy DM & open social</button>':'')+'</div></section>':'';
+
     const link=(url,label)=>safeUrl(url)?'<a class="button button-secondary" href="'+escapeHtml(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>':'';
     let actions='';
     if(career){
@@ -331,7 +373,7 @@
       '<div class="simple-detail card"><div class="eyebrow">'+escapeHtml(r.type)+'</div><h2>'+escapeHtml(r.jobTitle||r.name)+'</h2><p class="simple-detail-meta">'+escapeHtml([r.name,r.location,career?r.salary:r.industry].filter(Boolean).join(' · '))+'</p>'+
       (career?'<div class="simple-detail-note"><strong>'+rankOpportunity(r).score+'/100 JobOS fit score</strong><p>'+escapeHtml(r.angle||'Review the role and prepare your application.')+'</p><p>Hiring contact: '+(verifiedContact?escapeHtml(r.person):'Not verified yet')+'</p></div>':
       '<div class="simple-email"><span>EMAIL DRAFT</span><h3>'+escapeHtml(subject||'Suggested introduction')+'</h3><p>'+escapeHtml(draft||'No message prepared yet.')+'</p>'+(r.channel==='Email'&&!validMail(r.email)?'<small>Recipient not found. Gmail will open with an empty To field.</small>':'')+'</div>')+
-      '<div class="simple-primary-actions">'+actions+'</div>'+recruiterPanel+'<div class="simple-detail-footer">'+link(source,'Research source')+'<button class="button button-secondary" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button><button class="button button-secondary" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></div>';
+      '<div class="simple-primary-actions">'+actions+'</div>'+contactPanel+recruiterPanel+'<div class="simple-detail-footer">'+link(source,'Research source')+'<button class="button button-secondary" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button><button class="button button-secondary" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></div>';
   }
   function stagedResearchPanel(scope='all'){
     const data=window.JobOSResearchPreview||{records:[],state:'signed_out'};
@@ -351,7 +393,7 @@
     const active=state.records.filter(r=>!isPassed(r)),career=active.filter(r=>r.type==='Career'&&(jobMeetsThreshold(r)||!!r.appliedDate)),due=active.filter(isDue);
     const group=[['Employment','career'],['Career Outreach','careeroutreach'],['MunkOS','business'],['Networking','networking']];
     const pending=career.filter(r=>!r.appliedDate).sort((a,b)=>Number(window.JobOSDocuments?.has(b))-Number(window.JobOSDocuments?.has(a))||opportunitySort(a,b));
-    const drafts=active.filter(r=>r.type!=='Career'&&!isSent(r)).sort(opportunitySort);
+    const drafts=active.filter(r=>r.type!=='Career'&&!isSent(r)&&munkosContactReady(r)).sort(opportunitySort);
     const actions=[...pending.slice(0,4),...due.slice(0,3),...drafts.slice(0,5)].filter((r,i,a)=>a.findIndex(x=>x.id===r.id)===i).slice(0,8);
     const feed=window.JobOSResearchPreview;
     const staged=Array.isArray(feed?.records)?feed.records.filter(r=>r.type!=='Career'||jobMeetsThreshold(r)):[];
@@ -359,7 +401,7 @@
     return waiting+'<div class="simple-metrics">'+metricCard('Jobs to review',pending.length,'Verified 75+ listings')+metricCard('Messages sent',active.filter(isSent).length,'Confirmed')+metricCard('Replies',active.filter(isReply).length,'Tracked responses')+metricCard('Follow-ups',due.length,'Due now')+'</div>'+
       '<div class="simple-section"><div class="simple-section-head"><h2>Your next actions</h2><span>'+actions.length+' opportunities</span></div>'+
       (actions.length?'<div class="simple-list">'+actions.map(simplifiedCard).join('')+'</div>':'<div class="card simple-empty"><h3>Nothing requiring action yet</h3><p>Open a workspace to review contacts, or see research updates below.</p></div>')+'</div>'+
-      '<div class="simple-workspaces">'+group.map(([label,view])=>'<button data-nav="'+view+'" class="simple-workspace-tile"><strong>'+label+'</strong><span>'+workspaceRecords(view).filter(r=>!isPassed(r)).length+' tracked →</span></button>').join('')+'</div>'+
+      '<div class="simple-workspaces">'+group.map(([label,view])=>'<button data-nav="'+view+'" class="simple-workspace-tile"><strong>'+label+'</strong><span>'+workspaceRecords(view).filter(r=>!isPassed(r)&&munkosContactReady(r)).length+' tracked →</span></button>').join('')+'</div>'+
       '<details class="simple-secondary"><summary>Research updates & advanced tools</summary>'+stagedResearchPanel('all')+'<div class="simple-links"><button class="button button-secondary button-small" data-nav="insights">View analytics</button><button class="button button-secondary button-small" data-nav="followups">View follow-ups</button><button class="button button-secondary button-small" data-nav="strategies">Experiments</button><button class="button button-secondary button-small" data-nav="intake">Research review</button></div></details>';
   }
   function filtered(){return byNewest(state.records).filter(r=>!isPassed(r)&&(filter.type==='All'||r.type===filter.type)&&(filter.stage==='All'||r.stage===filter.stage)&&[r.name,r.industry,r.location,r.person,r.email,r.notes,r.angle,r.jobTitle,r.offerModule,r.painHypothesis].join(' ').toLowerCase().includes(filter.query.toLowerCase()));}
@@ -391,7 +433,7 @@
       '</article>';
   }
   function queue(){
-    const cards=filtered().filter(r=>r.draft?.trim()||r.type==='Business'||r.type==='Career Outreach');
+    const cards=filtered().filter(r=>(r.draft?.trim()||r.type==='Business'||r.type==='Career Outreach')&&munkosContactReady(r));
     return `${toolbar()}<p class="section-intro">Every business and career-outreach prospect can have a suggested draft. Preview or copy a message before a recipient is found; approve the saved message before sending. JobOS records only sends you confirm.</p>${cards.length?'<div class="opportunity-grid">'+cards.map(opportunityCard).join('')+'</div>':empty('No outreach prospects yet','Research and import businesses to prepare first drafts.',true)}`;
   }
   function contacts(){const rows=filtered();return `${toolbar()}<div class="card"><div class="card-head"><h2>${rows.length} opportunit${rows.length===1?'y':'ies'}</h2><button class="button button-secondary button-small" data-action="import">Import JSON / CSV</button></div>${rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Organization</th><th>Category</th><th>Channel</th><th>Stage</th><th>Next follow-up</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${escapeHtml(r.name)}</strong><span class="table-muted">${escapeHtml(r.person||r.location||r.industry||'No contact added')}</span></td><td>${escapeHtml(r.type)}</td><td>${escapeHtml(r.channel)}</td><td><span class="badge ${stageBadge(r.stage)}">${escapeHtml(r.stage)}</span></td><td>${escapeHtml(formatted(r.followup))}</td><td><button data-action="edit" data-id="${r.id}" class="table-link">Open ↗</button></td></tr>`).join('')}</tbody></table></div>`:empty('No opportunities match','Try changing your filters or adding a new prospect.',true)}</div>`;}
@@ -500,7 +542,7 @@ async function saveStrategy(e){
   function canonical(value){return String(value||'').toLowerCase().trim().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'');}
   function isDuplicatePair(a,b){if(a.type==='Career'&&b.type==='Career')return (a.jobUrl&&b.jobUrl&&canonical(a.jobUrl)===canonical(b.jobUrl))||(!a.jobUrl&&!b.jobUrl&&a.name.toLowerCase()===b.name.toLowerCase()&&a.jobTitle&&b.jobTitle&&a.jobTitle.toLowerCase()===b.jobTitle.toLowerCase());return a.type===b.type&&((a.email&&b.email&&a.email.toLowerCase()===b.email.toLowerCase())||(a.website&&b.website&&canonical(a.website)===canonical(b.website)&&a.name.toLowerCase()===b.name.toLowerCase()));}
   function duplicate(rec,id){return state.records.some(r=>r.id!==id&&isDuplicatePair(rec,r));}
-  function normalized(raw,id,extraStrategyIds=[]){const fields=['name','type','industry','location','person','channel','email','profile','website','stage','followup','concept','angle','subject','draft','notes','strategyId','variant','cc','sourceUrl','researchDate','verification','priority','jobTitle','jobUrl','salary','appliedDate','resumeUrl','coverLetterUrl','applicationFriction','contactVerified','offerModule','painEvidenceUrl','painHypothesis','packageNotes','locationBucket','distanceMiles','remoteWisconsinEligible','roleFit','compensationFit','employmentPitch'];const result={};for(const key of fields)result[key]=String(raw[key]||'').trim();if(!result.name)throw Error('Organization name is required.');if(result.name.length>150)throw Error('Organization name is too long.');if(!['Business','Career','Career Outreach','Networking','Collaboration'].includes(result.type))result.type='Business';if(!['Email','LinkedIn','Instagram','Other'].includes(result.channel))result.channel='Email';if(!stageFor(result.type).includes(result.stage))result.stage='Discovered';if(!['A','B'].includes(result.variant))result.variant='A';if(result.strategyId&&!state.strategies.some(x=>x.id===result.strategyId)&&!extraStrategyIds.includes(result.strategyId))throw Error('Unknown outreach strategy.');if(result.email&&!validMail(result.email))throw Error('Invalid email address.');const ccAddresses=result.cc?result.cc.split(',').map(x=>x.trim()):[];if(ccAddresses.length>3||ccAddresses.some(x=>!validMail(x)||x.toLowerCase()===result.email.toLowerCase()))throw Error('CC must contain up to three valid, distinct stakeholder emails, excluding the main recipient.');if(new Set(ccAddresses.map(x=>x.toLowerCase())).size!==ccAddresses.length)throw Error('Duplicate CC address.');for(const k of ['profile','website','concept','sourceUrl','jobUrl','resumeUrl','coverLetterUrl','painEvidenceUrl'])if(result[k]&&!safeUrl(result[k]))throw Error(`Invalid ${k} URL. Only http(s) links are allowed.`);if(result.followup&&!/^\d{4}-\d{2}-\d{2}$/.test(result.followup))throw Error('Follow-up must use YYYY-MM-DD.');if(result.appliedDate&&!/^\d{4}-\d{2}-\d{2}$/.test(result.appliedDate))throw Error('Application date must use YYYY-MM-DD.');if(result.researchDate&&!/^\d{4}-\d{2}-\d{2}$/.test(result.researchDate))throw Error('Research date must use YYYY-MM-DD.');if(!['','official-site','directory','unverified'].includes(result.verification))throw Error('Invalid contact verification label.');if(result.priority&&!/^(100|[1-9]?\d)$/.test(result.priority))throw Error('Research priority must be 0–100.');if(!['','low','medium','high','workday'].includes(result.applicationFriction))throw Error('Invalid application friction.');if(!['','official','public-profile'].includes(result.contactVerified))throw Error('Invalid contact verification.');if(!['','local20','remote','other'].includes(result.locationBucket))throw Error('Invalid location bucket.');if(result.distanceMiles&&(!Number.isFinite(Number(result.distanceMiles))||Number(result.distanceMiles)<0||Number(result.distanceMiles)>10000))throw Error('Invalid distance.');if(!['','yes','no','unknown'].includes(result.remoteWisconsinEligible))throw Error('Invalid remote WI eligibility.');if(!['','strong','moderate','weak'].includes(result.roleFit))throw Error('Invalid role fit label.');if(!['','target','minimum','below','unknown'].includes(result.compensationFit))throw Error('Invalid compensation label.');if(result.draft.length>9000||result.notes.length>4000)throw Error('Draft or notes are too long.');result.id=id||randomId();return result;}
+  function normalized(raw,id,extraStrategyIds=[]){const fields=['name','type','industry','location','person','channel','email','profile','website','stage','followup','concept','angle','subject','draft','notes','strategyId','variant','cc','sourceUrl','researchDate','verification','priority','jobTitle','jobUrl','salary','appliedDate','resumeUrl','coverLetterUrl','applicationFriction','contactVerified','offerModule','painEvidenceUrl','painHypothesis','packageNotes','locationBucket','distanceMiles','remoteWisconsinEligible','roleFit','compensationFit','employmentPitch','contactSource','socialSource'];const result={};for(const key of fields)result[key]=String(raw[key]||'').trim();if(!result.name)throw Error('Organization name is required.');if(result.name.length>150)throw Error('Organization name is too long.');if(!['Business','Career','Career Outreach','Networking','Collaboration'].includes(result.type))result.type='Business';if(!['Email','LinkedIn','Instagram','Other'].includes(result.channel))result.channel='Email';if(!stageFor(result.type).includes(result.stage))result.stage='Discovered';if(!['A','B'].includes(result.variant))result.variant='A';if(result.strategyId&&!state.strategies.some(x=>x.id===result.strategyId)&&!extraStrategyIds.includes(result.strategyId))throw Error('Unknown outreach strategy.');if(result.email&&!validMail(result.email))throw Error('Invalid email address.');const ccAddresses=result.cc?result.cc.split(',').map(x=>x.trim()):[];if(ccAddresses.length>3||ccAddresses.some(x=>!validMail(x)||x.toLowerCase()===result.email.toLowerCase()))throw Error('CC must contain up to three valid, distinct stakeholder emails, excluding the main recipient.');if(new Set(ccAddresses.map(x=>x.toLowerCase())).size!==ccAddresses.length)throw Error('Duplicate CC address.');for(const k of ['profile','website','concept','sourceUrl','jobUrl','resumeUrl','coverLetterUrl','painEvidenceUrl','contactSource','socialSource'])if(result[k]&&!safeUrl(result[k]))throw Error(`Invalid ${k} URL. Only http(s) links are allowed.`);if(result.followup&&!/^\d{4}-\d{2}-\d{2}$/.test(result.followup))throw Error('Follow-up must use YYYY-MM-DD.');if(result.appliedDate&&!/^\d{4}-\d{2}-\d{2}$/.test(result.appliedDate))throw Error('Application date must use YYYY-MM-DD.');if(result.researchDate&&!/^\d{4}-\d{2}-\d{2}$/.test(result.researchDate))throw Error('Research date must use YYYY-MM-DD.');if(!['','official-site','directory','unverified'].includes(result.verification))throw Error('Invalid contact verification label.');if(result.priority&&!/^(100|[1-9]?\d)$/.test(result.priority))throw Error('Research priority must be 0–100.');if(!['','low','medium','high','workday'].includes(result.applicationFriction))throw Error('Invalid application friction.');if(!['','official','public-profile'].includes(result.contactVerified))throw Error('Invalid contact verification.');if(!['','local20','remote','other'].includes(result.locationBucket))throw Error('Invalid location bucket.');if(result.distanceMiles&&(!Number.isFinite(Number(result.distanceMiles))||Number(result.distanceMiles)<0||Number(result.distanceMiles)>10000))throw Error('Invalid distance.');if(!['','yes','no','unknown'].includes(result.remoteWisconsinEligible))throw Error('Invalid remote WI eligibility.');if(!['','strong','moderate','weak'].includes(result.roleFit))throw Error('Invalid role fit label.');if(!['','target','minimum','below','unknown'].includes(result.compensationFit))throw Error('Invalid compensation label.');if(result.draft.length>9000||result.notes.length>4000)throw Error('Draft or notes are too long.');result.id=id||randomId();return result;}
   async function saveRecord(event){event.preventDefault();const form=event.currentTarget;const raw=Object.fromEntries(new FormData(form).entries());try{const rec=normalized(raw,editingId);if(!editingId&&!rec.draft&&['Business','Career Outreach'].includes(rec.type)){const generated=rec.type==='Business'?businessDraft(rec):generalEmploymentDraft(rec);rec.subject=generated.subject;rec.draft=generated.draft;}if(duplicate(rec,editingId))throw Error('Possible duplicate found with the same email or business domain. Check the existing record.');const prior=editingId?findRecord(editingId):null;const now=new Date().toISOString();if(prior&&(prior.sourceUrl!==rec.sourceUrl||prior.jobUrl!==rec.jobUrl||prior.email!==rec.email||prior.profile!==rec.profile||prior.verification!==rec.verification)){rec.intakeReview=provenanceReady(rec)?'recommended':'pending';rec.reviewedAt='';}if(prior&&(prior.draft!==rec.draft||prior.subject!==rec.subject||prior.channel!==rec.channel||prior.email!==rec.email||prior.profile!==rec.profile||prior.cc!==rec.cc)){rec.messageApprovedAt='';}if(prior&&prior.draft!==rec.draft&&prior.draft){activity(rec.id,'draft-revision','Draft edited; approval revoked','',{previous:prior.draft.slice(0,9000),revised:rec.draft.slice(0,9000),source:prior.type});}
     if(prior){const idx=state.records.findIndex(r=>r.id===editingId);state.records[idx]={...prior,...rec,updatedAt:now};activity(rec.id,'edited','Opportunity updated');}else{state.records.unshift({...rec,intakeReview:provenanceReady(rec)?'recommended':'pending',createdAt:now,updatedAt:now});activity(rec.id,'created','Opportunity added');}await persist();$('record-modal').close();notify('Opportunity saved securely.');}catch(err){$('record-error').textContent=err.message;}}
   async function deleteRecord(){if(!editingId)return;const record=findRecord(editingId);if(!confirm(`Delete ${record.name} and its associated activity history? This cannot be undone without a backup.`))return;state.records=state.records.filter(r=>r.id!==editingId);state.activities=state.activities.filter(a=>a.recordId!==editingId);await persist();$('record-modal').close();notify('Record deleted.');}
@@ -513,6 +555,15 @@ async function saveStrategy(e){
     activity(r.id,'draft-prepared','Suggested outreach draft saved for review');
     await persist();notify('Draft saved. Review or edit it before sending.');
   }
+  async function openBusinessSocial(id){
+    const r=findRecord(id);if(!r||r.type!=='Business'||isPassed(r)||r.optedOut)return;
+    const target=verifiedSocialUrl(r.profile);if(!target)return notify('No company social profile found for this business.');
+    const message=businessSocialDraft(r);
+    try{await navigator.clipboard.writeText(message);}catch{notify('Clipboard not available. Copy the suggested DM from the card.');}
+    window.open(target,'_blank','noopener,noreferrer');
+    activity(r.id,'social-draft-opened','Social profile opened with a suggested DM, not sent','',{channel:'social',platform:new URL(target).hostname});
+    await persist();notify('Social profile opened and short message copied. Nothing was sent.');
+  }
   async function copyDraft(id){
     const r=findRecord(id);if(!r)return;
     const text=r.draft?.trim()||(['Business','Career Outreach'].includes(r.type)?(r.type==='Business'?businessDraft(r):generalEmploymentDraft(r)).draft:'');
@@ -523,6 +574,7 @@ async function saveStrategy(e){
   function openGmailComposer(id){
     const r=findRecord(id);if(!r||r.optedOut||isPassed(r))return;
     if(r.channel!=='Email')return notify('Choose Email as the contact channel first.');
+    if(r.type==='Business'&&!validMail(r.email))return notify('No verified To address found. This prospect is held for contact research.');
     const proposed=r.type==='Business'?businessDraft(r):r.type==='Career Outreach'?generalEmploymentDraft(r):{subject:r.subject||'',draft:r.draft||''};
     const subject=r.subject||proposed.subject,body=r.draft||proposed.draft;
     if(!body.trim())return notify('No email draft is available yet.');
@@ -649,7 +701,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='opencompose')return openGmailComposer(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='opencompose')return openGmailComposer(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
