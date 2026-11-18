@@ -308,6 +308,7 @@
     onVaultOpen(){publishPreview();refreshUI();syncResearchBatches().catch(e=>status("Research Inbox: "+e.message));syncPassedFeedback().catch(e=>status('Feedback sync: '+e.message))},onLock(){refreshUI()},
     async createDraft(rec){return createDraft(rec)},
     async reviewReplies(records){if(!gmailConnected)throw Error("Connect Gmail first.");return gmail("reviewReplies",{records});},
+    async reviewCareerInbox(jobs){if(!gmailConnected)throw Error("Connect Gmail first under Cloud & Gmail.");return gmail("reviewCareerInbox",{jobs});},
     isGmailConnected(){return gmailConnected},
     isConnected(){return !!(linked&&user)},
     async refreshResearch(){

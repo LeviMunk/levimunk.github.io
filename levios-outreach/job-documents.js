@@ -165,10 +165,10 @@ function message(rec,channel='LinkedIn'){
  const p=JOBS[key],person=p.recruiter?.name,applied=!!rec.appliedDate,organization=p.company.replace(/[.!?]+$/,'');
  const greet=person?'Hi '+person.split(' ')[0]+',':'Hello recruiting team,';
  if(channel==='LinkedIn'){
-  return greet+' '+(applied?'I just applied for':'I am interested in')+' the '+p.title+' role at '+organization+'. My background is in marketing performance reporting, operations, and cross-team coordination. I would welcome the chance to connect. Thanks, Levi';
+  return (person?'Hey '+person.split(' ')[0]+'!':'Hi there!')+' '+(applied?'I just applied for':'I came across')+' the '+p.title+' role at '+organization+' and wanted to say hello. I\'ve worked across marketing, reporting, and running a small business, so it caught my attention. Would love to connect! - Levi';
  }
- return {subject:(applied?'Application submitted: ':'Interested in: ')+p.title,
- body:'Hello recruiting team,\n\n'+(applied?'I recently submitted my application for':'I am planning to apply for')+' the '+p.title+' position at '+organization+'. My background combines marketing performance reporting, operations, and customer-lifecycle coordination. I would appreciate the opportunity to connect with the team responsible for this opening.\n\nThank you,\nLevi Van Stappen'};
+ return {subject:'Hello about the '+p.title+' role',
+ body:'Hi there,\n\n'+(applied?'I just applied for':'I came across')+' the '+p.title+' role at '+organization+' and wanted to introduce myself. I\'ve worked in marketing reporting and operations, and I also ran a small membership business, so the role really caught my eye.\n\nIf there\'s someone on the hiring team I should connect with, I\'d appreciate a nudge in the right direction. You can see some of my work at levimunk.com.\n\nThanks!\nLevi Van Stappen'};
 }
 window.JobOSDocuments={has:rec=>!!keyFor(rec),save,downloadBoth,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
 })();
