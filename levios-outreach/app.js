@@ -305,7 +305,7 @@
     const link=(url,label)=>safeUrl(url)?'<a class="button button-secondary" href="'+escapeHtml(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>':'';
     let actions='';
     if(career){
-      actions=(r.appliedDate?'<span class="simple-status">Application recorded</span>':'<button class="button button-primary" data-action="prepareats" data-id="'+escapeHtml(r.id)+'">Prepare resume & cover letter</button>')+
+      actions=(window.JobOSDocuments?.has(r)?'<button class="button button-primary" data-action="pdfresume" data-id="'+escapeHtml(r.id)+'">Download resume PDF</button><button class="button button-secondary" data-action="pdfcover" data-id="'+escapeHtml(r.id)+'">Download cover letter PDF</button>':'<span class="simple-status">Tailored PDFs not yet prepared for this job</span>')+
         link(r.jobUrl,'Open application')+
         (!r.appliedDate?'<button class="button button-secondary" data-action="applied" data-id="'+escapeHtml(r.id)+'">I applied</button>':'')+
         (r.appliedDate&&verifiedContact?'<button class="button button-secondary" data-action="recruiterdraft" data-id="'+escapeHtml(r.id)+'">Message recruiter</button>':'');
@@ -317,11 +317,20 @@
         (r.draft?.trim()&&!isSent(r)?'<button class="button button-secondary" data-action="confirmsent" data-id="'+escapeHtml(r.id)+'">I sent it</button>':'')+
         (r.draft?.trim()&&messageIsApproved(r)&&r.channel==='Email'&&validMail(r.email)?'<button class="button button-secondary" data-action="gmaildraft" data-id="'+escapeHtml(r.id)+'">Save Gmail draft</button>':'');
     }
+    const recruiter=career?window.JobOSDocuments?.recruiter(r):null;
+    const recruiterPanel=career&&recruiter?'<section class="job-recruiter"><div class="eyebrow">RECRUITER OUTREACH</div><h3>'+escapeHtml(recruiter.name||'Hiring team contact')+'</h3><p class="small subtle">'+escapeHtml(recruiter.note||'A role-specific recruiter is not confirmed.')+'</p>'+
+      (recruiter.email?'<p class="small subtle">Public team inbox: '+escapeHtml(recruiter.email)+' · '+escapeHtml(recruiter.emailNote||'')+'</p>':'')+
+      '<div class="simple-email"><span>LINKEDIN MESSAGE · '+(r.appliedDate?'POST-APPLICATION':'INTRODUCTION')+'</span><p>'+escapeHtml(window.JobOSDocuments.message(r,'LinkedIn'))+'</p></div>'+
+      '<div class="simple-primary-actions"><button class="button button-secondary" data-action="copyrecruiter" data-id="'+escapeHtml(r.id)+'">Copy LinkedIn message</button>'+
+      (recruiter.profile?'<a class="button button-secondary" href="'+escapeHtml(recruiter.profile)+'" target="_blank" rel="noopener noreferrer">View professional profile ↗</a>':'')+
+      (recruiter.email?'<button class="button button-secondary" data-action="emailrecruiter" data-id="'+escapeHtml(r.id)+'">Open recruiter email</button>':'')+
+      (recruiter.search?'<a class="button button-secondary" href="'+escapeHtml(recruiter.search)+'" target="_blank" rel="noopener noreferrer">Find Harrow recruiter ↗</a>':'')+
+      '</div></section>':'';
     return '<button class="simple-back" data-action="detailback">← Back to '+escapeHtml(detailReturnView==='business'?'MunkOS':detailReturnView==='career'?'Employment':detailReturnView==='careeroutreach'?'Career Outreach':detailReturnView==='networking'?'Networking':'Dashboard')+'</button>'+
       '<div class="simple-detail card"><div class="eyebrow">'+escapeHtml(r.type)+'</div><h2>'+escapeHtml(r.jobTitle||r.name)+'</h2><p class="simple-detail-meta">'+escapeHtml([r.name,r.location,career?r.salary:r.industry].filter(Boolean).join(' · '))+'</p>'+
       (career?'<div class="simple-detail-note"><strong>'+rankOpportunity(r).score+'/100 JobOS fit score</strong><p>'+escapeHtml(r.angle||'Review the role and prepare your application.')+'</p><p>Hiring contact: '+(verifiedContact?escapeHtml(r.person):'Not verified yet')+'</p></div>':
       '<div class="simple-email"><span>EMAIL DRAFT</span><h3>'+escapeHtml(subject||'Suggested introduction')+'</h3><p>'+escapeHtml(draft||'No message prepared yet.')+'</p>'+(r.channel==='Email'&&!validMail(r.email)?'<small>Recipient not found. Gmail will open with an empty To field.</small>':'')+'</div>')+
-      '<div class="simple-primary-actions">'+actions+'</div><div class="simple-detail-footer">'+link(source,'Research source')+'<button class="button button-secondary" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button><button class="button button-secondary" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></div>';
+      '<div class="simple-primary-actions">'+actions+'</div>'+recruiterPanel+'<div class="simple-detail-footer">'+link(source,'Research source')+'<button class="button button-secondary" data-action="edit" data-id="'+escapeHtml(r.id)+'">Edit details</button><button class="button button-secondary" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></div>';
   }
   function stagedResearchPanel(scope='all'){
     const data=window.JobOSResearchPreview||{records:[],state:'signed_out'};
@@ -545,27 +554,31 @@ async function saveStrategy(e){
   async function copyAndOpen(id){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('This prospect opted out. No further outreach.');if(!r||!r.draft?.trim())return notify('Save a draft first.');const target=destinationFor(r);if(!target)return notify('Add a verified email or profile URL first.');window.open(target,'_blank','noopener,noreferrer');try{await navigator.clipboard.writeText(r.draft);notify('Draft copied. Confirm the send only after sending externally.');}catch{notify('Opened destination, but clipboard permission was denied. Copy your draft manually.');}
     pendingSendId=id;$('confirm-desc').textContent=`Did you actually send your ${r.channel} message to ${r.name}? Copying a draft or opening a tab does not count as sending.`;$('confirm-modal').showModal();}
   async function markSent(){const r=findRecord(pendingSendId);if(!r)return;if(r.optedOut){$('confirm-modal').close();pendingSendId=null;return notify('Do not contact: this prospect opted out.');}$('confirm-modal').close();const now=new Date().toISOString();activity(r.id,'sent',`${r.channel} message confirmed sent`,r.draft,{strategyId:r.strategyId||'',variant:r.variant||'',industry:r.industry||'',wordCount:(r.draft||'').trim().split(/\s+/).filter(Boolean).length,subject:r.subject||'',ccCount:r.cc?r.cc.split(',').filter(Boolean).length:0,channel:r.channel});if(['Discovered','Researched','Draft Ready'].includes(r.stage))r.stage='Contacted';if(!r.followup)r.followup=workdaysFrom(today(),5);r.updatedAt=now;pendingSendId=null;await persist();notify('Send recorded. Follow-up scheduled if needed.');}
-  async function prepareATS(id){
+  async function downloadJobPDF(id,kind){
     const r=findRecord(id);if(!r||r.type!=='Career')return;
-    if(!jobMeetsThreshold(r))return notify('This job does not meet the 75-point shortlist cutoff.');
-    if(!safeUrl(r.jobUrl))return notify('Add a verified job description link before requesting documents.');
-    // This static site has no direct document-generation backend. We preserve the request and
-    // hand a factual, job-specific brief to ChatGPT rather than claiming files were generated.
-    const brief='Prepare an ATS-safe one-page resume and a job-specific cover letter for this opportunity.\n'+
-      'Employer: '+r.name+'\nRole: '+r.jobTitle+'\nOfficial posting: '+r.jobUrl+'\n'+
-      'Location: '+(r.location||'Unknown')+'\nPay: '+(r.salary||'Not disclosed')+'\n'+
-      'Candidate: use my verified master resume and prior experience from this account only, asking for the source if unavailable.\n'+
-      'Do not invent accomplishments, metrics, contact names, or experience. Prioritize real relevant skills, ATS language from the posting, and a concise cover letter.\n'+
-      'Return editable DOCX and PDF files where available; distinguish finished files from drafts.\n'+
-      'Also propose a concise recruiter email and LinkedIn message only if a verified contact is supplied.\n'+
-      'After I confirm submission, help update JobOS activity and follow-up status.';
-    const tab=window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
-    try{await navigator.clipboard.writeText(brief)}catch{notify('Clipboard unavailable. Copy the job details from your package instead.');}
-    r.packageRequestedAt=new Date().toISOString();r.updatedAt=r.packageRequestedAt;
-    activity(r.id,'package-requested','ATS resume and cover-letter preparation requested','',{jobUrl:r.jobUrl,role:r.jobTitle||''});
-    await persist();
-    notify(tab?'Package request copied. Paste it into ChatGPT to create and save the files.':'Package request copied. Open ChatGPT and paste to create the files.');
+    if(!window.JobOSDocuments?.has(r))return notify('No reviewed PDF package is ready for this job.');
+    try{
+      await window.JobOSDocuments.ensure();
+      const name=window.JobOSDocuments.save(r,kind);
+      activity(r.id,'downloaded-document',kind+' PDF downloaded','',{jobTitle:r.jobTitle||'',file:name});
+      await persist();notify(kind.replace('_',' ')+' downloaded: '+name);
+    }catch(error){notify('PDF download failed: '+error.message);}
   }
+  async function copyRecruiterNote(id){
+    const r=findRecord(id);if(!r||!window.JobOSDocuments?.has(r))return;
+    try{await navigator.clipboard.writeText(window.JobOSDocuments.message(r,'LinkedIn'));notify('LinkedIn message copied, not sent.');}
+    catch{notify('Clipboard unavailable. You can select and copy the visible draft.');}
+  }
+  function openRecruiterEmail(id){
+    const r=findRecord(id),contact=window.JobOSDocuments?.recruiter(r);
+    if(!r||!contact?.email)return notify('No verified team email address is available.');
+    const m=window.JobOSDocuments.message(r,'Email');
+    const url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(contact.email)+'&su='+encodeURIComponent(m.subject)+'&body='+encodeURIComponent(m.body);
+    window.open(url,'_blank','noopener,noreferrer');
+    notify('Gmail compose opened for the public recruiting inbox. Nothing was sent.');
+  }
+  async function prepareATS(id){return downloadJobPDF(id,'Resume');}
+
   async function prepareRecruiterMessage(id){
     const r=findRecord(id);if(!r||r.type!=='Career')return;
     if(!r.appliedDate)return notify('Record your submitted application before drafting a “just applied” note.');
@@ -625,7 +638,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='opencompose')return openGmailComposer(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='opencompose')return openGmailComposer(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
