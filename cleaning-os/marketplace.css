@@ -1,0 +1,56 @@
+
+/* CleaningOS modular marketplace — separate from legacy demo layout */
+.cos-marketplace{max-width:1260px;margin:0 auto;color:var(--ink,#182b2a);padding-bottom:48px}
+.cos-marketplace *{box-sizing:border-box}
+.cos-market-hero{padding:clamp(26px,5vw,66px);border-radius:26px;background:linear-gradient(120deg,#112b28 0%,#163e35 65%,#255647 100%);color:#fff;overflow:hidden;position:relative}
+.cos-market-hero:after{content:"";position:absolute;right:-95px;top:-145px;width:380px;height:380px;border:1px solid #ffffff30;border-radius:50%;box-shadow:0 0 0 65px #ffffff08,0 0 0 130px #ffffff07;pointer-events:none}
+.cos-market-eyebrow{display:block;text-transform:uppercase;letter-spacing:.15em;font-size:11px;font-weight:750;color:#658a78}
+.cos-market-hero .cos-market-eyebrow,.cos-market-custom .cos-market-eyebrow{color:#aacbb7}
+.cos-market-hero h1{font-size:clamp(34px,4.4vw,63px);line-height:1.12;letter-spacing:-.045em;margin:22px 0;max-width:830px;color:#fff}
+.cos-market-hero h1 em{font-style:normal;color:#b7d7bf}
+.cos-market-hero p{font-size:clamp(15px,1.4vw,19px);line-height:1.7;color:#e1ebe4;max-width:700px}
+.cos-market-hero small{display:block;margin-top:23px;max-width:750px;color:#d4e4da;font-size:12px}
+.cos-market-hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.cos-market-primary,.cos-market-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:45px;padding:12px 19px;border-radius:10px;font-weight:700;text-decoration:none;font-size:14px;cursor:pointer}
+.cos-market-primary{background:#d6efc7;color:#183b2d!important;border:1px solid #d6efc7}
+.cos-market-secondary{background:transparent;border:1px solid #ffffff80;color:#fff!important}
+.cos-market-section{padding:47px 0 20px;scroll-margin-top:20px}
+.cos-market-heading{display:flex;align-items:start;justify-content:space-between;gap:22px;margin-bottom:23px}
+.cos-market-heading h2,.cos-market-custom h2{font-size:clamp(25px,2.8vw,38px);line-height:1.16;letter-spacing:-.03em;margin:9px 0 11px}
+.cos-market-heading p{max-width:680px;line-height:1.65;color:var(--muted,#62736d);margin:0}
+.cos-market-section-status{font-size:11px;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;border:1px solid #b7cec2;border-radius:100px;padding:8px 12px;color:#416a55}
+.cos-market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cos-market-card{background:var(--card,#fff);border:1px solid #dbe3dc;border-radius:18px;padding:22px;display:flex;flex-direction:column;min-height:220px;box-shadow:0 6px 21px #172a2110}
+.cos-market-core-card{border-color:#c4d9ce;background:linear-gradient(160deg,#f5faf6,#fff)}
+.cos-market-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cos-market-glyph{width:39px;height:39px;display:grid;place-items:center;background:#e5f1e9;border-radius:10px;color:#285e43;font-size:21px;font-weight:700}
+.cos-market-tag{background:#f0f3f0;border-radius:100px;padding:6px 10px;font-size:10px;font-weight:700;color:#617368}
+.cos-market-included{color:#28664b;background:#dceee3}
+.cos-market-card h3{font-size:19px;line-height:1.3;margin:19px 0 8px}
+.cos-market-card p{font-size:14px;line-height:1.6;color:var(--muted,#61736d);margin:0 0 21px}
+.cos-market-action{display:inline-flex;align-items:center;align-self:flex-start;margin-top:auto;padding:0;border:0;background:transparent;color:#28654c;font-weight:750;cursor:pointer;font-size:13px}
+.cos-market-action:hover{text-decoration:underline}
+.cos-market-more{border:1px solid #dbe3dc;border-radius:15px;margin-top:18px;background:var(--card,#fff);overflow:hidden}
+.cos-market-more summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 20px;font-weight:750;list-style:none}
+.cos-market-more summary::-webkit-details-marker{display:none}
+.cos-market-more summary span{font-size:12px;color:#56836a;font-weight:600}
+.cos-market-more .cos-market-grid{padding:0 16px 16px}
+.cos-market-custom{margin-top:38px;padding:clamp(24px,3.5vw,42px);display:grid;grid-template-columns:1fr 1fr;gap:35px;border-radius:24px;background:#18372f;color:white;scroll-margin-top:20px}
+.cos-market-custom h2{color:white}
+.cos-market-custom-intro>p{line-height:1.75;color:#d3e1d6;font-size:15px}
+.cos-market-example{margin-top:25px;border-left:3px solid #b6dfb4;padding:8px 0 8px 16px;display:grid;gap:8px}
+.cos-market-example strong{color:#b6dfb4;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.cos-market-example span{line-height:1.6;color:#ecf3ed}
+.cos-market-form{background:#f7faf7;color:#18372f;border-radius:17px;padding:24px;display:grid;gap:14px;align-content:start}
+.cos-market-form label{display:grid;gap:8px;font-size:13px;font-weight:750}
+.cos-market-form input,.cos-market-form textarea,.cos-market-form select{font:inherit;font-weight:400;width:100%;padding:12px;border:1px solid #c8d5cc;border-radius:9px;background:#fff;color:#1b3228}
+.cos-market-form input:focus,.cos-market-form textarea:focus,.cos-market-form select:focus{outline:2px solid #477c5d;outline-offset:1px}
+.cos-market-submit{width:100%;font:inherit;font-size:14px}
+.cos-market-form small{font-size:11px;line-height:1.5;color:#536c60}
+.cos-market-saved{padding:12px;border-radius:9px;background:#e2f0e7;color:#265b3f;font-size:13px;line-height:1.6}
+.cos-market-saved button{border:0;background:none;text-decoration:underline;font-weight:700;color:inherit;cursor:pointer}
+.cos-market-closing{text-align:center;padding:40px 16px 0;display:grid;gap:10px}
+.cos-market-closing strong{font-size:clamp(18px,2vw,25px)}
+.cos-market-closing span{color:var(--muted,#61736d);font-size:14px}
+@media(max-width:850px){.cos-market-custom{grid-template-columns:1fr}.cos-market-heading{display:block}.cos-market-section-status{display:inline-block;margin-top:15px}}
+@media(max-width:610px){.cos-market-grid{grid-template-columns:1fr}.cos-market-hero{border-radius:18px}.cos-market-more .cos-market-grid{padding:0 12px 12px}.cos-market-card{min-height:190px}.cos-market-hero-actions>a{width:100%}.cos-market-custom{margin-top:25px;padding:20px}.cos-market-form{padding:17px}}
