@@ -59,3 +59,53 @@
 .held-jobs-panel{margin:16px 0;padding:18px}.held-jobs-panel summary{cursor:pointer;font-weight:700}.held-jobs-panel .job-row{border-top:1px solid var(--line)}
 .package-row .row-actions{flex-wrap:wrap}.package-row .draft-preview p{white-space:pre-wrap}
 @media(max-width:780px){.opportunity .card-foot{flex-direction:column}.opportunity .card-foot .button{width:100%}}
+
+/* JobOS 0.5: calm, linear everyday experience */
+.simple-hide-top-add{display:none!important}
+.sidebar-more{margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
+.sidebar-more summary{list-style:none;cursor:pointer;padding:9px 13px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}
+.sidebar-more summary::-webkit-details-marker{display:none}
+.sidebar-more .nav-item{font-size:12px;padding-left:20px}
+.simple-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:6px 0 28px}
+.simple-section{margin:12px 0 28px}
+.simple-section-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 14px}
+.simple-section-head h2,.simple-workspace-heading h2{font-family:var(--display);font-size:21px;margin:0}
+.simple-section-head span{font-size:12px;color:var(--muted)}
+.simple-list{display:grid;gap:10px}
+.simple-opportunity{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:19px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.simple-opportunity-main{flex:1;min-width:0}
+.simple-opportunity-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.simple-opportunity-top strong{font-family:var(--display);font-size:17px;line-height:1.4}
+.simple-opportunity p{color:var(--muted);font-size:12px;margin:7px 0}
+.simple-opportunity small{color:var(--bright);font-size:11px}
+.simple-score{font-size:11px;font-weight:800;color:var(--bright);padding:4px 8px;border:1px solid var(--line);border-radius:7px}
+.simple-opportunity-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.simple-opportunity-actions .pass-controls select{display:none}
+.simple-opportunity-actions .pass-controls{display:inline-flex}
+.simple-workspaces{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:26px 0}
+.simple-workspace-tile{cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:19px;text-align:left;color:var(--text);display:flex;flex-direction:column;gap:12px;transition:border-color .15s}
+.simple-workspace-tile:hover{border-color:var(--bright)}
+.simple-workspace-tile strong{font-size:14px}.simple-workspace-tile span{font-size:11px;color:var(--muted)}
+.simple-secondary{border-top:1px solid var(--line);margin:18px 0;padding:14px 0}
+.simple-secondary summary{cursor:pointer;color:var(--muted);font-size:12px;font-weight:600}
+.simple-secondary .research-preview-panel{margin-top:12px}
+.simple-secondary>p{font-size:12px;color:var(--muted)}
+.simple-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.simple-workspace-heading{display:flex;align-items:start;justify-content:space-between;gap:14px;margin:7px 0 20px}
+.simple-workspace-heading p{font-size:12px;color:var(--muted);margin:8px 0}
+.simple-search{margin:0 0 19px}.simple-search input{background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px 14px;width:100%;max-width:380px}
+.simple-empty{padding:25px}.simple-empty h3{margin:0 0 8px}.simple-empty p{color:var(--muted);font-size:12px}
+.simple-back{background:none;border:0;color:var(--muted);cursor:pointer;padding:6px 0 16px;font-size:13px}
+.simple-detail{max-width:880px;margin:0 auto;padding:30px}
+.simple-detail h2{font-family:var(--display);font-size:28px;line-height:1.25;margin:8px 0}
+.simple-detail-meta{font-size:13px;color:var(--muted);margin:8px 0 24px}
+.simple-email,.simple-detail-note{border:1px solid var(--line);border-radius:12px;padding:22px;background:rgba(255,255,255,.02);margin:22px 0}
+.simple-email>span{font-size:10px;color:var(--muted);letter-spacing:.1em;font-weight:800}
+.simple-email h3{font-size:17px;margin:13px 0 16px}.simple-email p{font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text)}
+.simple-email small{font-size:11px;color:var(--muted)}
+.simple-detail-note p{color:var(--muted);font-size:13px;line-height:1.7}
+.simple-primary-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 0 20px}
+.simple-detail-footer{border-top:1px solid var(--line);padding-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.simple-extra-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-top:1px solid var(--line)}
+@media(max-width:1050px){.simple-metrics,.simple-workspaces{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.simple-metrics,.simple-workspaces{grid-template-columns:repeat(2,minmax(0,1fr))}.simple-opportunity{align-items:stretch;flex-direction:column;padding:15px}.simple-opportunity-actions{justify-content:flex-start}.simple-detail{padding:20px}.simple-workspace-heading{flex-direction:column}}
