@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="./styles.css?v=munkos-field-specific-v1-20261118">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <script defer src="./job-documents.js?v=jobos-applied-inbox-remote-v4-20261118"></script>
-  <script defer src="./app.js?v=jobos-open-draft-v9-20261118"></script>
+  <script defer src="./app.js?v=jobos-remember-browser-v10-20261118"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
   <script defer src="./cloud.js?v=jobos-live-sync-20261118"></script>
 </head>
@@ -36,7 +36,7 @@
           <button type="button" data-view="contacts" class="nav-item">All records</button>
           <button type="button" data-view="pipeline" class="nav-item">Pipelines</button>
         </details>
-      </nav>     <div class="sidebar-bottom"><div class="vault-status"><span class="status-dot"></span> Local vault unlocked</div><div class="sidebar-small">Encrypted in browser · Optional cloud sync</div><button id="lock-button" class="sidebar-lock" type="button">⌁ &nbsp; Lock workspace</button></div>
+      </nav>     <div class="sidebar-bottom"><div class="vault-status"><span class="status-dot"></span> Local vault unlocked</div><div class="sidebar-small">Encrypted in browser · Optional cloud sync</div><button id="lock-button" class="sidebar-lock" type="button">⌁ &nbsp; Lock & forget this browser</button></div>
     </aside>
     <div class="main-area">
       <header class="topbar">
@@ -55,7 +55,7 @@
   <div id="unlock-screen" class="unlock-screen">
     <div class="unlock-art"><div class="unlock-orbit orbit-one"></div><div class="unlock-orbit orbit-two"></div><div class="unlock-monogram">JO<span>.</span></div><div class="unlock-caption">MAKE CONNECTIONS<br>THAT COMPOUND.</div></div>
     <div class="unlock-panel"><div class="unlock-heading"><span class="mini-mark">◆ JOBOS / WORKSPACE</span><h1 id="unlock-title">Your outreach,<br><em>organized.</em></h1><p id="unlock-description">One command center for employment, clients, and professional networking.</p></div>
-      <form id="vault-form"><label for="vault-pass">Vault passphrase</label><input type="password" id="vault-pass" placeholder="At least 12 characters" autocomplete="new-password" minlength="12" required><div id="confirm-pass-field"><label for="vault-confirm">Confirm passphrase</label><input type="password" id="vault-confirm" placeholder="Enter it again" autocomplete="new-password" minlength="12"></div><button id="vault-submit" class="button button-primary wide" type="submit">Create my private workspace ↗</button><p id="vault-error" class="error" role="alert"></p></form>
+      <form id="vault-form"><label for="vault-pass">Vault passphrase</label><input type="password" id="vault-pass" placeholder="At least 12 characters" autocomplete="new-password" minlength="12" required><div id="confirm-pass-field"><label for="vault-confirm">Confirm passphrase</label><input type="password" id="vault-confirm" placeholder="Enter it again" autocomplete="new-password" minlength="12"></div><label class="field" style="display:flex;align-items:flex-start;gap:10px;margin:12px 0 16px;line-height:1.35"><input id="remember-device" type="checkbox" checked style="width:18px;height:18px;flex:none;margin-top:2px"><span><strong>Remember this browser</strong><small style="display:block;opacity:.75">Skip the passphrase on future visits to this browser. Other people using this browser profile could access JobOS. Uncheck on a shared computer.</small></span></label><button id="vault-submit" class="button button-primary wide" type="submit">Create my private workspace ↗</button><p id="vault-error" class="error" role="alert"></p></form>
       <div class="security-note"><span>◈</span><p><strong>Your contacts are encrypted in this browser.</strong> Data is encrypted with your passphrase before local storage. Optional cloud sync is configured separately under Cloud & Gmail and stores only encrypted snapshots. If you lose your passphrase or clear browser data without a backup, your records cannot be recovered.</p></div>
     </div>
   </div>

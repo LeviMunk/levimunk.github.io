@@ -4,6 +4,7 @@
   'use strict';
   const STORAGE_KEY = 'levios.outreach.encrypted.v1';
   const ITERATIONS = 320000;
+  const TRUSTED_DB='jobos-trusted-device-v1',TRUSTED_STORE='keys';
   const STAGES = ['Discovered','Researched','Draft Ready','Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed','Saved','Applied','Recruiter Screen','Interview','Offer','Rejected','Withdrawn'];
   const STRATEGY_STARTERS = [{"id":"subject","name":"Subject line: direct vs curiosity","question":"Does a truthful, specific subject outperform a short open-ended one?","a":"Direct: 'Idea for [business] website'","b":"Curiosity: 'Quick question about [business]'","status":"planned","notes":"One accurate subject only. Never fake a reply, urgency, or existing relationship."},{"id":"length","name":"Email length: brief vs detailed","question":"For the same offer, does 60–90 words outperform 130–170 words?","a":"Brief: one observation, one value statement, one question","b":"Detailed: observation, example, proof, one question","status":"planned","notes":"Hold the offer and recipient type constant. Word count is captured when you confirm a send."},{"id":"angle","name":"Problem reveal vs opportunity","question":"Does a verifiable business friction point earn more positive replies than an upside-focused idea?","a":"Specific, independently checked problem or missed opportunity","b":"Plausible upside tied to the business, without inventing results","status":"active","notes":"Don't assert revenue losses without evidence. A helpful observation beats fabricated urgency."},{"id":"cta","name":"Call-to-action friction","question":"Does asking permission to share an example work better than asking for a call immediately?","a":"Low friction: 'Worth sending you a quick example?'","b":"Direct ask: 'Open to a 15-minute call next week?'","status":"active","notes":"Keep the rest of the message as similar as possible."},{"id":"personal","name":"Personalization depth","question":"Does a specific business observation improve replies compared with category-level messaging?","a":"One verified observation about that exact organization","b":"One accurate industry-specific observation","status":"planned","notes":"Do not invent research findings."},{"id":"stakeholders","name":"Stakeholder involvement","question":"Does appropriately involving a second relevant stakeholder help with routing?","a":"One directly relevant recipient only","b":"Two genuinely relevant stakeholders, introduced transparently","status":"planned","notes":"CC is not a pressure tactic. Do not include unrelated executives or use mass CC."},{"id":"sender","name":"Sender presentation: authentic identity","question":"Does a consistent professional signature outperform a shorter personal signature?","a":"Real sender name + function + legitimate business affiliation","b":"Same real sender name + brief human signoff","status":"planned","notes":"Never claim to be a woman, colleague, or employee who is not actually sending the email."},{"id":"followup","name":"Follow-up approach","question":"Does a useful new detail improve reply quality compared with a simple reminder?","a":"One new concrete observation or offer of a useful example","b":"Short courteous reminder referring to the original message","status":"planned","notes":"Honor no-contact requests; avoid repetitive nudges."}];
   const VIEWS = {
@@ -72,6 +73,53 @@
     const base=await crypto.subtle.importKey('raw',encoder.encode(passphrase),'PBKDF2',false,['deriveKey']);
     return crypto.subtle.deriveKey({name:'PBKDF2',salt:saltBytes,iterations:ITERATIONS,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
   }
+  // Opt-in convenience: store only the non-extractable browser CryptoKey, never the passphrase.
+  // Any person/script with access to this browser profile and origin can unlock this device's vault.
+  function trustedDb(){
+    return new Promise((resolve,reject)=>{
+      if(!('indexedDB' in window))return reject(Error('Browser does not support remembered unlock.'));
+      const request=indexedDB.open(TRUSTED_DB,1);
+      request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(TRUSTED_STORE))request.result.createObjectStore(TRUSTED_STORE);};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||Error('Browser device storage unavailable'));
+    });
+  }
+  async function trustedKey(operation,value){
+    const db=await trustedDb();
+    try{return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(TRUSTED_STORE,operation==='get'?'readonly':'readwrite');
+      const store=tx.objectStore(TRUSTED_STORE);
+      const req=operation==='get'?store.get('vault'):operation==='put'?store.put(value,'vault'):store.delete('vault');
+      req.onsuccess=()=>resolve(operation==='get'?req.result:true);
+      req.onerror=()=>reject(req.error||Error('Device key operation failed'));
+      tx.onerror=()=>reject(tx.error||Error('Device storage transaction failed'));
+    });}finally{db.close();}
+  }
+  async function rememberThisBrowser(){
+    if(!encryptionKey||!salt)return;
+    try{
+      await trustedKey('put',{key:encryptionKey,salt:bytesToB64(salt),version:1});
+    }catch(e){notify('JobOS opened, but this browser could not remember your unlock: '+e.message);}
+  }
+  async function forgetThisBrowser(){
+    try{await trustedKey('delete');}catch(e){console.warn('Could not clear remembered unlock:',e.message);}
+  }
+  async function autoUnlockTrustedBrowser(){
+    if(state||!localStorage.getItem(STORAGE_KEY)||!globalThis.crypto?.subtle)return;
+    try{
+      const remembered=await trustedKey('get');
+      if(!remembered)return;
+      const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if(remembered.version!==1||remembered.salt!==stored.salt||!remembered.key){await forgetThisBrowser();return;}
+      await openVault('',remembered.key);
+    }catch(e){
+      encryptionKey=null;salt=null;state=null;
+      $('app-shell').hidden=true;$('unlock-screen').hidden=false;
+      await forgetThisBrowser();
+      setAuthMode();
+      console.warn('Remembered JobOS unlock was invalid; passphrase is required:',e.message);
+    }
+  }
   async function writeVault(){
     if(!state||!encryptionKey||!salt)throw Error('Vault is locked');
     const iv=crypto.getRandomValues(new Uint8Array(12));
@@ -114,12 +162,12 @@
     render();
     return report;
   }
-  async function openVault(passphrase){
+  async function openVault(passphrase,deviceKey=null){
     const stored=localStorage.getItem(STORAGE_KEY);
     if(stored){
       const saved=JSON.parse(stored);
       if(saved.version!==1||!saved.salt||!saved.iv||!saved.ciphertext)throw Error('Unsupported or corrupted vault file.');
-      salt=b64ToBytes(saved.salt);encryptionKey=await deriveKey(passphrase,salt);
+      salt=b64ToBytes(saved.salt);encryptionKey=deviceKey||await deriveKey(passphrase,salt);
       const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(saved.iv)},encryptionKey,b64ToBytes(saved.ciphertext));
       const restored=JSON.parse(decoder.decode(plaintext));
       if(!restored||!Array.isArray(restored.records)||!Array.isArray(restored.activities))throw Error('Invalid vault data');
@@ -815,7 +863,25 @@ async function saveStrategy(e){
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
   document.addEventListener('change',e=>{if(e.target.matches('#record-form [name="type"]')){syncRecordFormType();}else if(e.target.id==='type-filter'){filter.type=e.target.value;render();}else if(e.target.id==='stage-filter'){filter.stage=e.target.value;render();}});
-  $('vault-form').addEventListener('submit',async e=>{e.preventDefault();$('vault-error').textContent='';const pass=$('vault-pass').value;if(!localStorage.getItem(STORAGE_KEY)&&pass!==$('vault-confirm').value){$('vault-error').textContent='Passphrases do not match.';return;}const btn=$('vault-submit');btn.disabled=true;btn.textContent='Opening encrypted vault...';try{await openVault(pass);}catch(err){encryptionKey=null;salt=null;state=null;$('vault-error').textContent='Unable to unlock. Check the passphrase or backup file.';console.warn('Vault unlock error:',err.message);}finally{btn.disabled=false;if(state)setAuthMode();else{const btnText=localStorage.getItem(STORAGE_KEY)?'Unlock my workspace ↗':'Create my private workspace ↗';btn.textContent=btnText;}}});
+  $('vault-form').addEventListener('submit',async e=>{
+    e.preventDefault();$('vault-error').textContent='';
+    const pass=$('vault-pass').value;
+    if(!localStorage.getItem(STORAGE_KEY)&&pass!==$('vault-confirm').value){$('vault-error').textContent='Passphrases do not match.';return;}
+    const btn=$('vault-submit');btn.disabled=true;btn.textContent='Opening encrypted vault...';
+    try{
+      await openVault(pass);
+      if($('remember-device').checked)await rememberThisBrowser();
+      else await forgetThisBrowser();
+    }catch(err){
+      encryptionKey=null;salt=null;state=null;
+      $('vault-error').textContent='Unable to unlock. Check the passphrase or backup file.';
+      console.warn('Vault unlock error:',err.message);
+    }finally{
+      btn.disabled=false;
+      if(state)setAuthMode();
+      else btn.textContent=localStorage.getItem(STORAGE_KEY)?'Unlock my workspace ↗':'Create my private workspace ↗';
+    }
+  });
   $('record-form').addEventListener('submit',saveRecord);
   $('strategy-form').addEventListener('submit',saveStrategy);
   $('reply-form').addEventListener('submit',saveReplyReview);
@@ -823,7 +889,7 @@ async function saveStrategy(e){
   $('confirm-sent').addEventListener('click',markSent);
   $('confirm-not-sent').addEventListener('click',()=>{pendingSendId=null;$('confirm-modal').close();notify('Kept as draft. No send recorded.');});
   $('add-main').addEventListener('click',()=>editRecord());$('add-top').addEventListener('click',()=>editRecord());
-  $('lock-button').addEventListener('click',lockVault);
+  $('lock-button').addEventListener('click',async()=>{await forgetThisBrowser();lockVault();notify('Locked and removed remembered access on this browser.');});
   $('import-file').addEventListener('change',e=>importFile(e.target.files?.[0]));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state&&Date.now()-lastActivityAt>20*60*1000)lockVault();});
   setInterval(()=>{if(state&&Date.now()-lastActivityAt>20*60*1000)lockVault();},60_000);
@@ -890,4 +956,5 @@ async function saveStrategy(e){
   };
   window.LeviOutreachTrackedEmails=()=>state?[...new Set(state.records.filter(r=>r.email&&isSent(r)).map(r=>r.email))]:[];
   setAuthMode();
+  autoUnlockTrustedBrowser();
 })();
