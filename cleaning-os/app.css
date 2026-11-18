@@ -822,3 +822,8 @@ body[data-industry="cleaning"] .fd-workspace .fd-section-head h2{font-size:22px;
 body[data-industry="cleaning"] .fd-workspace .fd-section-head p{max-width:670px}
 @media(max-width:780px){.fd-page-intro{flex-direction:column;align-items:flex-start}.fd-workspace{padding:18px}.fd-page-intro .btn{align-self:flex-start}}
 @media(max-width:500px){body[data-industry="cleaning"] .lc-mini-stats.fd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}body[data-industry="cleaning"] .lc-mini-stats.fd-stats>div{min-height:92px;padding:14px}.fd-workspace{padding:14px}.fd-workspace-top{align-items:flex-start;flex-direction:column}.fd-workspace .fd-tabs{overflow-x:auto;flex-wrap:nowrap}.fd-workspace .fd-tabs button{white-space:nowrap}}
+
+
+/* FrontDoor progressive data display */
+.fd-more{display:block;width:calc(100% - 24px);margin:12px;padding:12px;background:#EEF7F3;color:#25685F;border:1px solid #C7E3D6;border-radius:10px;font:700 11px 'Manrope',sans-serif;cursor:pointer;text-align:center}
+.fd-more:hover,.fd-more:focus-visible{background:#DBF0E6;outline-offset:2px}
