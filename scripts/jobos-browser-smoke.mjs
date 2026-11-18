@@ -8,7 +8,7 @@ page.on('response',r=>{if(r.url().includes('research-feed'))traces.push('feed re
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(['error','warning'].includes(m.type()))errors.push('console '+m.type()+': '+m.text());});
 try{
-  await page.goto('http://127.0.0.1:4173/levios-outreach/',{waitUntil:'domcontentloaded',timeout:20000});
+  await page.goto('http://127.0.0.1:4173/jobos/',{waitUntil:'domcontentloaded',timeout:20000});
   await page.locator('#vault-pass').fill('jobos-test-passphrase-2026');
   await page.locator('#vault-confirm').fill('jobos-test-passphrase-2026');
   await page.locator('#vault-submit').click();
