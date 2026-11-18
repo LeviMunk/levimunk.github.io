@@ -1,0 +1,28 @@
+
+/* Dashboard configuration: browser-local presentation only */
+#view [hidden]{display:none!important}
+.cos-layout{margin:20px 0 26px;border:1px solid #d5e4d9;border-radius:18px;background:linear-gradient(110deg,#f2faf4,#ffffff);padding:22px}
+.cos-layout-intro{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.cos-layout-intro h2{font-size:clamp(19px,2vw,27px);margin:5px 0 7px;color:#193a30}
+.cos-layout-intro p{margin:0;font-size:14px;color:#527066;line-height:1.5}
+.cos-layout-button{border:1px solid #245c43;background:#245c43;color:#fff;border-radius:9px;padding:11px 17px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cos-layout-editor{margin-top:22px;padding-top:21px;border-top:1px solid #d5e4d9;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cos-layout-editor h3{font-size:16px;margin:0 0 5px;color:#193a30}
+.cos-layout-editor p{font-size:12px;color:#61786b;margin:0 0 14px}
+.cos-layout-line{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #dce7df;background:#fff;border-radius:10px;padding:10px;margin:8px 0}
+.cos-layout-line label{display:flex;align-items:center;gap:11px;cursor:pointer}
+.cos-layout-line label span{display:grid;gap:3px}
+.cos-layout-line strong{color:#243c32;font-size:13px}
+.cos-layout-line small{color:#65796f;font-size:11px}
+.cos-layout-line input,.cos-layout-metrics input{accent-color:#29684d;width:17px;height:17px}
+.cos-layout-line>div{display:flex;gap:5px}
+.cos-layout-line button{border:1px solid #d1ded4;background:#f5f9f6;color:#244c37;border-radius:7px;width:29px;height:29px;cursor:pointer}
+.cos-layout-line button:disabled{opacity:.35;cursor:not-allowed}
+.cos-layout-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cos-layout-metrics label{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #dce7df;border-radius:9px;padding:10px;font-size:12px;color:#324a3f;cursor:pointer}
+.cos-layout-footer{grid-column:1/-1;border-top:1px solid #d5e4d9;padding-top:15px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.cos-layout-footer span{font-size:11px;color:#60746a}
+.cos-layout-footer button{border:0;background:none;color:#276349;font-weight:700;text-decoration:underline;cursor:pointer}
+.cos-layout-empty{padding:14px;color:#577064}
+@media(max-width:800px){.cos-layout-editor{grid-template-columns:1fr}.cos-layout-intro{align-items:flex-start;flex-direction:column}.cos-layout-metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:470px){.cos-layout-metrics{grid-template-columns:1fr}.cos-layout-footer{align-items:flex-start;flex-direction:column}}
