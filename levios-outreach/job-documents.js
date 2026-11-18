@@ -148,6 +148,49 @@ function save(rec,kind){
  const p=JOBS[key],pdf=kind==='Resume'?renderResume(p):renderLetter(p);
  pdf.save(filename(p,kind));return filename(p,kind);
 }
+async function ensureZip(){
+ if(window.JSZip)return;
+ await new Promise((resolve,reject)=>{
+  const existing=document.querySelector('script[data-jobos-zip]');
+  if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',()=>reject(Error('ZIP engine unavailable')),{once:true});return;}
+  const script=document.createElement('script');script.dataset.jobosZip='true';
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+  script.onload=resolve;script.onerror=()=>reject(Error('ZIP engine could not load'));
+  document.head.appendChild(script);
+ });
+ if(!window.JSZip)throw Error('ZIP engine unavailable');
+}
+async function kit(rec){
+ const key=keyFor(rec);if(!key)throw Error('No reviewed job package is available.');
+ await ensure();await ensureZip();
+ const p=JOBS[key],zip=new window.JSZip();
+ zip.file(filename(p,'Resume'),renderResume(p).output('arraybuffer'));
+ zip.file(filename(p,'Cover_Letter'),renderLetter(p).output('arraybuffer'));
+ const profile=p.recruiter;
+ const note=['JOBOS APPLICATION CHECKLIST',p.company+' | '+p.title,'',
+  '1. Review and upload the enclosed resume and cover-letter PDFs.',
+  '2. Complete the application on the official employer job posting.',
+  '3. Return to JobOS and click I applied only after the submission succeeds.',
+  '4. Use the recruiter outreach note below if appropriate. Do not claim to have applied until you actually have.',
+  '','Job posting: '+(rec.jobUrl||''),
+  'Recruiter research: '+(profile?.name||'No named recruiter verified'),
+  (profile?.note||''),profile?.profile||profile?.search||'',
+  '','LINKEDIN INTRODUCTION BEFORE APPLYING',message({...rec,appliedDate:''},'LinkedIn'),
+  '','LINKEDIN MESSAGE AFTER APPLYING',message({...rec,appliedDate:'submitted'},'LinkedIn'),
+  '','EMAIL DRAFT BEFORE APPLYING',message({...rec,appliedDate:''},'Email').subject,
+  message({...rec,appliedDate:''},'Email').body,
+  '','EMAIL DRAFT AFTER APPLYING',message({...rec,appliedDate:'submitted'},'Email').subject,
+  message({...rec,appliedDate:'submitted'},'Email').body,
+  '','No messages sent or applications submitted by generating this package.'
+ ].join('\n');
+ zip.file('Recruiter_Outreach_and_Application_Checklist.txt',note);
+ const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+ const name='Levi_Van_Stappen_'+p.slug+'_Application_Kit.zip';
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+ return name;
+}
 function recruiter(rec){const key=keyFor(rec);return key?JOBS[key].recruiter:null;}
 function message(rec,channel='LinkedIn'){
  const key=keyFor(rec);if(!key)return null;
@@ -159,5 +202,5 @@ function message(rec,channel='LinkedIn'){
  return {subject:(applied?'Application submitted: ':'Interested in: ')+p.title,
  body:'Hello recruiting team,\n\n'+(applied?'I recently submitted my application for':'I am planning to apply for')+' the '+p.title+' position at '+organization+'. My background combines marketing performance reporting, operations, and customer-lifecycle coordination. I would appreciate the opportunity to connect with the team responsible for this opening.\n\nThank you,\nLevi Van Stappen'};
 }
-window.JobOSDocuments={has:rec=>!!keyFor(rec),save,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
+window.JobOSDocuments={has:rec=>!!keyFor(rec),save,kit,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
 })();
