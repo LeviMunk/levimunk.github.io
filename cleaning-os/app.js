@@ -34,6 +34,34 @@ function table(headers,rows){return '<div class="tablewrap"><table><thead><tr>'+
 const jobs=()=>window.CleaningOperations.summary(state).billable,done=()=>jobs().filter(j=>j.status==='Completed'),due=()=>jobs().filter(j=>j.status!=='Completed');
 function metrics(){const v=window.CleaningOperations.summary(state);const vals=[['Visits this week',v.billable.length,'Selected planner week'],['Quoted revenue',cash(v.revenue),'Fictional, not collected'],['Completed visits',v.completed,'Checklist-gated'],['Schedule overlaps',v.overlap.length,'Same crew / time collision']];return '<div class="stats">'+vals.map(([name,val,note])=>'<div class="card"><div class="statname">'+name+'</div><div class="metric">'+val+'</div><div class="caption">'+note+'</div></div>').join('')+'</div>'}
 function board(){return window.CleaningOperations.board(state)}
+
+const layoutSections=[['pulse','Business pulse','Operational metrics'],['journey','Customer journey','Service modules'],['actions','Action center','Follow-ups and exceptions']];
+const layoutMetrics=['Follow-ups due','Confirmed bookings','Scheduled visits','Quality reviews','Recurring clients','Post-clean follow-ups'];
+let layoutEditorOpen=false;
+function layoutPrefs(){
+state.settings??={view:'Agency'};let p=state.settings.layout;
+if(!p||typeof p!=='object'||Array.isArray(p))p={};
+const valid=layoutSections.map(x=>x[0]);
+p.order=[...new Set([...(Array.isArray(p.order)?p.order.filter(x=>valid.includes(x)):[]),...valid])];
+p.hidden=Array.isArray(p.hidden)?p.hidden.filter(x=>valid.includes(x)):[];
+p.hiddenMetrics=Array.isArray(p.hiddenMetrics)?p.hiddenMetrics.filter(x=>layoutMetrics.includes(x)):[];
+state.settings.layout=p;return p;
+}
+function layoutControls(){
+const p=layoutPrefs();
+return '<section class="cos-layout"><div class="cos-layout-intro"><div><span class="eyebrow">YOUR WORKSPACE. YOUR WAY.</span><h2>Make the dashboard yours.</h2><p>Keep the information you use, hide the rest, and put the important work first.</p></div><button type="button" class="cos-layout-button" data-layout-editor aria-expanded="'+layoutEditorOpen+'">'+(layoutEditorOpen?'Done customizing ✓':'Customize dashboard ⚙')+'</button></div>'
++'<div class="cos-layout-editor" id="cos-layout-editor" '+(layoutEditorOpen?'':'hidden')+'><div><h3>Workspace sections</h3><p>Toggle visibility and move sections up or down.</p>'+p.order.map((id,i)=>{const x=layoutSections.find(y=>y[0]===id);return '<div class="cos-layout-line"><label><input type="checkbox" data-layout-section="'+id+'" '+(p.hidden.includes(id)?'':'checked')+'><span><strong>'+x[1]+'</strong><small>'+x[2]+'</small></span></label><div><button type="button" data-layout-move="'+id+'" data-step="-1" '+(i===0?'disabled':'')+' aria-label="Move '+x[1]+' up">↑</button><button type="button" data-layout-move="'+id+'" data-step="1" '+(i===p.order.length-1?'disabled':'')+' aria-label="Move '+x[1]+' down">↓</button></div></div>'}).join('')+'</div><div><h3>Business pulse cards</h3><p>Choose which metrics to show.</p><div class="cos-layout-metrics">'+layoutMetrics.map(name=>'<label><input type="checkbox" data-layout-metric="'+esc(name)+'" '+(p.hiddenMetrics.includes(name)?'':'checked')+'>'+esc(name)+'</label>').join('')+'</div></div><div class="cos-layout-footer"><span>Preferences are browser-local. All data is fictional.</span><button type="button" data-layout-reset>Restore default layout</button></div></div></section>';
+}
+function applyLayout(){
+if(page!=='dashboard')return;
+const p=layoutPrefs(),main=$('#view'),hero=main?.querySelector('.lc-command-hero');if(!hero)return;
+const nodes={pulse:main.querySelector('.lc-pulse'),journey:main.querySelector('.lc-home-stages'),actions:main.querySelector('.lc-dashboard-bottom')};
+let cursor=hero;
+for(const id of p.order){const node=nodes[id];if(!node)continue;cursor.after(node);cursor=node;node.hidden=p.hidden.includes(id)}
+const cards=[...(nodes.pulse?.querySelectorAll('.lc-dashboard-stat')||[])];cards.forEach((node,i)=>{node.hidden=p.hiddenMetrics.includes(layoutMetrics[i])});
+if(cards.length&&cards.every(node=>node.hidden)&&!nodes.pulse.querySelector('.cos-layout-empty'))nodes.pulse.insertAdjacentHTML('beforeend','<p class="cos-layout-empty">No cards selected. Customize your dashboard to show metrics.</p>');
+}
+
 function dashboard(){
 const v=window.CleaningOperations.summary(state),life=window.CleaningLifecycle.ensure(state),campaign=window.CleaningWinback.campaign(state);
 const newLeads=life.leads.filter(x=>x.status==='New').length,booked=life.leads.filter(x=>x.status==='Booked').length;
@@ -43,6 +71,7 @@ const aftercareDue=window.CleaningAftercare.ensure(state).records.filter(x=>!x.c
 const statuses=[{label:'Follow-ups due',number:dueFollowups,route:'convert',icon:'users'},{label:'Confirmed bookings',number:booked,route:'convert',icon:'check'},{label:'Scheduled visits',number:v.billable.length,route:'deliver',icon:'calendar'},{label:'Quality reviews',number:pending,route:'deliver',icon:'shield'},{label:'Recurring clients',number:state.clients.filter(c=>!c.recovery&&c.frequency!=='One-time').length,route:'grow',icon:'repeat'},{label:'Post-clean follow-ups',number:aftercareDue,route:'deliver',icon:'heart'}];
 const hasExceptions=v.overlap.length||v.skipped||pending||aftercareDue;
 return '<div class="lc-command-top"><span class="eyebrow">CLEANINGOS / BUSINESS OVERVIEW</span><span class="lc-system-chip"><span aria-hidden="true"></span> DEMONSTRATION WORKSPACE</span></div>'
++layoutControls()
 +'<section class="lc-command-hero"><div class="lc-command-copy"><span class="lc-command-kicker">YOUR BUSINESS. BEAUTIFULLY CONNECTED.</span><h1>Beautiful homes.<br><em>Brilliant operations.</em></h1><p>One connected workspace for every customer, every clean, and every opportunity to grow.</p><div class="lc-command-actions"><button class="btn" data-page="convert">Manage enquiries <span aria-hidden="true">↗</span></button><button class="btn alt" data-page="deliver">Service operations</button></div></div><div class="lc-command-art lc-home-collage"><div class="lc-home-main-photo"><img loading="eager" decoding="async" src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1400&q=85" alt="Illustrative bright contemporary living room" onerror="this.hidden=true"></div><div class="lc-home-inset-photo"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=700&q=82" alt="Illustrative modern kitchen interior" onerror="this.hidden=true"></div><div class="lc-home-photo-label">THE BEAUTY OF A WELL-RUN BUSINESS</div></div></section>'
 +'<section class="lc-pulse"><div class="lc-section-top"><div><span class="eyebrow">BUSINESS PULSE</span><h2>At a glance</h2></div><span class="lc-updated-note">Connected sample data</span></div><div class="lc-dashboard-stats">'+statuses.map((x,i)=>'<button class="lc-dashboard-stat" data-page="'+x.route+'"><span class="lc-stat-label">'+window.CleaningVisual.icon(x.icon,18)+'<small>'+x.label+'</small></span><strong>'+x.number+'</strong><span class="lc-stat-footer">View details <span aria-hidden="true">↗</span></span></button>').join('')+'</div></section>'
 +window.CleaningLifecycle.homeStages(state)
@@ -94,6 +123,7 @@ if(window.CleaningAftercare.sync(state))save();
 const view=(views[page]||dashboard)();
 const prospectContext=prospectPreview.name&&!['welcome','builder','setup'].includes(page)?'<div class="cos-prospect-context"><div><strong>Prepared for '+esc(prospectPreview.name)+'</strong><span>Personalized navigation · All customer records and metrics below are fictional examples, not your company data.</span></div><button type="button" data-page="welcome">Back to showcase ↗</button></div>':'';
 content.innerHTML=prospectContext+view+(page==='welcome'||page==='setup'||page==='builder'?'':'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>');
+if(page==='dashboard')applyLayout();
 }catch(error){
 console.error('CleaningOS view render failed',page,error);
 const failedPage=page;
@@ -161,6 +191,9 @@ const copyCustom=e.target.closest('[data-custom-copy]');if(copyCustom){
 const last=Array.isArray(state.customRequests)?state.customRequests[0]:null;if(!last)return;
 const message='CleaningOS custom module idea\nTitle: '+last.title+'\nArea: '+last.area+'\nProblem: '+last.problem+'\n\nPrepared in the demo; this has not been sent.';
 try{await navigator.clipboard.writeText(message);copyCustom.textContent='Copied ✓'}catch(err){window.prompt('Copy your request:',message)}return}
+if(e.target.closest('[data-layout-editor]')){layoutEditorOpen=!layoutEditorOpen;render();return}
+const move=e.target.closest('[data-layout-move]');if(move){const p=layoutPrefs(),i=p.order.indexOf(move.dataset.layoutMove),j=i+Number(move.dataset.step);if(i>=0&&j>=0&&j<p.order.length){[p.order[i],p.order[j]]=[p.order[j],p.order[i]];save();render()}return}
+if(e.target.closest('[data-layout-reset]')){state.settings.layout={};layoutEditorOpen=true;save();render();return}
 const navigation=e.target.closest('[data-page]');
 if(navigation){e.preventDefault();go(navigation.dataset.page);return}
 const moreLeads=e.target.closest('[data-fd-more]');if(moreLeads){window.CleaningFrontDoor.ensure(state);state.lifecycle.frontdoor.visibleLeads=Math.min(250,(state.lifecycle.frontdoor.visibleLeads||40)+40);render();return}
@@ -189,6 +222,8 @@ const weekly=e.target.closest('[data-planner-week]');if(weekly){window.CleaningP
 if(e.target.closest('[data-planner-close]')){state.planner.selected=null;save();render();return}
 const jb=e.target.closest('[data-job]');if(jb){activeJob=jb.dataset.job;go('jobs');return}const el=e.target.closest('[data-action]');if(!el)return;const act=el.dataset.action;if(act.startsWith('goto:'))go(act.slice(5));else if(act.startsWith('job:')){activeJob=act.slice(4);go('jobs')}else if(act.startsWith('complete:')){const j=jobs().find(x=>x.id===Number(act.slice(9)));{const result=window.CleaningOperations.change(state,act.slice(9),'status','Completed');if(result.ok){save();render()}else alert(result.reason||'Unable to complete job.')}}else if(act.startsWith('unlock:')){const n=Number(act.slice(7));const feature=extras[n];if(feature){if(!state.modules.includes(n))state.modules.push(n);save();alert(feature[0]+' is an optional future module. Interest saved in this browser. No integration or payment was activated.');render()}}else if(act==='reset'&&confirm('Restore all CleaningOS fictional example data?')){state=seed();activeJob='';window.CleaningOperations.ensure(state);window.CleaningJourney.ensure(state);window.CleaningWinback.ensure(state);window.CleaningLifecycle.ensure(state);window.CleaningFrontDoor.ensure(state);window.CleaningStudio.ensure(state);window.CleaningWinback.loadDemo(state);save();go('dashboard')}});
 $('#app').addEventListener('change',async e=>{const x=e.target;
+if(x.matches('[data-layout-section]')){const p=layoutPrefs(),id=x.dataset.layoutSection;p.hidden=x.checked?p.hidden.filter(v=>v!==id):[...new Set([...p.hidden,id])];save();render();return}
+if(x.matches('[data-layout-metric]')){const p=layoutPrefs(),id=x.dataset.layoutMetric;p.hiddenMetrics=x.checked?p.hiddenMetrics.filter(v=>v!==id):[...new Set([...p.hiddenMetrics,id])];save();render();return}
 if(x.matches('[data-ac-interest]')){const result=window.CleaningAftercare.update(state,x.dataset.acInterest,'interest',x.value);if(!result.ok)alert(result.reason);else{save();render()}return}
 if(x.matches('[data-fd-followup]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdFollowup);if(l){l.followUpDate=x.value;save();render()}return}
 if(x.matches('[data-fd-status]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdStatus);if(l){l.status=x.value;save();render()}return}
