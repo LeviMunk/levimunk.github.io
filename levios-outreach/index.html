@@ -8,45 +8,45 @@
   <meta name="description" content="JobOS: private prospecting and follow-up workspace.">
   <title>JobOS | Private Workspace</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=jobos-outreach-repair2-20261117">
-  <script defer src="./app.js?v=jobos-outreach-repair2-20261117"></script>
+  <link rel="stylesheet" href="./styles.css?v=jobos-simple-v05-20261117">
+  <script defer src="./app.js?v=jobos-simple-v05-20261117"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
-  <script defer src="./cloud.js?v=jobos-outreach-repair2-20261117"></script>
+  <script defer src="./cloud.js?v=jobos-simple-v05-20261117"></script>
 </head>
 <body>
   <div id="app-shell" class="shell" hidden>
     <aside class="sidebar" aria-label="Primary navigation">
-      <div class="brand"><div class="brandmark">J<span>O</span></div><div><strong>LEVIOS</strong><small>OPPORTUNITY COMMAND</small></div></div>
+      <div class="brand"><div class="brandmark">J<span>O</span></div><div><strong>LEVIOS</strong><small>YOUR OPPORTUNITY DESK</small></div></div>
       <div class="workspace-label">WORKSPACE</div>
       <nav id="navigation" class="nav">
         <button type="button" data-view="overview" class="nav-item active"><span class="nav-symbol">◫</span> Dashboard</button>
-        <button type="button" data-view="intake" class="nav-item"><span class="nav-symbol">⇥</span> Intake & Approvals</button>
-        <div class="workspace-label nav-group-label">YOUR FOUR WORKSPACES</div>
+        <div class="workspace-label nav-group-label">WORKSPACES</div>
         <button type="button" data-view="career" class="nav-item"><span class="nav-symbol">▣</span> Employment</button>
         <button type="button" data-view="careeroutreach" class="nav-item"><span class="nav-symbol">◎</span> Career Outreach</button>
         <button type="button" data-view="business" class="nav-item"><span class="nav-symbol">↗</span> MunkOS</button>
-        <button type="button" data-view="networking" class="nav-item"><span class="nav-symbol">◎</span> Networking</button>
-        <div class="workspace-label nav-group-label">TOOLS & ACTIVITY</div>
-        <button type="button" data-view="queue" class="nav-item"><span class="nav-symbol">✉</span> Messages <span id="nav-ready" class="nav-count">0</span></button>
-        <button type="button" data-view="contacts" class="nav-item"><span class="nav-symbol">⊞</span> All Opportunities</button>
-        <button type="button" data-view="pipeline" class="nav-item"><span class="nav-symbol">▤</span> All Pipelines</button>
-        <button type="button" data-view="followups" class="nav-item"><span class="nav-symbol">◷</span> Follow-ups <span id="nav-due" class="nav-count">0</span></button>
-        <button type="button" data-view="insights" class="nav-item"><span class="nav-symbol">◩</span> Insights</button>
-        <button type="button" data-view="strategies" class="nav-item"><span class="nav-symbol">◇</span> Strategy Lab</button>
-      </nav>
-      <div class="sidebar-bottom"><div class="vault-status"><span class="status-dot"></span> Local vault unlocked</div><div class="sidebar-small">Encrypted in browser · Optional cloud sync</div><button id="lock-button" class="sidebar-lock" type="button">⌁ &nbsp; Lock workspace</button></div>
+        <button type="button" data-view="networking" class="nav-item"><span class="nav-symbol">◉</span> Networking</button>
+        <details class="sidebar-more"><summary>More tools <span>⌄</span></summary>
+          <button type="button" data-view="queue" class="nav-item">Messages <span id="nav-ready" class="nav-count">0</span></button>
+          <button type="button" data-view="followups" class="nav-item">Follow-ups <span id="nav-due" class="nav-count">0</span></button>
+          <button type="button" data-view="insights" class="nav-item">Analytics</button>
+          <button type="button" data-view="strategies" class="nav-item">Experiments</button>
+          <button type="button" data-view="intake" class="nav-item">Research intake</button>
+          <button type="button" data-view="contacts" class="nav-item">All records</button>
+          <button type="button" data-view="pipeline" class="nav-item">Pipelines</button>
+        </details>
+      </nav>     <div class="sidebar-bottom"><div class="vault-status"><span class="status-dot"></span> Local vault unlocked</div><div class="sidebar-small">Encrypted in browser · Optional cloud sync</div><button id="lock-button" class="sidebar-lock" type="button">⌁ &nbsp; Lock workspace</button></div>
     </aside>
     <div class="main-area">
       <header class="topbar">
         <div class="mobile-brand"><span>◈</span> JOBOS</div>
         <div class="crumb">PERSONAL WORKSPACE <span>/</span> <strong id="top-view">OVERVIEW</strong></div>
-        <div class="top-actions"><span class="private-pill"><span class="status-dot"></span> PRIVATE · ENCRYPTED</span><button id="add-top" class="button button-primary" type="button">+ Add opportunity</button></div>
+        <div class="top-actions"><span class="private-pill"><span class="status-dot"></span> PRIVATE · ENCRYPTED</span><button id="add-top" class="button button-primary simple-hide-top-add" type="button">+ Add opportunity</button></div>
       </header>
       <main class="content" id="main-content" tabindex="-1">
-        <div class="page-heading"><div><div class="eyebrow" id="eyebrow">THURSDAY, NOVEMBER 12</div><h1 id="page-title">Every opportunity, one place<span class="lime-dot">.</span></h1><p id="page-subtitle">Employment, career outreach, MunkOS clients, and networking in one place.</p></div><button type="button" id="add-main" class="button button-secondary">New prospect <span>↗</span></button></div>
+        <div class="page-heading"><div><div class="eyebrow" id="eyebrow">THURSDAY, NOVEMBER 12</div><h1 id="page-title">Every opportunity, one place<span class="lime-dot">.</span></h1><p id="page-subtitle">Employment, career outreach, MunkOS clients, and networking in one place.</p></div><button type="button" id="add-main" class="button button-secondary simple-hide-top-add">New prospect <span>↗</span></button></div>
         <div id="view-root" aria-live="polite"></div>
       </main>
-      <footer class="footer"><span>JOBOS <b>v0.4</b></span><span>Encrypted local vault · Optional Supabase sync · Back up regularly</span></footer>
+      <footer class="footer"><span>JOBOS <b>v0.5</b></span><span>Encrypted local vault · Optional Supabase sync · Back up regularly</span></footer>
     </div>
   </div>
 
