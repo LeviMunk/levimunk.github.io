@@ -161,14 +161,15 @@ async function downloadBoth(rec){
 }
 function recruiter(rec){const key=keyFor(rec);return key?JOBS[key].recruiter:null;}
 function message(rec,channel='LinkedIn'){
- const key=keyFor(rec);if(!key)return null;
- const p=JOBS[key],person=p.recruiter?.name,applied=!!rec.appliedDate,organization=p.company.replace(/[.!?]+$/,'');
- const greet=person?'Hi '+person.split(' ')[0]+',':'Hello recruiting team,';
+ const key=keyFor(rec);if(!key||!rec?.appliedDate)return null;
+ const p=JOBS[key],person=p.recruiter?.name,organization=p.company.replace(/[.!?]+$/,'');
+ const role=p.title;
+ const greeting=person?'Hi '+person.split(' ')[0]+',':'Hi recruiting team,';
  if(channel==='LinkedIn'){
-  return (person?'Hey '+person.split(' ')[0]+'!':'Hi there!')+' '+(applied?'I just applied for':'I came across')+' the '+p.title+' role at '+organization+' and wanted to say hello. I\'ve worked across marketing, reporting, and running a small business, so it caught my attention. Would love to connect! - Levi';
+  return (person?'Hey '+person.split(' ')[0]+'!':'Hi there!')+' I recently applied for the '+role+' role at '+organization+' and wanted to introduce myself. My background blends marketing, analytics, and business operations, which is why the position stood out. I would love to connect. - Levi';
  }
- return {subject:'Hello about the '+p.title+' role',
- body:'Hi there,\n\n'+(applied?'I just applied for':'I came across')+' the '+p.title+' role at '+organization+' and wanted to introduce myself. I\'ve worked in marketing reporting and operations, and I also ran a small membership business, so the role really caught my eye.\n\nIf there\'s someone on the hiring team I should connect with, I\'d appreciate a nudge in the right direction. You can see some of my work at levimunk.com.\n\nThanks!\nLevi Van Stappen'};
+ return {subject:'Applied for '+role+' at '+organization,
+ body:greeting+'\n\nI recently applied for the '+role+' position at '+organization+' and wanted to reach out personally.\n\nMy experience spans marketing, analytics, and business operations, and the position feels closely aligned with the kind of work I enjoy: connecting useful data to practical improvements.\n\nI would be glad to connect or answer any questions about my application. You can find examples of my work at levimunk.com.\n\nThanks for your time!\nLevi Van Stappen'};
 }
 window.JobOSDocuments={has:rec=>!!keyFor(rec),save,downloadBoth,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
 })();
