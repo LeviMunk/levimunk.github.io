@@ -1,0 +1,46 @@
+name: Sync canonical JobOS into website
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-jobos-site
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Copy canonical JobOS assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://raw.githubusercontent.com/LeviMunk/levios-outreach/main'
+          for file in index.html app.js cloud.js styles.css job-documents.js research-feed.json favicon.svg; do
+            curl --fail --location --silent --show-error --retry 3 "$base/$file" -o "/tmp/jobos-$file"
+            test -s "/tmp/jobos-$file"
+            cp "/tmp/jobos-$file" "jobos/$file"
+            cp "/tmp/jobos-$file" "levios-outreach/$file"
+          done
+          node --check jobos/app.js
+          node --check jobos/cloud.js
+          node --check jobos/job-documents.js
+          node -e "const x=require('./jobos/research-feed.json'); if(!Array.isArray(x.records)||!x.records.some(r=>r.type==='Career')) process.exit(1)"
+      - name: Commit only if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add jobos/ levios-outreach/
+          if git diff --cached --quiet; then
+            echo 'JobOS already synchronized'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Sync JobOS public assets from canonical career repository'
+          git push
