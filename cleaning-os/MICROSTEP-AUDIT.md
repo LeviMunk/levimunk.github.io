@@ -20,7 +20,7 @@
 
 | # | Micro-step | Coverage | Source-grounded observation |
 |---|---|---|---|
-| 00.01 | Create authenticated company/tenant | **M** | No tenant or isolation |
+| 00.01 | Create authenticated company/tenant | **M** | CleaningOS has no verified authenticated tenant. MunkOS foundation reportedly underway; [implementation and T01–T15 acceptance contract](STEP-00-01-COMPANY-TENANT.md). Not verified end-to-end. |
 | 00.02 | Invite owner and staff users | **M** | No login or invitation |
 | 00.03 | Choose solo/small-team/agency mode | **D** | Local Customize setting |
 | 00.04 | Save operating company name | **D** | Browser-local field |
