@@ -68,6 +68,7 @@ function render(){
 const expanded=$('#os-nav-more')?.open||false;
 const content=$('#view');
 try{
+if(window.CleaningAftercare.sync(state))save();
 const view=(views[page]||dashboard)();
 content.innerHTML=view+'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>';
 }catch(error){
@@ -93,6 +94,23 @@ try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){try{window.scrol
 }
 $('#menu').onclick=()=>{const open=!$('.side').classList.contains('open');$('.side').classList.toggle('open',open);$('#menu').setAttribute('aria-expanded',String(open))};
 $('#app').addEventListener('click',async e=>{
+const acCopy=e.target.closest('[data-ac-copy]');if(acCopy){
+const msg=window.CleaningAftercare.message(state,acCopy.dataset.acCopy,acCopy.dataset.acKind);
+if(!msg){alert('Follow-up not found');return}
+try{await navigator.clipboard.writeText(msg);alert('Draft copied. No message was sent.')}
+catch(err){window.prompt('Copy this draft manually:',msg)}
+return
+}
+const acContact=e.target.closest('[data-ac-contacted]');if(acContact){
+if(!confirm('Did you actually contact this customer outside CleaningOS? This only logs your confirmation.'))return;
+const result=window.CleaningAftercare.update(state,acContact.dataset.acContacted,'contacted');
+if(!result.ok)alert(result.reason);else{save();render()}return
+}
+const acReview=e.target.closest('[data-ac-review]');if(acReview){
+if(!confirm('Did you actually send an unbiased feedback request outside CleaningOS?'))return;
+const result=window.CleaningAftercare.update(state,acReview.dataset.acReview,'review-request');
+if(!result.ok)alert(result.reason);else{save();render()}return
+}
 const navigation=e.target.closest('[data-page]');
 if(navigation){e.preventDefault();go(navigation.dataset.page);return}
 const moreLeads=e.target.closest('[data-fd-more]');if(moreLeads){window.CleaningFrontDoor.ensure(state);state.lifecycle.frontdoor.visibleLeads=Math.min(250,(state.lifecycle.frontdoor.visibleLeads||40)+40);render();return}
@@ -121,6 +139,7 @@ const weekly=e.target.closest('[data-planner-week]');if(weekly){window.CleaningP
 if(e.target.closest('[data-planner-close]')){state.planner.selected=null;save();render();return}
 const jb=e.target.closest('[data-job]');if(jb){activeJob=jb.dataset.job;go('jobs');return}const el=e.target.closest('[data-action]');if(!el)return;const act=el.dataset.action;if(act.startsWith('goto:'))go(act.slice(5));else if(act.startsWith('job:')){activeJob=act.slice(4);go('jobs')}else if(act.startsWith('complete:')){const j=jobs().find(x=>x.id===Number(act.slice(9)));{const result=window.CleaningOperations.change(state,act.slice(9),'status','Completed');if(result.ok){save();render()}else alert(result.reason||'Unable to complete job.')}}else if(act.startsWith('unlock:')){const n=Number(act.slice(7));const feature=extras[n];if(feature){if(!state.modules.includes(n))state.modules.push(n);save();alert(feature[0]+' is an optional future module. Interest saved in this browser. No integration or payment was activated.');render()}}else if(act==='reset'&&confirm('Restore all CleaningOS fictional example data?')){state=seed();activeJob='';window.CleaningOperations.ensure(state);window.CleaningJourney.ensure(state);window.CleaningWinback.ensure(state);window.CleaningLifecycle.ensure(state);window.CleaningFrontDoor.ensure(state);window.CleaningWinback.loadDemo(state);save();go('dashboard')}});
 $('#app').addEventListener('change',async e=>{const x=e.target;
+if(x.matches('[data-ac-interest]')){const result=window.CleaningAftercare.update(state,x.dataset.acInterest,'interest',x.value);if(!result.ok)alert(result.reason);else{save();render()}return}
 if(x.matches('[data-fd-followup]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdFollowup);if(l){l.followUpDate=x.value;save();render()}return}
 if(x.matches('[data-fd-status]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdStatus);if(l){l.status=x.value;save();render()}return}
 if(x.matches('[data-fd-template]')){const form=document.querySelector('#fd-campaign-form'),t=window.CleaningFrontDoor.templates[Number(x.value)];if(form&&t)form.elements.message.value=t[1];return}
@@ -143,6 +162,7 @@ else if(x.matches('[data-check]')){const result=window.CleaningOperations.toggle
 else if(x.matches('[data-actual]')){window.CleaningOperations.actual(state,x.dataset.actual,x.value);save();render()}
 else if(x.matches('[data-price]')){const key=x.dataset.price;state.pricing[key]=key==='extra'?x.value==='true':['beds','baths','rate'].includes(key)?Math.max(0,Number(x.value)||0):x.value;save();render()}else if(x.id==='company'){state.company=x.value.trim()||'FreshStart Cleaning Co.';save();render()}else if(x.id==='mode'){state.settings.view=x.value;save();render()}});
 $('#app').addEventListener('submit',e=>{e.preventDefault();const f=e.target,d=new FormData(f);
+if(f.matches('[data-ac-feedback]')){const result=window.CleaningAftercare.update(state,f.dataset.acFeedback,'feedback',{rating:d.get('rating'),note:d.get('note')});if(!result.ok)alert(result.reason);else{save();render()}return}
 if(f.id==='fd-site-form'){state.lifecycle.website={...state.lifecycle.website,headline:String(d.get('headline')||'').slice(0,110),subtitle:String(d.get('subtitle')||'').slice(0,250),cta:String(d.get('cta')||'').slice(0,50)};save();render();return}
 if(f.id==='fd-message-form'){window.CleaningFrontDoor.note(state,d.get('leadId'),d.get('note'));save();render();return}
 if(f.id==='fd-onboarding-form'){const l=window.CleaningFrontDoor.lead(state,d.get('leadId'));if(l){l.onboarding.notes=String(d.get('notes')||'').slice(0,500);l.onboarding.visitDate=String(d.get('visitDate')||'').slice(0,10);l.onboarding.visitTime=String(d.get('visitTime')||'').slice(0,5);l.onboarding.crew=String(d.get('crew')||'').trim().slice(0,80);l.estimate=Math.max(0,Number(d.get('estimate'))||0);save();render()}return}
