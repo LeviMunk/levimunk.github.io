@@ -827,3 +827,51 @@ body[data-industry="cleaning"] .fd-workspace .fd-section-head p{max-width:670px}
 /* FrontDoor progressive data display */
 .fd-more{display:block;width:calc(100% - 24px);margin:12px;padding:12px;background:#EEF7F3;color:#25685F;border:1px solid #C7E3D6;border-radius:10px;font:700 11px 'Manrope',sans-serif;cursor:pointer;text-align:center}
 .fd-more:hover,.fd-more:focus-visible{background:#DBF0E6;outline-offset:2px}
+
+
+/* FrontDoor paint/hit-test stabilization: decorations must never intercept pointer events. */
+body[data-industry="cleaning"] .lc-header-convert{
+  isolation:auto;
+  contain:layout paint;
+  overflow:hidden;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-focus-header,
+body[data-industry="cleaning"] .lc-header-convert .lc-focus-header *,
+body[data-industry="cleaning"] .lc-header-convert .lc-header-backdrop,
+body[data-industry="cleaning"] .lc-header-convert .lc-header-side,
+body[data-industry="cleaning"] .fd-browser-photo::after{
+  pointer-events:none!important;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-focus-header{
+  transform:none!important;
+  filter:none!important;
+  opacity:1;
+  z-index:0;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-focus-header .lc-visual-browser{
+  transform:none!important;
+  box-shadow:0 5px 14px #3C8F6B20;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-header-backdrop{
+  display:none!important;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-header-inner{
+  position:relative;
+  z-index:2;
+}
+body[data-industry="cleaning"] .lc-header-convert .lc-header-inner *{
+  pointer-events:auto;
+}
+body[data-industry="cleaning"] .fd-workspace,
+body[data-industry="cleaning"] .fd-workspace .fd-tabs{
+  position:relative;
+  z-index:1;
+  isolation:auto;
+  transform:none;
+  filter:none;
+  backdrop-filter:none;
+}
+body[data-industry="cleaning"] .fd-workspace::before,
+body[data-industry="cleaning"] .fd-workspace::after{
+  pointer-events:none;
+}
