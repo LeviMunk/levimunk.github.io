@@ -43,10 +43,14 @@ try{
   const draftParsed=new URL(draftUrl);
   const fields={to:draftParsed.searchParams.get('to'),subject:draftParsed.searchParams.get('su'),message:draftParsed.searchParams.get('body')};
   if(fields.to!=='qa@example.org'||!fields.subject?.includes('QA Cleaning Outreach')||!fields.message?.includes('client journey'))throw Error('Open Draft did not prefill correct To, subject and new client-journey message: '+JSON.stringify(fields));
-  const sentDetails=page.locator('details.simple-secondary').filter({hasText:/Sent outreach/});
-  if(await sentDetails.count()===0)throw Error('No Sent Outreach section after Open Draft');
-  if(!(await sentDetails.first().textContent()).includes('QA Cleaning Outreach'))throw Error('Opened contact missing from Sent Outreach section');
+  const activeBusinessText=await page.locator('#view-root').innerText();
+  if(activeBusinessText.includes('Email ready')||activeBusinessText.includes('Held for later')||activeBusinessText.includes('Research updates and import tools')||activeBusinessText.includes('Contact research needed')||activeBusinessText.includes('Sent outreach'))throw Error('MunkOS active queue includes management clutter');
   if(await page.locator('.simple-list > .simple-opportunity').filter({hasText:'QA Cleaning Outreach'}).count())throw Error('Opened contact remained in active outreach');
+  await page.locator('[data-view="manage"]').click();
+  const sentDetails=page.locator('details.simple-secondary').filter({hasText:/Sent outreach/});
+  if(await sentDetails.count()===0)throw Error('Sent Outreach is not accessible from Workspace management');
+  if(!(await sentDetails.first().textContent()).includes('QA Cleaning Outreach'))throw Error('Opened contact missing from Workspace management');
+  if(!(await page.locator('#view-root').innerText()).includes('Contact research needed'))throw Error('Research tools missing from management');
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
   await page.locator('#lock-button').click();
   await page.reload({waitUntil:'domcontentloaded'});
