@@ -46,6 +46,7 @@ try{
   const activeBusinessText=await page.locator('#view-root').innerText();
   if(activeBusinessText.includes('Email ready')||activeBusinessText.includes('Held for later')||activeBusinessText.includes('Research updates and import tools')||activeBusinessText.includes('Contact research needed')||activeBusinessText.includes('Sent outreach'))throw Error('MunkOS active queue includes management clutter');
   if(await page.locator('.simple-list > .simple-opportunity').filter({hasText:'QA Cleaning Outreach'}).count())throw Error('Opened contact remained in active outreach');
+  await page.locator('details.sidebar-more summary').click();
   await page.locator('[data-view="manage"]').click();
   const sentDetails=page.locator('details.simple-secondary').filter({hasText:/Sent outreach/});
   if(await sentDetails.count()===0)throw Error('Sent Outreach is not accessible from Workspace management');
