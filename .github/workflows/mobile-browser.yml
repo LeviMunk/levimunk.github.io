@@ -31,6 +31,8 @@ jobs:
           exit 1
       - name: Check portfolio on Android Chromium and iPhone WebKit
         run: node scripts/mobile-browser-test.mjs
+      - name: Verify JobOS unlock and public jobs in Chromium
+        run: node scripts/jobos-browser-smoke.mjs
       - name: Upload screenshots and test results
         if: always()
         uses: actions/upload-artifact@v4
