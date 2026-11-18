@@ -26,4 +26,21 @@ try{
   console.log(JSON.stringify(result,null,2));
   if(errors.some(s=>/ReferenceError|TypeError|SyntaxError|is not defined|Cannot read/.test(s)))throw Error('Browser runtime errors detected');
   if(!result.hasHoneycomb||!result.hasHarrow)throw Error('Public starter jobs did not appear in Employment after vault unlock');
+  await page.evaluate(async()=>{
+    await window.LeviOutreachImportResearchPack({records:[{name:'QA Cleaning Outreach',type:'Business',industry:'Cleaning Services',location:'Madison, WI',distanceMiles:'100',email:'qa@example.org',website:'https://example.org',sourceUrl:'https://example.org',researchDate:'2026-11-18',verification:'official-site'}]});
+    window.open=(url)=>{window.__jobosDraftTestUrl=url;return {opener:null};};
+  });
+  await page.locator('[data-view="business"]').click();
+  const btn=page.locator('[data-action="opencompose"]').first();
+  await btn.waitFor({state:'visible',timeout:10000});
+  await btn.click();
+  const draftUrl=await page.evaluate(()=>window.__jobosDraftTestUrl||'');
+  const draftParsed=new URL(draftUrl);
+  const fields={to:draftParsed.searchParams.get('to'),subject:draftParsed.searchParams.get('su'),message:draftParsed.searchParams.get('body')};
+  if(fields.to!=='qa@example.org'||!fields.subject?.includes('QA Cleaning Outreach')||!fields.message?.includes('client journey'))throw Error('Open Draft did not prefill correct To, subject and new client-journey message: '+JSON.stringify(fields));
+  const outreach=await page.locator('#view-root').innerText();
+  if(!outreach.includes('Sent outreach')||!outreach.includes('QA Cleaning Outreach'))throw Error('Opening draft did not move contact into Sent Outreach');
+  if(outreach.includes('Businesses to contact\\n')&&await page.locator('.simple-opportunity [data-action="opencompose"]').count())throw Error('Already-opened contact remained in active outreach list');
+  console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
+
 }finally{await browser.close();}
