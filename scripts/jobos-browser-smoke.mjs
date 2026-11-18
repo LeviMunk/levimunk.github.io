@@ -13,6 +13,11 @@ try{
   await page.locator('#vault-confirm').fill('jobos-test-passphrase-2026');
   await page.locator('#vault-submit').click();
   await page.locator('#app-shell').waitFor({state:'visible',timeout:15000});
+  // A personal browser should reopen the encrypted vault without another passphrase.
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#app-shell').waitFor({state:'visible',timeout:15000});
+  if(!(await page.locator('#unlock-screen').evaluate(el=>el.hidden)))throw Error('Remembered browser did not auto-unlock');
+  console.log('PASS remembered browser automatically unlocks after reload');
   await page.waitForTimeout(3500);
   const vaultError=await page.locator('#vault-error').innerText();
   const stateHints=await page.evaluate(()=>({unlockHidden:document.querySelector('#unlock-screen')?.hidden,buttonText:document.querySelector('#vault-submit')?.innerText,viewRootExists:!!document.querySelector('#view-root'),selectedNav:[...document.querySelectorAll('[data-view].active')].map(x=>x.dataset.view)}));
