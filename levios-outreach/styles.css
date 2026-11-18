@@ -114,3 +114,11 @@
 .simple-new-inbox{padding:22px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:18px}
 .simple-new-inbox h2{font:700 21px var(--display);margin:5px 0}.simple-new-inbox p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}.simple-new-inbox .button{flex-shrink:0}
 @media(max-width:650px){.simple-new-inbox{flex-direction:column;align-items:start}}
+
+/* Pre-tailored PDF downloads and sourced recruiter guidance */
+.job-recruiter{margin-top:22px;border-top:1px solid var(--line);padding:23px 0 4px}
+.job-recruiter h3{font-family:var(--display);font-size:18px;margin:8px 0}
+.job-recruiter .simple-email{margin:15px 0;padding:16px 18px}
+.job-recruiter .simple-primary-actions{padding-top:0}
+.simple-primary-actions>.simple-status{font-size:12px;color:var(--muted)}
+@media(max-width:680px){.simple-detail .simple-primary-actions>.button{width:100%;text-align:center}}
