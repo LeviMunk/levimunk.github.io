@@ -73,7 +73,8 @@ document.body.classList.toggle('cos-entry-mode',page==='welcome'||page==='setup'
 try{
 if(window.CleaningAftercare.sync(state))save();
 const view=(views[page]||dashboard)();
-content.innerHTML=view+(page==='welcome'||page==='setup'||page==='builder'?'':'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>');
+const prospectContext=prospectPreview.name&&!['welcome','builder','setup'].includes(page)?'<div class="cos-prospect-context"><div><strong>Prepared for '+esc(prospectPreview.name)+'</strong><span>Personalized navigation · All customer records and metrics below are fictional examples, not your company data.</span></div><button type="button" data-page="welcome">Back to showcase ↗</button></div>':'';
+content.innerHTML=prospectContext+view+(page==='welcome'||page==='setup'||page==='builder'?'':'<p class="footer">All client names, home details, appointments and financial figures are fictional. No customer messages are sent. Demo changes are stored only in your browser.</p>');
 }catch(error){
 console.error('CleaningOS view render failed',page,error);
 const failedPage=page;
