@@ -1,0 +1,52 @@
+
+.pj-root{max-width:1450px;margin:auto;color:#17372e}
+.pj-hero{border-radius:24px;background:radial-gradient(circle at 90% 15%,#285b4c,#102a25 70%);padding:clamp(28px,5vw,64px);color:white}
+.pj-hero>span,.pj-board-heading>span,.pj-panel>span{letter-spacing:.15em;text-transform:uppercase;font-size:11px;font-weight:800;color:#93bba7}
+.pj-hero h1{font-size:clamp(36px,4.7vw,66px);line-height:1.08;letter-spacing:-.045em;max-width:850px;margin:22px 0;color:white}
+.pj-hero h1 em{font-style:normal;color:#b9e7cb}
+.pj-hero p{font-size:17px;max-width:720px;line-height:1.7;color:#e2f0e8}
+.pj-hero>div{display:flex;gap:12px;margin:26px 0 20px;flex-wrap:wrap}
+.pj-hero button,.pj-footer button{background:#c7e9d0;color:#16392a;border:0;border-radius:10px;padding:12px 18px;font-weight:800;cursor:pointer}
+.pj-hero button+button{background:transparent;color:white;border:1px solid #9ecbb8}
+.pj-hero small{display:block;color:#b8d5c7;line-height:1.5}
+.pj-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0 35px}
+.pj-stats>div{background:#fff;border:1px solid #dce6de;padding:22px;border-radius:16px;display:grid;gap:10px}
+.pj-stats small{color:#5c7a6a}
+.pj-stats strong{font-size:32px;color:#19452f}
+.pj-board-heading h2{font-size:32px;letter-spacing:-.03em;margin:8px 0}
+.pj-board-heading p{color:#5b7369;margin:0 0 20px}
+.pj-board{display:grid;grid-template-columns:repeat(6,minmax(165px,1fr));gap:10px;overflow-x:auto;padding-bottom:12px}
+.pj-column{background:#f1f7f2;border:1px solid #d8e5d9;border-radius:16px;padding:12px;min-height:255px}
+.pj-column header{padding:6px 5px 16px;border-bottom:1px solid #d8e5d9;margin-bottom:14px}
+.pj-column header span{font-size:10px;color:#527e69;letter-spacing:.1em;font-weight:800}
+.pj-column h3{font-size:16px;margin:9px 0 5px}
+.pj-column header small{color:#698075}
+.pj-person{display:flex;flex-direction:column;text-align:left;gap:8px;width:100%;border:1px solid #d6e4d8;border-radius:12px;background:white;padding:13px;margin-bottom:9px;cursor:pointer;box-shadow:0 4px 14px #163b2c0a}
+.pj-person.active{border:2px solid #30875b;box-shadow:0 0 0 3px #bbdfc8}
+.pj-person strong{font-size:13px;color:#1a332a}
+.pj-person small{font-size:11px;color:#71867c}
+.pj-route{align-self:flex-start;border-radius:20px;background:#ecf1e9;padding:5px 8px;font-size:10px;font-weight:800;color:#3b7656}
+.pj-route.blocked{background:#fae8e4;color:#994639}
+.pj-route.recover{background:#fff0d4;color:#94651b}
+.pj-route.retain{background:#ddf1e4;color:#256b46}
+.pj-details{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+.pj-panel{background:white;border:1px solid #d8e5dc;border-radius:19px;padding:clamp(20px,2.5vw,32px)}
+.pj-panel h2{font-size:28px;margin:10px 0 18px}
+.pj-panel h3{font-size:17px;margin:18px 0 8px}
+.pj-panel>label{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:13px 0;color:#334f40;font-size:13px;font-weight:650}
+.pj-panel select,.pj-panel input[type=number]{padding:10px;border:1px solid #cdded2;border-radius:8px;min-width:125px}
+.pj-panel input[type=checkbox]{accent-color:#26774d;width:18px;height:18px}
+.pj-event{padding:9px 0;border-bottom:1px solid #edf1eb;color:#597669;font-size:13px}
+.pj-assignment{border-radius:13px;background:#e5f2e9;padding:20px;margin-bottom:22px}
+.pj-assignment.blocked{background:#f9e8e5}
+.pj-assignment.recover{background:#fff1d6}
+.pj-assignment small{font-size:10px;color:#5e8570;letter-spacing:.09em}
+.pj-assignment h3{font-size:25px;margin:8px 0}
+.pj-panel>p{font-size:13px;color:#536e5d;line-height:1.65}
+.pj-disclaimer{padding:12px;border-left:3px solid #d59a4d;background:#fff8e8}
+.pj-footer{text-align:center;margin-top:24px;padding:35px;background:#edf6ef;border-radius:18px}
+.pj-footer strong{font-size:23px}
+.pj-footer p{color:#567363}
+@media(max-width:1100px){.pj-board{grid-template-columns:repeat(6,minmax(190px,1fr))}}
+@media(max-width:760px){.pj-details{grid-template-columns:1fr}.pj-stats{grid-template-columns:1fr 1fr}.pj-hero{border-radius:15px}}
+@media(max-width:460px){.pj-stats{grid-template-columns:1fr}.pj-panel>label{align-items:flex-start;flex-direction:column}.pj-panel select,.pj-panel input[type=number]{width:100%}}
