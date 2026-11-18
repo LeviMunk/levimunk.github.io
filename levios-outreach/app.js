@@ -78,6 +78,16 @@
     const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},encryptionKey,plaintext));
     localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,kdf:'PBKDF2-SHA256',iterations:ITERATIONS,salt:bytesToB64(salt),iv:bytesToB64(iv),ciphertext:bytesToB64(cipher)}));
   }
+  async function importStarterResearch(){
+    // The feed contains only public employer listings and business websites; no personal vault data.
+    // Importing is local, encrypted, deduplicated and never constitutes a sent message or application.
+    const resp=await fetch('./research-feed.json?v=jobos-populated-20261117',{cache:'no-store',signal:AbortSignal.timeout(7000)});
+    if(!resp.ok)throw Error('Research feed unavailable: HTTP '+resp.status);
+    const feed=await resp.json();
+    if(feed?.version!==1||!Array.isArray(feed.records)||feed.records.length>30)throw Error('Research feed format invalid.');
+    const sanitized=feed.records.filter(r=>r&&['Business','Career'].includes(r.type)&&r.verification==='official-site'&&safeUrl(r.sourceUrl)&&r.researchDate);
+    return mergeImport(sanitized,[],{automatic:true});
+  }
   async function openVault(passphrase){
     const stored=localStorage.getItem(STORAGE_KEY);
     if(stored){
@@ -96,7 +106,7 @@
     }
     $('vault-pass').value='';$('vault-confirm').value='';
     $('unlock-screen').hidden=true;$('app-shell').hidden=false;
-    lastActivityAt=Date.now();navigate('overview');window.LeviCloud?.onVaultOpen?.();
+    lastActivityAt=Date.now();navigate('overview');try{await importStarterResearch();}catch(e){console.warn('Starter research not loaded:',e.message);}window.LeviCloud?.onVaultOpen?.();
   }
   function lockVault(){state=null;encryptionKey=null;salt=null;pendingSendId=null;editingId=null;$('app-shell').hidden=true;$('unlock-screen').hidden=false;setAuthMode();window.LeviCloud?.onLock?.();}
   async function persist(){await writeVault();render();window.LeviCloud?.onLocalWrite?.();}
