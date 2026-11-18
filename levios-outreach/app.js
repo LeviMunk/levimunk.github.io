@@ -241,6 +241,7 @@
     if(rec.type==='Career'){
       if(!rec.jobUrl)return {name:'Add verified job link',ready:false};
       if(['Applied','Recruiter Screen','Interview','Offer','Rejected','Withdrawn','Closed'].includes(rec.stage))return {name:'Application recorded',ready:true};
+      if(window.JobOSDocuments?.has(rec))return {name:'Resume & cover letter ready to download',ready:true};
       if(!rec.resumeUrl)return {name:'Prepare ATS resume',ready:false};
       if(!rec.coverLetterUrl)return {name:'Resume linked · cover letter needs decision',ready:true};
       return {name:'Apply and confirm submission',ready:true};
@@ -260,7 +261,7 @@
     const suggested=rec.type==='Business'?businessDraft(rec):rec.type==='Career Outreach'?generalEmploymentDraft(rec):null;
     const draft=rec.draft||suggested?.draft||'',subject=rec.subject||suggested?.subject||'';
     const actions=career?
-      (!applied?'<button class="button button-primary button-small" data-action="prepareats" data-id="'+escapeHtml(rec.id)+'">Generate resume / cover letter</button>':'')+
+      (window.JobOSDocuments?.has(rec)?'<button class="button button-primary button-small" data-action="pdfresume" data-id="'+escapeHtml(rec.id)+'">Download resume PDF</button><button class="button button-secondary button-small" data-action="pdfcover" data-id="'+escapeHtml(rec.id)+'">Download cover letter PDF</button>':'<span class="small subtle">PDF package not prepared yet</span>')+
       (!applied?'<button class="button button-secondary button-small" data-action="applied" data-id="'+escapeHtml(rec.id)+'">Confirm applied</button>':'')+
       (applied&&contact?'<button class="button button-secondary button-small" data-action="recruiterdraft" data-id="'+escapeHtml(rec.id)+'">Recruiter message</button>':''):
       (!rec.draft&&suggested?'<button class="button button-primary button-small" data-action="savedraft" data-id="'+escapeHtml(rec.id)+'">Save suggested draft</button>':'')+
@@ -278,7 +279,7 @@
   function simplifiedCard(r){
     const career=r.type==='Career',title=escapeHtml(r.jobTitle||r.name),score=rankOpportunity(r).score;
     const sub=career?[r.name,r.location,r.salary||'Pay undisclosed']:[r.industry||r.type,r.location,r.stage];
-    const status=career?(r.appliedDate?'Applied':r.resumeUrl?'Materials ready':'Review & apply'):isSent(r)?'Sent':r.draft?.trim()?'Draft ready':'Suggested message ready';
+    const status=career?(r.appliedDate?'Applied':window.JobOSDocuments?.has(r)?'Resume & cover letter ready':r.resumeUrl?'Materials linked':'Package not prepared yet'):isSent(r)?'Sent':r.draft?.trim()?'Draft ready':'Suggested message ready';
     return '<article class="simple-opportunity"><div class="simple-opportunity-main"><div class="simple-opportunity-top"><strong>'+title+'</strong>'+(career?'<span class="simple-score">'+score+'/100</span>':'')+'</div><p>'+escapeHtml(sub.filter(Boolean).join(' · '))+'</p><small>'+escapeHtml(status)+'</small></div><div class="simple-opportunity-actions"><button class="button button-primary button-small" data-action="opendetail" data-id="'+escapeHtml(r.id)+'">'+(career?'View job':'Review')+'</button><button class="button button-secondary button-small" data-action="passlead" data-id="'+escapeHtml(r.id)+'">Pass</button></div></article>';
   }
   function workspace(view){
