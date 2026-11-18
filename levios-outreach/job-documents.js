@@ -160,16 +160,22 @@ async function downloadBoth(rec){
  return [resume,letter];
 }
 function recruiter(rec){const key=keyFor(rec);return key?JOBS[key].recruiter:null;}
-function message(rec,channel='LinkedIn'){
+function recipientIsPersonal(address){
+ const local=String(address||'').trim().toLowerCase().split('@')[0];
+ return !!local&&!/^(jobs?|careers?|hiring|recruit(ing|ment|er|ers)?|talent|hr|humanresources|people|info|hello|contact|team|support|admin|applications|apply)([._+-]|$)/i.test(local);
+}
+function message(rec,channel='LinkedIn',recipientEmail=''){
  const key=keyFor(rec);if(!key||!rec?.appliedDate)return null;
- const p=JOBS[key],person=p.recruiter?.name,organization=p.company.replace(/[.!?]+$/,'');
- const role=p.title;
- const greeting=person?'Hi '+person.split(' ')[0]+',':'Hi recruiting team,';
+ const p=JOBS[key],organization=p.company.replace(/[.!?]+$/,''),role=p.title;
+ const verifiedPerson=(rec.contactVerified==='official'&&rec.person&&recipientIsPersonal(recipientEmail||rec.email))
+  ?String(rec.person).trim().split(/\s+/)[0]:null;
+ const linkedinPerson=rec.contactVerified==='public-profile'&&rec.person
+  ?String(rec.person).trim().split(/\s+/)[0]:p.recruiter?.profile&&p.recruiter?.name?p.recruiter.name.split(/\s+/)[0]:null;
  if(channel==='LinkedIn'){
-  return (person?'Hey '+person.split(' ')[0]+'!':'Hi there!')+' I recently applied for the '+role+' role at '+organization+' and wanted to introduce myself. My background blends marketing, analytics, and business operations, which is why the position stood out. I would love to connect. - Levi';
+  return (linkedinPerson?'Hey '+linkedinPerson+'!':'Hi there!')+' I recently applied for the '+role+' role at '+organization+' and wanted to introduce myself. My background blends marketing, analytics, and business operations, which is why the position stood out. I would love to connect. - Levi';
  }
  return {subject:'Applied for '+role+' at '+organization,
- body:greeting+'\n\nI recently applied for the '+role+' position at '+organization+' and wanted to reach out personally.\n\nMy experience spans marketing, analytics, and business operations, and the position feels closely aligned with the kind of work I enjoy: connecting useful data to practical improvements.\n\nI would be glad to connect or answer any questions about my application. You can find examples of my work at levimunk.com.\n\nThanks for your time!\nLevi Van Stappen'};
+ body:(verifiedPerson?'Hi '+verifiedPerson+',':'Hi recruiting team,')+'\n\nI recently applied for the '+role+' position at '+organization+' and wanted to reach out personally.\n\nMy experience spans marketing, analytics, and business operations, and the position feels closely aligned with the kind of work I enjoy: connecting useful data to practical improvements.\n\nI would be glad to connect or answer any questions about my application. You can find examples of my work at levimunk.com.\n\nThanks for your time!\nLevi Van Stappen'};
 }
 window.JobOSDocuments={has:rec=>!!keyFor(rec),save,downloadBoth,ensure,recruiter,message,filenameFor:(rec,kind)=>{const k=keyFor(rec);return k?filename(JOBS[k],kind):null;}};
 })();

@@ -368,14 +368,26 @@
     const pitch=String(rec.employmentPitch||'marketing analytics, business operations, and process improvement').trim().slice(0,350);
     return {subject:'Quick hello about '+rec.name,draft:greet+'\n\nI came across '+rec.name+' and wanted to say hello. I work across marketing, analytics, and operations, especially '+pitch+'. I like finding practical ways to make teams\' work easier and understand what\'s actually working.\n\nIf that sounds useful to your team, I\'d enjoy connecting. Here\'s a bit about my work: levimunk.com.\n\nThanks!\nLevi'};
   }
+  function recruiterEmailIsTeam(email){
+    const local=String(email||'').trim().toLowerCase().split('@')[0];
+    return !local||/^(jobs?|careers?|hiring|recruit(ing|ment|er|ers)?|talent|hr|humanresources|people|info|hello|contact|team|support|admin|applications|apply)([._+-]|$)/i.test(local)||/^(talentteam|hiringteam|recruitingteam|hrteam|peopleops)$/.test(local);
+  }
+  function recruiterRecipient(rec,publicContact){
+    // Prefer an explicitly verified recruiter email; otherwise fall back to a published team inbox.
+    const personal=rec.contactVerified==='official'&&validMail(rec.email)&&!recruiterEmailIsTeam(rec.email)&&!!firstName(rec.person);
+    if(personal)return {email:rec.email,person:firstName(rec.person),personal:true};
+    const teamEmail=validMail(publicContact?.email)?publicContact.email:rec.contactVerified==='official'&&validMail(rec.email)?rec.email:null;
+    return teamEmail?{email:teamEmail,person:null,personal:false}:null;
+  }
   function recruiterDraft(rec){
-    if(rec.type!=='Career'||!rec.appliedDate||!rec.person||!['official','public-profile'].includes(rec.contactVerified))return null;
-    const verifiedEmail=rec.contactVerified==='official'&&validMail(rec.email),verifiedLinkedIn=rec.contactVerified==='public-profile'&&safeUrl(rec.profile);
-    const channel=rec.channel==='LinkedIn'&&verifiedLinkedIn?'LinkedIn':rec.channel==='Email'&&verifiedEmail?'Email':verifiedEmail?'Email':verifiedLinkedIn?'LinkedIn':null;
+    if(rec.type!=='Career'||!rec.appliedDate)return null;
+    const verifiedLinkedIn=rec.contactVerified==='public-profile'&&!!firstName(rec.person)&&safeUrl(rec.profile);
+    const target=recruiterRecipient(rec,window.JobOSDocuments?.recruiter(rec));
+    const channel=rec.channel==='LinkedIn'&&verifiedLinkedIn?'LinkedIn':rec.channel==='Email'&&target?'Email':target?'Email':verifiedLinkedIn?'LinkedIn':null;
     if(!channel)return null;
-    const greet=firstName(rec.person),role=rec.jobTitle||'the open position';
-    if(channel==='LinkedIn')return {channel,subject:'',draft:'Hey '+greet+'! I recently applied for the '+role+' role at '+rec.name+' and wanted to say hello. My background spans marketing, analytics, and operations, so the opportunity caught my attention. I would love to connect! - Levi'};
-    return {channel,subject:'Applied for '+role+' at '+rec.name,draft:'Hi '+greet+',\n\nI recently applied for the '+role+' position at '+rec.name+' and wanted to reach out personally.\n\nI work across marketing, analytics, and business operations, especially using data to make everyday processes and decisions easier. This position seems like a great fit for that experience.\n\nI would be happy to connect or answer any questions about my application. You can also see some of my work at levimunk.com.\n\nThanks for your time!\nLevi'};
+    const role=rec.jobTitle||'the open position';
+    if(channel==='LinkedIn')return {channel,subject:'',draft:'Hey '+firstName(rec.person)+'! I recently applied for the '+role+' role at '+rec.name+' and wanted to say hello. My background spans marketing, analytics, and operations, so the opportunity caught my attention. I would love to connect! - Levi'};
+    return {channel,subject:'Applied for '+role+' at '+rec.name,draft:(target.personal?'Hi '+target.person+',':'Hi recruiting team,')+'\n\nI recently applied for the '+role+' position at '+rec.name+' and wanted to reach out personally.\n\nI work across marketing, analytics, and business operations, especially using data to make everyday processes and decisions easier. This position seems like a great fit for that experience.\n\nI would be happy to connect or answer any questions about my application. You can also see some of my work at levimunk.com.\n\nThanks for your time!\nLevi'};
   }
   const positiveReply = rec => state.activities.some(a=>a.recordId===rec.id&&a.kind==='replied'&&a.meta?.outcome==='positive');
   function readiness(rec){
@@ -497,11 +509,11 @@
     }
     const recruiter=career?window.JobOSDocuments?.recruiter(r):null;
     const recruiterPanel=career&&r.appliedDate&&recruiter?'<section class="job-recruiter"><div class="eyebrow">RECRUITER OUTREACH</div><h3>'+escapeHtml(recruiter.name||'Hiring team contact')+'</h3><p class="small subtle">'+escapeHtml(recruiter.note||'A role-specific recruiter is not confirmed.')+'</p>'+
-      (recruiter.email?'<p class="small subtle">Public team inbox: '+escapeHtml(recruiter.email)+' · '+escapeHtml(recruiter.emailNote||'')+'</p>':'')+
+      (recruiter.email?'<p class="small subtle">Published hiring inbox: '+escapeHtml(recruiter.email)+' · '+escapeHtml(recruiter.emailNote||'')+'</p>':'')+
       '<div class="simple-email"><span>LINKEDIN MESSAGE · '+(r.appliedDate?'POST-APPLICATION':'INTRODUCTION')+'</span><p>'+escapeHtml(window.JobOSDocuments.message(r,'LinkedIn'))+'</p></div>'+
       '<div class="simple-primary-actions"><button class="button button-secondary" data-action="copyrecruiter" data-id="'+escapeHtml(r.id)+'">Copy LinkedIn message</button>'+
       (recruiter.profile?'<a class="button button-secondary" href="'+escapeHtml(recruiter.profile)+'" target="_blank" rel="noopener noreferrer">View professional profile ↗</a>':'')+
-      (recruiter.email?'<button class="button button-secondary" data-action="emailrecruiter" data-id="'+escapeHtml(r.id)+'">Open recruiter email</button>':'')+
+      (recruiterRecipient(r,recruiter)?'<button class="button button-secondary" data-action="emailrecruiter" data-id="'+escapeHtml(r.id)+'">Open recruiter email</button>':'')+
       (recruiter.search?'<a class="button button-secondary" href="'+escapeHtml(recruiter.search)+'" target="_blank" rel="noopener noreferrer">Find Harrow recruiter ↗</a>':'')+
       '</div></section>':'';
     return '<button class="simple-back" data-action="detailback">← Back to '+escapeHtml(detailReturnView==='business'?'MunkOS':detailReturnView==='career'?'Employment':detailReturnView==='careeroutreach'?'Career Outreach':detailReturnView==='networking'?'Networking':'Dashboard')+'</button>'+
@@ -819,14 +831,20 @@ async function saveStrategy(e){
     catch{notify('Clipboard unavailable. You can select and copy the visible draft.');}
   }
   function openRecruiterEmail(id){
-    const r=findRecord(id),contact=window.JobOSDocuments?.recruiter(r);
-    if(!r||!contact?.email)return notify('No verified team email address is available.');
-    if(!r.appliedDate)return notify('Confirm your job application before opening a recruiter email about applying.');
-    const m=window.JobOSDocuments.message(r,'Email');
+    const r=findRecord(id);
+    if(!r||r.type!=='Career'||!r.appliedDate)return notify('Confirm your job application before opening a recruiter email about applying.');
+    const target=recruiterRecipient(r,window.JobOSDocuments?.recruiter(r));
+    if(!target)return notify('No verified recruiter email or published hiring-team email is available.');
+    const m=window.JobOSDocuments?.has(r)
+      ?window.JobOSDocuments.message(r,'Email',target.email)
+      :recruiterDraft({...r,channel:'Email'});
     if(!m)return notify('The post-application message is not available.');
-    const url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(contact.email)+'&su='+encodeURIComponent(m.subject)+'&body='+encodeURIComponent(m.body);
+    // CC is always opt-in through the saved record, never added from scraped contacts.
+    const cc=String(r.cc||'').split(',').map(x=>x.trim()).filter(x=>validMail(x)&&x.toLowerCase()!==target.email.toLowerCase()).slice(0,3);
+    let url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(target.email)+'&su='+encodeURIComponent(m.subject)+'&body='+encodeURIComponent(m.body||m.draft);
+    if(cc.length)url+='&cc='+encodeURIComponent(cc.join(','));
     window.open(url,'_blank','noopener,noreferrer');
-    notify('Gmail compose opened for the public recruiting inbox. Nothing was sent.');
+    notify('Gmail draft opened for '+(target.personal?target.person:'the hiring team')+'. Nothing was sent.');
   }
   async function prepareATS(id){return downloadJobPDF(id,'Resume');}
 
