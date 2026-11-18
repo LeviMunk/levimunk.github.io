@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-17",
+  "updatedAt": "2026-11-18",
   "description": "Public sourced JobOS starter opportunities only; never applications or sent messages.",
   "records": [
     {
@@ -73,10 +73,10 @@
       "email": "",
       "person": "",
       "profile": "",
-      "offerModule": "CleaningOS · Rebooking / Reactivation",
       "angle": "The company publishes recurring home-cleaning services for Appleton and the Fox Valley. A rebooking reminder campaign could be tested, but no problem is established.",
       "painHypothesis": "The company publishes recurring home-cleaning services for Appleton and the Fox Valley. A rebooking reminder campaign could be tested, but no problem is established.",
-      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent."
+      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent.",
+      "offerModule": "Custom Revenue Dashboard"
     },
     {
       "name": "True Joy Cleaning",
@@ -92,10 +92,10 @@
       "email": "",
       "person": "",
       "profile": "",
-      "offerModule": "CleaningOS · Rebooking / Reactivation",
       "angle": "Publishes weekly and biweekly house-cleaning offerings. Consider optional repeat-booking follow-up and track which reminders lead to a response.",
       "painHypothesis": "Publishes weekly and biweekly house-cleaning offerings. Consider optional repeat-booking follow-up and track which reminders lead to a response.",
-      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent."
+      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent.",
+      "offerModule": "Custom Revenue Dashboard"
     },
     {
       "name": "Queen of Cleaning",
@@ -108,13 +108,15 @@
       "verification": "official-site",
       "stage": "Researched",
       "channel": "Email",
-      "email": "",
+      "email": "hello@queenofcleaningwi.com",
       "person": "",
-      "profile": "",
-      "offerModule": "CleaningOS · Rebooking / Reactivation",
+      "profile": "https://www.instagram.com/annie_queenofcleaning/",
       "angle": "Offers recurring residential and specialty cleaning. Hypothesis: measurement of requests and routine-service retention may be useful; existing systems are unknown.",
       "painHypothesis": "Offers recurring residential and specialty cleaning. Hypothesis: measurement of requests and routine-service retention may be useful; existing systems are unknown.",
-      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent."
+      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent.",
+      "contactSource": "https://queenofcleaningwi.com/privacy-policy/",
+      "socialSource": "https://linktr.ee/queenofcleaning",
+      "offerModule": "Custom Revenue Dashboard"
     },
     {
       "name": "Partners in Grime Fox Cities LLC",
@@ -130,10 +132,10 @@
       "email": "",
       "person": "",
       "profile": "",
-      "offerModule": "CleaningOS · Rebooking / Reactivation",
       "angle": "Public site highlights cleaning services in Fox Cities. Hypothesis: prospective customer follow-up and reactivation reporting could add insight.",
       "painHypothesis": "Public site highlights cleaning services in Fox Cities. Hypothesis: prospective customer follow-up and reactivation reporting could add insight.",
-      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent."
+      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent.",
+      "offerModule": "Custom Revenue Dashboard"
     },
     {
       "name": "Suntastic Home Cleaning",
@@ -146,13 +148,54 @@
       "verification": "official-site",
       "stage": "Researched",
       "channel": "Email",
-      "email": "",
+      "email": "suntastichomecleaning@gmail.com",
       "person": "",
       "profile": "",
-      "offerModule": "CleaningOS · Rebooking / Reactivation",
       "angle": "Public site describes local house-cleaning services. Hypothesis: optional booking reminders and referral tracking could be useful; no unmet need is verified.",
       "painHypothesis": "Public site describes local house-cleaning services. Hypothesis: optional booking reminders and referral tracking could be useful; no unmet need is verified.",
-      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent."
+      "notes": "Public business source verified November 17, 2026. Email address and decision-maker not verified; drafted outreach is a suggestion only. No outreach has been sent.",
+      "contactSource": "https://www.suntastichomecleaning.com/contact-2",
+      "offerModule": "Custom Revenue Dashboard"
+    },
+    {
+      "name": "BowTie Carpet Cleaning",
+      "location": "Appleton, WI",
+      "website": "https://www.bowtiecleaning.com/",
+      "email": "wayne@bowtiecleaning.com",
+      "contactSource": "https://www.bowtiecleaning.com/contact",
+      "angle": "They offer specialized carpet cleaning and service visits. A small report showing which past customers return and which inquiries become bookings could be worth testing.",
+      "type": "Business",
+      "industry": "Local Cleaning & Property Services",
+      "stage": "Researched",
+      "verification": "official-site",
+      "sourceUrl": "https://www.bowtiecleaning.com/contact",
+      "researchDate": "2026-11-18",
+      "channel": "Email",
+      "profile": "",
+      "subject": "",
+      "draft": "",
+      "notes": "Company contact email published on business website. Outreach idea is hypothetical; no revenue problem established.",
+      "offerModule": "Custom Revenue Dashboard"
+    },
+    {
+      "name": "Sparkling Spaces WI",
+      "location": "Appleton, WI",
+      "website": "https://www.sparklingspaceswi.com/",
+      "email": "Info@sparklingspaceswi.com",
+      "contactSource": "https://www.sparklingspaceswi.com/",
+      "angle": "They serve rentals, realtors and commercial spaces. Tracking return customers and which service types bring in work could be worth exploring.",
+      "type": "Business",
+      "industry": "Local Cleaning & Property Services",
+      "stage": "Researched",
+      "verification": "official-site",
+      "sourceUrl": "https://www.sparklingspaceswi.com/",
+      "researchDate": "2026-11-18",
+      "channel": "Email",
+      "profile": "",
+      "subject": "",
+      "draft": "",
+      "notes": "Company contact email published on business website. Outreach idea is hypothetical; no revenue problem established.",
+      "offerModule": "Custom Revenue Dashboard"
     }
   ]
 }
