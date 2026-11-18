@@ -95,6 +95,7 @@ $('#menu').onclick=()=>{const open=!$('.side').classList.contains('open');$('.si
 $('#app').addEventListener('click',async e=>{
 const navigation=e.target.closest('[data-page]');
 if(navigation){e.preventDefault();go(navigation.dataset.page);return}
+const moreLeads=e.target.closest('[data-fd-more]');if(moreLeads){window.CleaningFrontDoor.ensure(state);state.lifecycle.frontdoor.visibleLeads=Math.min(250,(state.lifecycle.frontdoor.visibleLeads||40)+40);render();return}
 const ftab=e.target.closest('[data-fd-tab]');if(ftab){state.lifecycle.frontdoor.tab=ftab.dataset.fdTab;save();render();return}
 const fl=e.target.closest('[data-fd-lead]');if(fl){state.lifecycle.frontdoor.selectedLead=fl.dataset.fdLead;save();render();return}
 const fs=e.target.closest('[data-fd-start-onboard]');if(fs){state.lifecycle.frontdoor.selectedLead=fs.dataset.fdStartOnboard;state.lifecycle.frontdoor.tab='onboarding';save();render();return}
