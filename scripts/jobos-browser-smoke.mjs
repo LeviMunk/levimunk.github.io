@@ -38,9 +38,10 @@ try{
   const draftParsed=new URL(draftUrl);
   const fields={to:draftParsed.searchParams.get('to'),subject:draftParsed.searchParams.get('su'),message:draftParsed.searchParams.get('body')};
   if(fields.to!=='qa@example.org'||!fields.subject?.includes('QA Cleaning Outreach')||!fields.message?.includes('client journey'))throw Error('Open Draft did not prefill correct To, subject and new client-journey message: '+JSON.stringify(fields));
-  const outreach=await page.locator('#view-root').innerText();
-  if(!outreach.includes('Sent outreach')||!outreach.includes('QA Cleaning Outreach'))throw Error('Opening draft did not move contact into Sent Outreach');
-  if(outreach.includes('Businesses to contact\\n')&&await page.locator('.simple-opportunity [data-action="opencompose"]').count())throw Error('Already-opened contact remained in active outreach list');
+  const sentDetails=page.locator('details.simple-secondary').filter({hasText:/Sent outreach/});
+  if(await sentDetails.count()===0)throw Error('No Sent Outreach section after Open Draft');
+  if(!(await sentDetails.first().textContent()).includes('QA Cleaning Outreach'))throw Error('Opened contact missing from Sent Outreach section');
+  if(await page.locator('.simple-list > .simple-opportunity').filter({hasText:'QA Cleaning Outreach'}).count())throw Error('Opened contact remained in active outreach');
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
 
 }finally{await browser.close();}
