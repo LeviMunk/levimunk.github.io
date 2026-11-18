@@ -48,5 +48,11 @@ try{
   if(!(await sentDetails.first().textContent()).includes('QA Cleaning Outreach'))throw Error('Opened contact missing from Sent Outreach section');
   if(await page.locator('.simple-list > .simple-opportunity').filter({hasText:'QA Cleaning Outreach'}).count())throw Error('Opened contact remained in active outreach');
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
+  await page.locator('#lock-button').click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#unlock-screen').waitFor({state:'visible',timeout:10000});
+  if(!(await page.locator('#app-shell').evaluate(el=>el.hidden)))throw Error('Lock & forget did not revoke remembered browser key');
+  console.log('PASS remembered key revoked by Lock & forget');
+
 
 }finally{await browser.close();}
