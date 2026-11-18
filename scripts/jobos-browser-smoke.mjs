@@ -30,12 +30,19 @@ try{
   const result={errors,traces,vaultError,stateHints,overviewHTML:overviewHTML.slice(0,1800),shellHTML,overview:overview.slice(0,1800),jobs:jobs.slice(0,2500),jobHTML:(await page.locator('#view-root').innerHTML()).slice(0,1800),hasHoneycomb:jobs.includes('Marketing Ops Analyst'),hasHarrow:jobs.includes('Marketing Operations Coordinator')};
   console.log(JSON.stringify(result,null,2));
   if(errors.some(s=>/ReferenceError|TypeError|SyntaxError|is not defined|Cannot read/.test(s)))throw Error('Browser runtime errors detected');
-  if(!result.hasHoneycomb||!result.hasHarrow)throw Error('Public starter jobs did not appear in Employment after vault unlock');
+  if(!result.hasHoneycomb)throw Error('Qualified active job not visible in Employment');
+  if(await page.locator('#view-root #search-input').count())throw Error('Employment still contains search input');
+  if(jobs.includes('Public jobs')||jobs.includes('Refresh & import jobs')||jobs.includes('interview and recruiter review')||jobs.includes('Jobs worth applying to'))throw Error('Employment still shows research or helper sections');
+  if(await page.locator('#view-root [data-action="opendetail"]').count()!==1)throw Error('Employment should show exactly one active job in smoke fixture');
   await page.evaluate(async()=>{
     await window.LeviOutreachImportResearchPack({records:[{name:'QA Cleaning Outreach',type:'Business',industry:'Cleaning Services',location:'Madison, WI',distanceMiles:'100',email:'qa@example.org',website:'https://example.org',sourceUrl:'https://example.org',researchDate:'2026-11-18',verification:'official-site'}]});
     window.open=(url)=>{window.__jobosDraftTestUrl=url;return {opener:null};};
   });
   await page.locator('[data-view="business"]').click();
+  if(await page.locator('#view-root #search-input').count())throw Error('MunkOS still contains search input');
+  if(await page.locator('#view-root .simple-opportunity').count()!==1)throw Error('Unexpected number of active MunkOS prospects');
+  if(await page.locator('.compact-workspace .page-heading p').isVisible())throw Error('MunkOS page subtitle still visible');
+
   const btn=page.locator('[data-action="opencompose"]').first();
   await btn.waitFor({state:'visible',timeout:10000});
   await btn.click();
@@ -52,6 +59,9 @@ try{
   if(await sentDetails.count()===0)throw Error('Sent Outreach is not accessible from Workspace management');
   if(!(await sentDetails.first().textContent()).includes('QA Cleaning Outreach'))throw Error('Opened contact missing from Workspace management');
   if(!(await page.locator('#view-root').innerText()).includes('Contact research needed'))throw Error('Research tools missing from management');
+  const manageText=await page.locator('#view-root').innerText();
+  if(!manageText.includes('Applied jobs')||!manageText.includes('Job research and import'))throw Error('Applied jobs or job research not accessible in management');
+
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
   await page.locator('#lock-button').click();
   await page.reload({waitUntil:'domcontentloaded'});
