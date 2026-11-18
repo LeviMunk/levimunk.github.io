@@ -875,3 +875,36 @@ body[data-industry="cleaning"] .fd-workspace::before,
 body[data-industry="cleaning"] .fd-workspace::after{
   pointer-events:none;
 }
+
+
+/* Consistent FrontDoor form controls; Firefox textarea previously had native sizing. */
+body[data-industry="cleaning"] .fd-workspace .field{
+  display:block;
+  width:100%;
+  min-width:0;
+  margin:12px 0;
+}
+body[data-industry="cleaning"] .fd-workspace .field input:not([type="checkbox"]),
+body[data-industry="cleaning"] .fd-workspace .field textarea,
+body[data-industry="cleaning"] .fd-workspace .field select{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  margin-top:7px;
+  padding:11px 12px;
+  border:1px solid #C8DFD7;
+  border-radius:9px;
+  background:#FFFFFF;
+  color:#234B4B;
+  font:500 12px/1.55 'Manrope',sans-serif;
+  box-sizing:border-box;
+}
+body[data-industry="cleaning"] .fd-workspace .field textarea{
+  min-height:92px;
+  resize:vertical;
+}
+body[data-industry="cleaning"] .fd-workspace .field :is(input,textarea,select):focus-visible{
+  outline:2px solid #3D9587;
+  outline-offset:2px;
+}
