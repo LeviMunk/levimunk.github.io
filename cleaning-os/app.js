@@ -173,7 +173,7 @@ const focusButton=e.target.closest('[data-showcase-focus]');if(focusButton){show
 const showcase=e.target.closest('[data-showcase]');if(showcase){
  const action=showcase.dataset.showcase;
  if(action==='builder'){go('builder');return}
- if(action==='explore'){try{localStorage.setItem(entryKey,'demo')}catch(err){}go('dashboard');return}
+ if(action==='explore'){try{localStorage.setItem(entryKey,'demo')}catch(err){}go('pipeline');return}
  if(action==='journey'){try{localStorage.setItem(entryKey,'demo')}catch(err){}go('journey');return}
  if(action==='focus'){try{localStorage.setItem(entryKey,'demo')}catch(err){}go(window.CleaningWelcome.chooseFocus(showcaseFocus).route);return}
 }
