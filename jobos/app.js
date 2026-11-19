@@ -488,7 +488,7 @@
       const fields=kind==='experience'
         ?[['company','Employer'],['title','Job title'],['location','Location'],['startDate','Start (YYYY-MM)'],['endDate','End (YYYY-MM or Present)'],['description','Responsibilities / achievements']]
         :[['school','Institution'],['degree','Degree or credential'],['field','Field of study'],['startDate','Start (YYYY-MM)'],['endDate','End (YYYY-MM)']];
-      const items=entries.map((entry,i)=>'<article class="card" style="padding:12px;margin:8px 0"><strong>'+escapeHtml(entry[fields[0][0]])+' · '+escapeHtml(entry[fields[1][0]])+'</strong><p class="small subtle">'+escapeHtml([entry.startDate,entry.endDate].filter(Boolean).join(' → '))+' · '+(entry.verifiedAt?'Verified':'Unverified')+'</p><button class="button button-secondary button-small" data-action="applyremoveentry" data-kind="'+kind+'" data-index="'+i+'">Remove</button></article>').join('');
+      const items=entries.map((entry,i)=>'<article class="card" style="padding:12px;margin:8px 0"><strong>'+escapeHtml(entry[fields[0][0]])+' · '+escapeHtml(entry[fields[1][0]])+'</strong><p class="small subtle">'+escapeHtml([entry.startDate,entry.endDate].filter(Boolean).join(' → '))+' · '+(entry.verifiedAt?'Verified':'Needs your confirmation')+'</p><div class="simple-links"><button class="button button-secondary button-small" data-action="applyeditentry" data-kind="'+kind+'" data-index="'+i+'">Review & edit</button><button class="button button-secondary button-small" data-action="applyremoveentry" data-kind="'+kind+'" data-index="'+i+'">Remove</button></div></article>').join('');
       return '<h3 style="margin-top:22px">'+label+'</h3><p>Only entries you verify are exported to the extension. Use accurate dates, not estimates.</p>'+items+
         '<form class="apply-entry-form" data-kind="'+kind+'"><div class="simple-links" style="align-items:flex-start;gap:12px">'+fields.map(([field,title])=>'<label class="field" style="min-width:195px;flex:1"><span>'+escapeHtml(title)+'</span>'+(field==='description'?'<textarea name="'+field+'" maxlength="1500" rows="3"></textarea>':'<input name="'+field+'" maxlength="160" '+(field===fields[0][0]||field===fields[1][0]?'required':'')+'>')+'</label>').join('')+'</div>'+
         '<label class="field" style="display:flex;align-items:center;gap:8px;margin:10px 0"><input type="checkbox" name="confirmEntry" required style="width:auto"><span>I checked the employer/institution, title/credential and dates.</span></label>'+
@@ -496,6 +496,7 @@
     };
     return '<details class="simple-secondary"><summary>JobOS Apply · master profile and saved answers'+(isVerified?' · verified':'')+'</summary>'+
       '<p>Information is stored in your existing encrypted JobOS vault. Check all facts before verifying. No application or form is submitted automatically.</p>'+
+      '<div class="card" style="padding:15px;margin:12px 0"><strong>Import résumé suggestions</strong><p>Load a private JobOS résumé import file. Existing verified fields and history are preserved; imported details remain unverified until you review them.</p><input type="file" id="apply-resume-import" accept="application/json,.json" aria-label="Select private résumé suggestions JSON file"></div>'+
       '<form id="apply-profile-form"><div class="simple-links" style="align-items:flex-start;gap:12px">'+fields+'</div>'+
       '<label class="field" style="margin:12px 0;display:flex;align-items:center;gap:8px"><input type="checkbox" name="confirmFacts" required style="width:auto"><span>I reviewed these details and confirm they are accurate.</span></label>'+
       '<button type="submit" class="button button-primary button-small">Verify & save profile</button> '+
@@ -512,6 +513,61 @@
       '<button class="button button-primary button-small" data-action="applycopyprofile" '+(!isVerified?'disabled title="Verify your profile first"':'')+'>Copy verified autofill data</button>'+
       '<p class="small subtle">Copying exposes the information to your clipboard until replaced. The extension never sends or submits an application for you.</p></details>';
   }
+  function editApplyEntry(kind,index){
+    if(!['experience','education'].includes(kind)||!Number.isInteger(index))return;
+    const entries=window.JobOSApply.normalizeEntries(kind==='experience'?state.applyExperience:state.applyEducation,kind);
+    const entry=entries[index];
+    const form=document.querySelector('.apply-entry-form[data-kind="'+kind+'"]');
+    if(!entry||!form)return;
+    for(const field of Object.keys(entry)){
+      if(field==='verifiedAt')continue;
+      const el=form.elements.namedItem(field);
+      if(el)el.value=entry[field]||'';
+    }
+    form.dataset.editIndex=String(index);
+    const submit=form.querySelector('button[type="submit"]');
+    if(submit)submit.textContent='Confirm & save reviewed '+kind;
+    form.scrollIntoView({block:'center',behavior:'smooth'});
+    form.elements.namedItem('confirmEntry').checked=false;
+  }
+  async function importApplySuggestions(file){
+    const input=document.getElementById('apply-resume-import');
+    try{
+      if(!state||!window.JobOSApply)return;
+      if(!file||file.size>150000)throw Error('Select a JSON file under 150 KB.');
+      const raw=JSON.parse(await file.text());
+      if(raw.format!=='jobos-resume-suggestions-v1'||!raw.profile||!Array.isArray(raw.experience)||!Array.isArray(raw.education))
+        throw Error('Not a supported JobOS résumé suggestions file.');
+      const api=window.JobOSApply;
+      const suggested=api.normalizeProfile(raw.profile);
+      if(api.validProfile(suggested).length)throw Error('Source profile has invalid contact or URL fields.');
+      const current=api.normalizeProfile(state.applicationProfile||{});
+      let addedFields=0;
+      for(const field of api.FIELDS){
+        if(!current[field]&&suggested[field]){current[field]=suggested[field];addedFields++;}
+      }
+      const merge=(key,kind,max)=>{
+        const old=api.normalizeEntries(state[key]||[],kind),fresh=api.normalizeEntries(raw[kind]||[],kind);
+        const first=kind==='experience'?'company':'school',second=kind==='experience'?'title':'degree';
+        let inserted=0;
+        for(const item of fresh){
+          if(old.length>=max)break;
+          const dup=old.some(x=>x[first].toLowerCase()===item[first].toLowerCase()&&x[second].toLowerCase()===item[second].toLowerCase());
+          if(dup)continue;
+          old.push({...item,verifiedAt:''});inserted++;
+        }
+        state[key]=old;return inserted;
+      };
+      const experience=merge('applyExperience','experience',15),education=merge('applyEducation','education',10);
+      state.applicationProfile=current;
+      // Any previously verified profile must be re-reviewed if we add new content.
+      if(addedFields)state.applicationProfileVerifiedAt='';
+      activity('','apply-resume-import','Imported unverified résumé suggestions', '',{profileFields:addedFields,experience,education});
+      await persist();
+      notify('Imported '+addedFields+' contact fields, '+experience+' jobs and '+education+' education entries. Review and verify before autofilling.');
+    }catch(err){notify('Résumé suggestions not imported: '+err.message);}
+    finally{if(input)input.value='';}
+  }
   async function saveApplyEntry(event){
     event.preventDefault();
     const form=event.target,kind=form.dataset.kind;
@@ -524,10 +580,12 @@
     if(raw.endDate&&!/^(?:\d{4}(?:-\d{2})?|Present)$/i.test(raw.endDate))return notify('End date must be YYYY, YYYY-MM or Present.');
     const collection=kind==='experience'?'applyExperience':'applyEducation';
     const existing=window.JobOSApply.normalizeEntries(state[collection]||[],kind);
-    if(existing.length>=(kind==='experience'?15:10))return notify('History limit reached.');
+    if(existing.length>=(kind==='experience'?15:10)&&!form.dataset.editIndex)return notify('History limit reached.');
     const next=window.JobOSApply.normalizeEntries([{...raw,verifiedAt:new Date().toISOString()}],kind);
     if(!next.length)return notify('Entry incomplete.');
-    state[collection]=[...existing,...next];
+    const editIndex=form.dataset.editIndex===''?NaN:Number(form.dataset.editIndex);
+    if(Number.isInteger(editIndex)&&editIndex>=0&&editIndex<existing.length){existing[editIndex]=next[0];state[collection]=existing;}
+    else state[collection]=[...existing,...next];
     activity('','apply-history','Verified '+kind+' history entry saved');
     await persist();notify('Verified '+kind+' saved in encrypted JobOS vault.');
   }
@@ -1028,7 +1086,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='applycopyprofile')return copyApplyProfile();if(action==='applyremoveentry')return removeApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyremoveanswer')return removeApplyAnswer(Number(el.dataset.index));if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='applycopyprofile')return copyApplyProfile();if(action==='applyremoveentry')return removeApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyeditentry')return editApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyremoveanswer')return removeApplyAnswer(Number(el.dataset.index));if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
@@ -1062,6 +1120,7 @@ async function saveStrategy(e){
   $('add-main').addEventListener('click',()=>editRecord());$('add-top').addEventListener('click',()=>editRecord());
   $('lock-button').addEventListener('click',async()=>{lockVault();await forgetThisBrowser();notify('Locked and removed remembered access on this browser.');});
   $('import-file').addEventListener('change',e=>importFile(e.target.files?.[0]));
+  document.addEventListener('change',e=>{if(e.target?.id==='apply-resume-import')importApplySuggestions(e.target.files?.[0]);});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state&&Date.now()-lastActivityAt>20*60*1000)lockVault();});
   setInterval(()=>{if(state&&Date.now()-lastActivityAt>20*60*1000)lockVault();},60_000);
   if(!globalThis.crypto?.subtle){$('vault-error').textContent='Secure browser encryption is unavailable. Use HTTPS or localhost in a modern browser.';$('vault-submit').disabled=true;}
