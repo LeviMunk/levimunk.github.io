@@ -13,6 +13,8 @@ try{
   await page.locator('#vault-confirm').fill('jobos-test-passphrase-2026');
   await page.locator('#vault-submit').click();
   await page.locator('#app-shell').waitFor({state:'visible',timeout:15000});
+  // Finish saving the trusted-browser key before deliberately reloading.
+  await page.waitForFunction(()=>!document.querySelector('#vault-submit')?.disabled);
   // A personal browser should reopen the encrypted vault without another passphrase.
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#app-shell').waitFor({state:'visible',timeout:15000});
