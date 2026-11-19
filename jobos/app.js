@@ -465,6 +465,81 @@
       ?'<div class="simple-list">'+active.slice(0,50).map(simplifiedCard).join('')+'</div>'
       :'<div class="card simple-empty"><h3>All caught up</h3><p>'+(career?'No active jobs waiting for an application.':'No active outreach waiting for action.')+'</p></div>';
   }
+  const APPLY_FIELD_LABELS=[
+    ['firstName','First name'],['lastName','Last name'],['email','Email address'],
+    ['phone','Phone'],['city','City'],['state','State / region'],['postalCode','ZIP / postal code'],
+    ['linkedinUrl','LinkedIn profile URL'],['portfolioUrl','Portfolio website URL'],
+    ['currentCompany','Current employer'],['currentTitle','Current position']
+  ];
+  function applyProfilePanel(){
+    const api=window.JobOSApply;
+    if(!api)return '<p class="small subtle">Application autofill module unavailable. Refresh JobOS.</p>';
+    const p=api.normalizeProfile(state.applicationProfile||{});
+    const answers=api.normalizeAnswers(state.screeningAnswers||[]);
+    const isVerified=!!state.applicationProfileVerifiedAt;
+    const fields=APPLY_FIELD_LABELS.map(([key,label])=>'<label class="field" style="min-width:200px;flex:1"><span>'+escapeHtml(label)+'</span><input name="'+key+'" maxlength="400" value="'+escapeHtml(p[key])+'" autocomplete="off"></label>').join('');
+    const list=answers.map((x,i)=>'<article class="card" style="padding:12px;margin:8px 0"><strong>'+escapeHtml(x.question)+'</strong><p class="small subtle">'+escapeHtml(x.answer)+'</p><div class="simple-links"><span class="small subtle">'+(x.verifiedAt?'Verified answer':'Needs review')+'</span><button class="button button-secondary button-small" data-action="applyremoveanswer" data-index="'+i+'">Remove answer</button></div></article>').join('');
+    return '<details class="simple-secondary"><summary>JobOS Apply · master profile and saved answers'+(isVerified?' · verified':'')+'</summary>'+
+      '<p>Information is stored in your existing encrypted JobOS vault. Check all facts before verifying. No application or form is submitted automatically.</p>'+
+      '<form id="apply-profile-form"><div class="simple-links" style="align-items:flex-start;gap:12px">'+fields+'</div>'+
+      '<label class="field" style="margin:12px 0;display:flex;align-items:center;gap:8px"><input type="checkbox" name="confirmFacts" required style="width:auto"><span>I reviewed these details and confirm they are accurate.</span></label>'+
+      '<button type="submit" class="button button-primary button-small">Verify & save profile</button> '+
+      '<span class="small subtle">'+(isVerified?'Last verified '+escapeHtml(state.applicationProfileVerifiedAt):'Not verified yet')+'</span></form>'+
+      '<h3 style="margin-top:22px">Saved screening answers</h3>'+
+      '<p>Only exact matches to verified, non-sensitive questions are filled. Legal, demographic, salary, and consent questions are always left for you.</p>'+list+
+      '<form id="apply-answer-form"><label class="field"><span>Exact application question</span><input name="question" maxlength="300" required placeholder="e.g., Which analytics platforms have you used?"></label>'+
+      '<label class="field"><span>Your verified response</span><textarea name="answer" rows="3" maxlength="2500" required></textarea></label>'+
+      '<label class="field" style="display:flex;align-items:center;gap:8px;margin:10px 0"><input type="checkbox" name="confirmAnswer" required style="width:auto"><span>I confirm this answer is accurate.</span></label>'+
+      '<button type="submit" class="button button-secondary button-small">Save verified answer</button></form>'+
+      '<h3 style="margin-top:22px">Chrome extension handoff</h3>'+
+      '<p>Install the unpacked JobOS Apply extension from the repository. Copy this profile while your vault is unlocked, paste it into the extension, then fill supported forms from the extension toolbar. The extension keeps data only for your current browser session.</p>'+
+      '<button class="button button-primary button-small" data-action="applycopyprofile" '+(!isVerified?'disabled title="Verify your profile first"':'')+'>Copy verified autofill data</button>'+
+      '<p class="small subtle">Copying exposes the information to your clipboard until replaced. The extension never sends or submits an application for you.</p></details>';
+  }
+  async function saveApplyProfile(event){
+    event.preventDefault();
+    if(!state||!window.JobOSApply)return;
+    const form=event.target,values=Object.fromEntries(new FormData(form).entries());
+    if(values.confirmFacts!=='on')return notify('Review and confirm the profile details first.');
+    const profile=window.JobOSApply.normalizeProfile(values);
+    const errors=window.JobOSApply.validProfile(profile);
+    if(errors.length)return notify(errors.join(' '));
+    if(!profile.firstName||!profile.lastName||!profile.email)return notify('Name and email are needed for a verified profile.');
+    state.applicationProfile=profile;state.applicationProfileVerifiedAt=new Date().toISOString();
+    activity('','apply-profile','User verified application master profile');
+    await persist();notify('Verified application profile saved in the encrypted vault.');
+  }
+  async function saveApplyAnswer(event){
+    event.preventDefault();
+    if(!state||!window.JobOSApply)return;
+    const data=new FormData(event.target);
+    const question=String(data.get('question')||'').trim(),answer=String(data.get('answer')||'').trim();
+    if(window.JobOSApply.isSensitiveQuestion(question))return notify('Sensitive, legal, salary, and demographic questions must be answered manually.');
+    if(!question||!answer)return notify('A question and answer are required.');
+    if(data.get('confirmAnswer')!=='on')return notify('Review and verify your answer first.');
+    const current=window.JobOSApply.normalizeAnswers(state.screeningAnswers||[]);
+    const key=window.JobOSApply.questionKey(question);
+    const filtered=current.filter(a=>window.JobOSApply.questionKey(a.question)!==key);
+    if(filtered.length>=100)return notify('Answer library is full (100 entries).');
+    state.screeningAnswers=[...filtered,{question:question.slice(0,300),answer:answer.slice(0,2500),verifiedAt:new Date().toISOString()}];
+    activity('','apply-answer','Saved verified screening question');
+    await persist();notify('Verified screening answer saved.');
+  }
+  async function removeApplyAnswer(index){
+    const answers=window.JobOSApply?.normalizeAnswers(state.screeningAnswers||[])||[];
+    if(!Number.isInteger(index)||index<0||index>=answers.length)return;
+    answers.splice(index,1);state.screeningAnswers=answers;
+    activity('','apply-answer','Removed saved screening answer');
+    await persist();notify('Saved answer removed.');
+  }
+  async function copyApplyProfile(){
+    if(!state?.applicationProfileVerifiedAt)return notify('Verify your master profile first.');
+    try{
+      const pack=window.JobOSApply.packageForExtension(state.applicationProfile,state.screeningAnswers||[]);
+      await navigator.clipboard.writeText(JSON.stringify(pack));
+      notify('Verified autofill data copied. Paste into the JobOS Apply extension; clear clipboard afterward.');
+    }catch(e){notify('Unable to copy autofill data: '+e.message);}
+  }
   function managementView(){
     const records=state.records.filter(r=>!isPassed(r));
     const sent=records.filter(r=>r.type!=='Career'&&isSent(r)).sort(opportunitySort);
@@ -472,6 +547,7 @@
     const contact=records.filter(r=>r.type==='Business'&&!munkosContactReady(r));
     const held=records.filter(r=>r.type==='Career'&&!jobMeetsThreshold(r)&&!r.appliedDate);
     const applied=records.filter(r=>r.type==='Career'&&(!!r.appliedDate||['Applied','Recruiter Screen','Interview','Offer'].includes(r.stage)));
+    const applicationTools=applyProfilePanel();
     const section=(title,items,description)=>'<details class="simple-secondary"><summary>'+escapeHtml(title)+' · '+items.length+'</summary><p>'+escapeHtml(description)+'</p>'+(items.length?'<div class="simple-list">'+items.slice(0,100).map(simplifiedCard).join('')+'</div>':'<p>None at the moment.</p>')+'</details>';
     return '<div class="simple-workspace-heading"><div><h2>Workspace management</h2><p>Sent history, held prospects, contact research, and source updates live here instead of below the active opportunities.</p></div></div>'+
       section('Sent outreach',sent,'Records and follow-ups are retained after opening a Gmail draft.')+
@@ -479,6 +555,7 @@
       section('Contact research needed',contact,'These businesses need a public email or social contact before outreach.')+
       section('Applied jobs',applied,'Confirmed applications and their follow-up history are kept here.')+
       section('Other job research',held,'Jobs that do not currently meet the scoring cutoff.')+
+      applicationTools+
       '<details class="simple-secondary"><summary>Job research and import</summary>'+starterJobsPanel()+careerInboxPanel()+'</details>'+
       '<details class="simple-secondary"><summary>Research updates and import tools</summary>'+stagedResearchPanel('all')+'</details>'+
       '<div class="simple-links"><button class="button button-secondary button-small" data-action="new">+ Add opportunity</button><button class="button button-secondary button-small" data-nav="contacts">All records</button><button class="button button-secondary button-small" data-nav="followups">Follow-ups</button><button class="button button-secondary button-small" data-action="researchsetup">Cloud & Gmail settings</button></div>';
@@ -907,7 +984,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='applycopyprofile')return copyApplyProfile();if(action==='applyremoveanswer')return removeApplyAnswer(Number(el.dataset.index));if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
@@ -931,6 +1008,7 @@ async function saveStrategy(e){
       else btn.textContent=localStorage.getItem(STORAGE_KEY)?'Unlock my workspace ↗':'Create my private workspace ↗';
     }
   });
+  document.addEventListener('submit',e=>{if(e.target.id==='apply-profile-form')return saveApplyProfile(e);if(e.target.id==='apply-answer-form')return saveApplyAnswer(e);});
   $('record-form').addEventListener('submit',saveRecord);
   $('strategy-form').addEventListener('submit',saveStrategy);
   $('reply-form').addEventListener('submit',saveReplyReview);
