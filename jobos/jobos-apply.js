@@ -84,5 +84,48 @@
     const answer=normalizeAnswers(answers).find(a=>a.verifiedAt&&questionKey(a.question)===key);
     return answer?.answer||null;
   }
-  return {VERSION,FIELDS,questionKey,isSensitiveQuestion,normalizeProfile,validProfile,normalizeAnswers,normalizeEntries,verifiedEntries,entryValue,EXPERIENCE_FIELDS,EDUCATION_FIELDS,packageForExtension,parsePackage,matchingAnswer};
+
+  // Conservative topic matching: only user-approved answers can be suggested for autofill.
+  // Broad topic matches are intentionally not used for unattended choice/radio fields.
+  const TOPICS={
+    analytics:['analytics','analyze','analysis','data','metrics','reporting','insights','measurement','performance'],
+    social:['social media','social channels','social content','instagram','facebook','community','content strategy'],
+    automation:['automation','automate','workflow','process improvement','efficiency','integration'],
+    collaboration:['collaboration','cross functional','stakeholders','teamwork','working with teams'],
+    leadership:['leadership','lead','managed a team','management experience','mentoring'],
+    communication:['communication','communicate','writing','presentations','stakeholder updates'],
+    planning:['project planning','project management','prioritization','deadlines','organizing projects'],
+    customers:['customer service','customers','client relationships','client experience','customer success']
+  };
+  function topicFor(question){
+    const q=questionKey(question);
+    for(const [topic,words] of Object.entries(TOPICS))if(words.some(word=>q.includes(word)))return topic;
+    return '';
+  }
+  function relatedAnswers(answers,question){
+    if(isSensitiveQuestion(question))return [];
+    const exact=questionKey(question),topic=topicFor(question);
+    if(!topic)return [];
+    return normalizeAnswers(answers).filter(a=>a.verifiedAt&&questionKey(a.question)!==exact&&topicFor(a.question)===topic).slice(0,3);
+  }
+  function suggestAnswer(question,answers=[],experience=[],context={}){
+    const q=clean(question,300);
+    if(!q||isSensitiveQuestion(q))return {draft:'',source:'blocked',topic:''};
+    const exact=matchingAnswer(answers,q);
+    if(exact)return {draft:exact,source:'approved-exact',topic:topicFor(q)};
+    const related=relatedAnswers(answers,q);
+    const topic=topicFor(q);
+    // Do not invent achievements, skill levels, results, timelines or tool usage.
+    // Related answers are offered as wording to revise, not auto-verified as an exact answer.
+    if(related.length)return {draft:related[0].answer,source:'related-approved-answer',topic};
+    const verified=verifiedEntries(experience,'experience').filter(e=>e.description);
+    if(verified.length){
+      const best=verified.find(e=>topic&&topicFor(e.description)===topic)||verified[0];
+      const intro='In my role as '+best.title+' at '+best.company+', ';
+      const description=best.description.replace(/\s+/g,' ').trim().replace(/^[•\-\s]+/,'');
+      return {draft:(intro+description.charAt(0).toLowerCase()+description.slice(1)).slice(0,1200),source:'verified-experience-rephrase',topic};
+    }
+    return {draft:'',source:'needs-facts',topic};
+  }
+  return {topicFor,relatedAnswers,suggestAnswer,VERSION,FIELDS,questionKey,isSensitiveQuestion,normalizeProfile,validProfile,normalizeAnswers,normalizeEntries,verifiedEntries,entryValue,EXPERIENCE_FIELDS,EDUCATION_FIELDS,packageForExtension,parsePackage,matchingAnswer};
 });
