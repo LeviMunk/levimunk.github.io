@@ -504,7 +504,7 @@
     }).join('');
     const privateAnswers=state.applicationPrivateAnswers||{};
     const privateFields=APPLY_PRIVATE_QUESTIONS.map(([id,label,info])=>
-      '<label class="field" style="margin:12px 0"><span>'+escapeHtml(label)+'</span><p class="small subtle">'+escapeHtml(info)+'</p><select name="'+id+'"><option value="">Not provided</option>'+[['prefer','Prefer not to answer / disclose'],['yes','Yes'],['no','No'],['review','Review each application manually']].map(([val,title])=>'<option value="'+val+'" '+(privateAnswers[id]===val?'selected':'')+'>'+title+'</option>').join('')+'</select></label>'
+      '<label class="field" style="margin:12px 0"><span>'+escapeHtml(label)+'</span><p class="small subtle">'+escapeHtml(info)+'</p><select name="'+id+'"><option value="">Not provided</option>'+(id==='gender'||id==='raceEthnicity'||id==='salary'?[['review','Review each application manually'],['prefer','Prefer not to disclose']]:[['review','Review each application manually'],['prefer','Prefer not to answer / disclose'],['yes','Yes'],['no','No']]).map(([val,title])=>'<option value="'+val+'" '+(privateAnswers[id]===val?'selected':'')+'>'+title+'</option>').join('')+'</select></label>'
     ).join('');
     return '<h3 style="margin-top:22px">Common application questions</h3>'+
       '<p>Fill in answers you have confirmed; leave others blank. JobOS uses the exact saved question text, not guesses. Employer-specific questions should be reviewed separately.</p>'+
