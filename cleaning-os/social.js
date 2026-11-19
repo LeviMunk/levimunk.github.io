@@ -17,24 +17,85 @@ const suggestions=[
 ];
 return {year,month,selected:dateString(year,month,Math.min(now.getDate(),28)),posts:suggestions.map((x,i)=>({id:i+1,date:dateString(year,month,x[0]),category:x[1],title:x[2],platform:x[3],status:x[4]}))};
 }
-function ensure(s){if(!s.socialPlan||!Array.isArray(s.socialPlan.posts))s.socialPlan=initial();return s.socialPlan}
-function shift(s,step){const d=ensure(s),t=new Date(d.year,d.month+Number(step),1);d.year=t.getFullYear();d.month=t.getMonth();d.selected=dateString(d.year,d.month,1)}
-function select(s,date){if(/^\d{4}-\d\d-\d\d$/.test(date))ensure(s).selected=date}
+
+const categoryImages={
+'Before & after':'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=640&q=80',
+'Cleaning tip':'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=640&q=80',
+'Customer trust':'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=640&q=80',
+'Seasonal offer':'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=640&q=80',
+'Behind the scenes':'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=640&q=80',
+'Recurring care':'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=640&q=80'
+};
+const statuses=['Draft','Scheduled','Published'];
+function ensure(s){
+if(!s.socialPlan||!Array.isArray(s.socialPlan.posts))s.socialPlan=initial();
+const d=s.socialPlan;
+for(const p of d.posts){
+if(!p.imageUrl)p.imageUrl=categoryImages[p.category]||'';
+if(typeof p.caption!=='string')p.caption=p.title;
+if(!statuses.includes(p.status))p.status='Draft';
+}
+if(!d.editingId||!d.posts.some(p=>String(p.id)===String(d.editingId)))d.editingId=null;
+return d;
+}
+function shift(s,step){const d=ensure(s),t=new Date(d.year,d.month+Number(step),1);d.year=t.getFullYear();d.month=t.getMonth();d.selected=dateString(d.year,d.month,1);d.editingId=null}
+function select(s,date){if(/^\d{4}-\d\d-\d\d$/.test(date)){const d=ensure(s);d.selected=date;d.editingId=null}}
+function edit(s,id){const d=ensure(s),p=d.posts.find(x=>String(x.id)===String(id));if(!p)return false;d.editingId=p.id;d.selected=p.date;const dt=new Date(p.date+'T12:00:00');d.year=dt.getFullYear();d.month=dt.getMonth();return true}
+function validDate(value){return /^\d{4}-\d\d-\d\d$/.test(value)&&!Number.isNaN(new Date(value+'T12:00:00').getTime())&&new Date(value+'T12:00:00').toISOString().slice(0,10)===value}
+function safeImage(value){
+const x=String(value||'').trim();
+if(!x)return '';
+if(x.startsWith('data:image/jpeg;base64,')||x.startsWith('data:image/png;base64,')||x.startsWith('data:image/webp;base64,'))return x.length<=220000?x:'';
+try{const u=new URL(x);return u.protocol==='https:'?u.href.slice(0,600):''}catch(e){return ''}
+}
 function add(s,values){
 const d=ensure(s),title=String(values.title||'').trim().slice(0,100),date=String(values.date||'');
-if(title.length<3||!(/^\d{4}-\d\d-\d\d$/).test(date)||Number.isNaN(new Date(date+'T12:00:00').getTime()))return {ok:false};
-d.posts.push({id:Date.now(),date,title,category:categories.includes(values.category)?values.category:categories[0],platform:['Instagram','Facebook'].includes(values.platform)?values.platform:'Instagram',status:'Draft'});d.selected=date;return {ok:true}
+if(title.length<3||!validDate(date))return {ok:false};
+const post={id:Date.now(),date,title,category:categories.includes(values.category)?values.category:categories[0],platform:['Instagram','Facebook'].includes(values.platform)?values.platform:'Instagram',status:'Draft',caption:title,imageUrl:categoryImages[values.category]||''};
+d.posts.push(post);d.selected=date;d.editingId=post.id;return {ok:true};
 }
+function savePost(s,values){
+const d=ensure(s),p=d.posts.find(x=>String(x.id)===String(values.id));if(!p)return {ok:false,reason:'Post not found.'};
+const title=String(values.title||'').trim().slice(0,100),date=String(values.date||'');
+if(title.length<3||!validDate(date))return {ok:false,reason:'Provide a title and valid date.'};
+const image=String(values.imageUrl||'').trim();
+if(image&&!safeImage(image))return {ok:false,reason:'Use a valid HTTPS image URL, or clear the field.'};
+p.title=title;p.date=date;p.caption=String(values.caption||'').trim().slice(0,1200);
+p.category=categories.includes(values.category)?values.category:categories[0];
+p.platform=['Instagram','Facebook'].includes(values.platform)?values.platform:'Instagram';
+p.status=statuses.includes(values.status)?values.status:'Draft';
+p.imageUrl=safeImage(image);
+d.selected=date;const dt=new Date(date+'T12:00:00');d.year=dt.getFullYear();d.month=dt.getMonth();d.editingId=p.id;
+return {ok:true};
+}
+function remove(s,id){
+const d=ensure(s),i=d.posts.findIndex(x=>String(x.id)===String(id));
+if(i<0)return false;d.posts.splice(i,1);d.editingId=null;return true;
+}
+function imageTag(p,cls){
+const url=safeImage(p.imageUrl||'');
+return url?'<img class="'+cls+'" src="'+E(url)+'" alt="Illustrative image for '+E(p.title)+'" loading="lazy" onerror="this.hidden=true">':'<span class="'+cls+' sp-no-image">No image</span>';
+}
+function editor(p){
+if(!p)return '';
+return '<section class="sp-editor" id="sp-editor"><div class="sp-editor-heading"><div><span>EDIT POST · LOCAL DEMO</span><h2>'+E(p.title)+'</h2><p>Changes update the calendar immediately when saved. Nothing is sent or published.</p></div><button type="button" data-sp-close aria-label="Close editor">✕</button></div><div class="sp-editor-layout"><div class="sp-preview">'+imageTag(p,'sp-preview-img')+'<div class="sp-preview-info"><strong>'+E(p.platform)+' preview</strong><p>'+E(p.caption||p.title)+'</p></div></div><form id="sp-edit-post"><input type="hidden" name="id" value="'+E(p.id)+'"><label>Post title<input name="title" maxlength="100" required value="'+E(p.title)+'"></label><label>Posting date<input type="date" name="date" value="'+E(p.date)+'" required></label><label>Platform<select name="platform">'+['Instagram','Facebook'].map(x=>'<option '+(p.platform===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><label>Status (demo only)<select name="status">'+statuses.map(x=>'<option '+(p.status===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><label>Content theme<select name="category">'+categories.map(x=>'<option '+(p.category===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><label class="sp-span-two">Caption<textarea name="caption" rows="5" maxlength="1200">'+E(p.caption)+'</textarea></label><label class="sp-span-two">Post image URL (HTTPS)<input name="imageUrl" type="url" placeholder="https://example.com/photo.jpg" value="'+E(p.imageUrl)+'"></label><p class="sp-span-two sp-image-help">Paste an image link, or upload a JPEG, PNG, or WebP. Uploaded images are resized and stored only in this browser.</p><label class="sp-span-two sp-upload-label">Upload a post image<input type="file" accept="image/png,image/jpeg,image/webp" data-sp-image-upload></label><div class="sp-editor-actions sp-span-two"><button type="submit">Save post changes</button><button type="button" class="sp-delete" data-sp-delete="'+E(p.id)+'">Delete post</button></div></form></div></section>';
+}
+
 function view(s){
 const d=ensure(s),first=new Date(d.year,d.month,1),monthName=first.toLocaleString('en-US',{month:'long',year:'numeric'}),count=new Date(d.year,d.month+1,0).getDate(),offset=(first.getDay()+6)%7,posts=d.posts.filter(p=>p.date.startsWith(d.year+'-'+pad(d.month+1)+'-')),published=posts.filter(p=>p.status==='Published').length;
 const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const cells=Array.from({length:Math.ceil((offset+count)/7)*7},(_,i)=>{const day=i-offset+1;if(day<1||day>count)return '<div class="sp-cell sp-outside" aria-hidden="true"></div>';const dt=dateString(d.year,d.month,day),items=posts.filter(p=>p.date===dt);return '<button type="button" class="sp-cell '+(d.selected===dt?'sp-selected':'')+'" data-sp-date="'+dt+'"><span class="sp-day">'+day+'</span>'+items.map(p=>'<span class="sp-event">'+E(p.title)+'</span>').join('')+'</button>'}).join('');
-const selectedPosts=d.posts.filter(p=>p.date===d.selected);
-return '<div class="sp-root"><section class="sp-hero"><span>SOCIAL PLANNER · OPTIONAL MODULE PREVIEW</span><h1>A full month of content. <em>One clear plan.</em></h1><p>See what is planned, where it will be published, and how content connects to leads and booked services. Customize the schedule for your cleaning business.</p><small>Browser-local prototype. All sample posts and performance figures are fictional. No social media accounts are connected or posts published.</small></section>'
+const cells=Array.from({length:Math.ceil((offset+count)/7)*7},(_,i)=>{
+const day=i-offset+1;if(day<1||day>count)return '<div class="sp-cell sp-outside" aria-hidden="true"></div>';
+const dt=dateString(d.year,d.month,day),items=posts.filter(p=>p.date===dt);
+return '<div class="sp-cell '+(d.selected===dt?'sp-selected':'')+'"><button type="button" class="sp-day-button" data-sp-date="'+dt+'" aria-label="Select '+dt+'"><span class="sp-day">'+day+'</span></button>'+items.map(p=>'<button type="button" class="sp-calendar-post" data-sp-edit="'+p.id+'" aria-label="Edit '+E(p.title)+'">'+imageTag(p,'sp-calendar-thumb')+'<span><strong>'+E(p.title)+'</strong><small>'+E(p.status)+'</small></span></button>').join('')+'</div>'
+}).join('');
+const selectedPosts=d.posts.filter(p=>p.date===d.selected),active=d.posts.find(p=>String(p.id)===String(d.editingId));
+return '<div class="sp-root"><section class="sp-hero"><span>SOCIAL PLANNER · OPTIONAL MODULE PREVIEW</span><h1>A full month of content. <em>One clear plan.</em></h1><p>See the creative, caption, date and status for every planned post. Select a thumbnail to edit the post in your calendar.</p><small>Browser-local prototype. Sample photography and metrics are illustrative. No social account is connected or content published.</small></section>'
 +'<section class="sp-sample-stats"><div><span>Posts planned this month</span><strong>'+posts.length+'</strong><small>Drafts + scheduled posts</small></div><div><span>Posts published</span><strong>'+published+'</strong><small>Locally marked status only</small></div><div><span>Sample reach</span><strong>18.4K</strong><small>Illustrative, not connected analytics</small></div><div><span>Sample website inquiries</span><strong>12</strong><small>Illustrative, not attributed conversions</small></div></section>'
 +'<section class="sp-calendar"><div class="sp-calendar-top"><div><span>CONTENT CALENDAR</span><h2>'+E(monthName)+'</h2></div><div class="sp-controls"><button type="button" data-sp-month="-1" aria-label="Previous month">←</button><button type="button" data-sp-month="1" aria-label="Next month">→</button></div></div><div class="sp-weekdays">'+days.map(x=>'<span>'+x+'</span>').join('')+'</div><div class="sp-grid">'+cells+'</div></section>'
-+'<div class="sp-lower"><section class="sp-detail"><span>SELECTED DAY</span><h2>'+E(d.selected)+'</h2>'+(selectedPosts.length?selectedPosts.map(p=>'<article class="sp-post"><div><strong>'+E(p.title)+'</strong><span>'+E(p.category)+' · '+E(p.platform)+'</span></div><small>'+E(p.status)+'</small></article>').join(''):'<p class="sp-empty">No posts planned. Add a draft for this day.</p>')+'<h3>Plan a post</h3><form id="sp-new-post"><label>Posting date<input type="date" name="date" value="'+E(d.selected)+'" required></label><label>Post idea<input name="title" maxlength="100" placeholder="e.g. Spring refresh checklist" required></label><label>Content theme<select name="category">'+categories.map(x=>'<option>'+E(x)+'</option>').join('')+'</select></label><label>Platform<select name="platform"><option>Instagram</option><option>Facebook</option></select></label><button type="submit">Save draft locally</button></form></section>'
-+'<section class="sp-detail"><span>PERFORMANCE INSIGHTS · CONCEPT</span><h2>Beyond likes and reach.</h2><p>For a connected production version, track engagement, website visits, inquiries, qualified leads, and bookings from each social campaign.</p><div class="sp-metric-list"><div><strong>Awareness</strong><span>Reach and video views</span></div><div><strong>Engagement</strong><span>Comments, saves and shares</span></div><div><strong>Interest</strong><span>Profile and website clicks</span></div><div><strong>Conversion</strong><span>Inquiries and booked cleans where attribution is available</span></div></div><p class="sp-note">These would require supported platform integrations, campaign links, consent-aware attribution, and clear limitations. The figures above are intentionally sample-only.</p><button type="button" data-page="pipeline" class="sp-secondary">View Customer Journey →</button></section></div></div>';
++editor(active)
++'<div class="sp-lower"><section class="sp-detail"><span>SELECTED DAY</span><h2>'+E(d.selected)+'</h2>'+(selectedPosts.length?selectedPosts.map(p=>'<button type="button" class="sp-post sp-post-clickable" data-sp-edit="'+p.id+'">'+imageTag(p,'sp-list-thumb')+'<span><strong>'+E(p.title)+'</strong><small>'+E(p.category)+' · '+E(p.platform)+' · '+E(p.status)+'</small></span><b>Edit ↗</b></button>').join(''):'<p class="sp-empty">No posts planned. Add a draft for this day.</p>')+'<h3>Plan a post</h3><form id="sp-new-post"><label>Posting date<input type="date" name="date" value="'+E(d.selected)+'" required></label><label>Post idea<input name="title" maxlength="100" placeholder="e.g. Spring refresh checklist" required></label><label>Content theme<select name="category">'+categories.map(x=>'<option>'+E(x)+'</option>').join('')+'</select></label><label>Platform<select name="platform"><option>Instagram</option><option>Facebook</option></select></label><button type="submit">Create & edit draft</button></form></section>'
++'<section class="sp-detail"><span>PERFORMANCE INSIGHTS · CONCEPT</span><h2>Beyond likes and reach.</h2><p>A connected production version should track engagement, website visits, inquiries, qualified leads, and bookings for each campaign when attribution is available.</p><div class="sp-metric-list"><div><strong>Awareness</strong><span>Reach and video views</span></div><div><strong>Engagement</strong><span>Comments, saves and shares</span></div><div><strong>Interest</strong><span>Profile and website clicks</span></div><div><strong>Conversion</strong><span>Inquiries and booked cleans</span></div></div><p class="sp-note">Supported platform integrations and consent-aware attribution are required for real analytics. Numbers above are fictional.</p><button type="button" data-page="pipeline" class="sp-secondary">View Customer Journey →</button></section></div></div>';
 }
-window.CleaningSocial={ensure,view,shift,select,add};
+window.CleaningSocial={ensure,view,shift,select,add,edit,savePost,remove,safeImage};
 })();
