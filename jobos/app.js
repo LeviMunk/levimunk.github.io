@@ -498,24 +498,41 @@
   ];
   function applyQuestionPanel(api,answers){
     const existing=new Map(answers.map(a=>[api.questionKey(a.question),a]));
-    const common=APPLY_COMMON_QUESTIONS.map(([question,placeholder])=>{
+    const commonField=([question,placeholder])=>{
       const item=existing.get(api.questionKey(question));
       return '<label class="field" style="margin:10px 0"><span>'+escapeHtml(question)+'</span><input name="commonAnswer" data-question="'+escapeHtml(question)+'" value="'+escapeHtml(item?.answer||'')+'" placeholder="'+escapeHtml(placeholder)+'" maxlength="500" autocomplete="off"></label>';
-    }).join('');
+    };
+    const unanswered=APPLY_COMMON_QUESTIONS.filter(([q])=>!existing.get(api.questionKey(q))?.verifiedAt);
+    const completed=APPLY_COMMON_QUESTIONS.filter(([q])=>!!existing.get(api.questionKey(q))?.verifiedAt);
     const privateAnswers=state.applicationPrivateAnswers||{};
-    const privateFields=APPLY_PRIVATE_QUESTIONS.map(([id,label,info])=>
-      '<label class="field" style="margin:12px 0"><span>'+escapeHtml(label)+'</span><p class="small subtle">'+escapeHtml(info)+'</p><select name="'+id+'"><option value="">Not provided</option>'+(id==='gender'||id==='raceEthnicity'||id==='salary'?[['review','Review each application manually'],['prefer','Prefer not to disclose']]:[['review','Review each application manually'],['prefer','Prefer not to answer / disclose'],['yes','Yes'],['no','No']]).map(([val,title])=>'<option value="'+val+'" '+(privateAnswers[id]===val?'selected':'')+'>'+title+'</option>').join('')+'</select></label>'
-    ).join('');
+    const privateField=([id,label,info])=>{
+      const choices=id==='raceEthnicity'
+        ?[['review','Review each employer form'],['prefer','Prefer not to disclose'],['americanIndian','American Indian or Alaska Native'],['asian','Asian'],['black','Black or African American'],['hispanic','Hispanic or Latino'],['middleEastern','Middle Eastern or North African'],['pacificIslander','Native Hawaiian or Other Pacific Islander'],['white','White'],['multiple','Two or more races / ethnicities'],['other','Other / self-describe on employer form']]
+        :id==='gender'
+          ?[['review','Review each employer form'],['prefer','Prefer not to disclose'],['woman','Woman'],['man','Man'],['nonbinary','Nonbinary'],['selfDescribe','Self-describe on employer form']]
+          :id==='veteran'
+            ?[['review','Review protected veteran status on employer form'],['prefer','Prefer not to disclose'],['yes','I identify as a veteran (check the employer definition)'],['no','I do not identify as a veteran']]
+            :id==='salary'
+              ?[['review','Review compensation for each position'],['prefer','Prefer not to disclose']]
+              :[['review','Review each employer form'],['prefer','Prefer not to answer / disclose'],['yes','Yes'],['no','No']];
+      return '<label class="field" style="margin:12px 0"><span>'+escapeHtml(label)+'</span><p class="small subtle">'+escapeHtml(info)+'</p><select name="'+id+'"><option value="">Not answered</option>'+choices.map(([val,title])=>'<option value="'+val+'" '+(privateAnswers[id]===val?'selected':'')+'>'+escapeHtml(title)+'</option>').join('')+'</select></label>';
+    };
+    const privateMissing=APPLY_PRIVATE_QUESTIONS.filter(([id])=>!privateAnswers[id]);
+    const privateCompleted=APPLY_PRIVATE_QUESTIONS.filter(([id])=>!!privateAnswers[id]);
     return '<h3 style="margin-top:22px">Common application questions</h3>'+
-      '<p>Fill in answers you have confirmed; leave others blank. JobOS uses the exact saved question text, not guesses. Employer-specific questions should be reviewed separately.</p>'+
-      '<form id="apply-common-form">'+common+
-      '<label class="field" style="display:flex;align-items:center;gap:8px;margin:12px 0"><input type="checkbox" name="confirmCommon" required style="width:auto"><span>I reviewed these answers for accuracy.</span></label>'+
-      '<button type="submit" class="button button-secondary button-small">Save verified common answers</button></form>'+
-      '<details class="simple-secondary" style="margin-top:18px"><summary>Private declarations · veteran, disability, and other sensitive questions</summary>'+
-      '<p>These are optional private reminders, not standard employer answers. Each organization may use different definitions and options. JobOS never exports or autofills these answers; you make each disclosure directly on the employer form.</p>'+
-      '<form id="apply-private-form">'+privateFields+
-      '<button type="submit" class="button button-secondary button-small">Save private preferences in encrypted vault</button>'+
-      '<button type="button" class="button button-secondary button-small" data-action="applyclearprivate">Clear private preferences</button></form></details>';
+      '<p>Only unanswered questions appear by default. Saved answers can be edited below. Each verified answer is reused only when the application question matches.</p>'+
+      '<form id="apply-common-form">'+
+      (unanswered.length?unanswered.map(commonField).join(''):'<p class="small subtle">All standard questions have saved answers.</p>')+
+      (completed.length?'<details class="simple-secondary"><summary>Answered common questions · '+completed.length+' (edit)</summary>'+completed.map(commonField).join('')+'</details>':'')+
+      '<label class="field" style="display:flex;align-items:center;gap:8px;margin:12px 0"><input type="checkbox" name="confirmCommon" required style="width:auto"><span>I reviewed any changes for accuracy.</span></label>'+
+      '<button type="submit" class="button button-secondary button-small">Save common answers</button></form>'+
+      '<h3 style="margin-top:22px">Optional self-identification & declarations</h3>'+
+      '<p>Race/ethnicity, gender, veteran and disability questions are voluntary and may be worded differently by employers. These private selections are never exported to the extension or automatically entered on employer applications.</p>'+
+      '<form id="apply-private-form">'+
+      (privateMissing.length?privateMissing.map(privateField).join(''):'<p class="small subtle">All private preferences have been reviewed.</p>')+
+      (privateCompleted.length?'<details class="simple-secondary"><summary>Answered private questions · '+privateCompleted.length+' (edit)</summary>'+privateCompleted.map(privateField).join('')+'</details>':'')+
+      '<div class="simple-links"><button type="submit" class="button button-secondary button-small">Save private choices</button>'+
+      '<button type="button" class="button button-secondary button-small" data-action="applyclearprivate">Clear private choices</button></div></form>';
   }
   async function saveApplyCommon(event){
     event.preventDefault();
@@ -523,28 +540,30 @@
     const form=event.target,rows=[...form.querySelectorAll('[name="commonAnswer"]')];
     if(new FormData(form).get('confirmCommon')!=='on')return notify('Confirm that you reviewed these answers.');
     const api=window.JobOSApply,current=api.normalizeAnswers(state.screeningAnswers||[]);
-    const keys=new Set(APPLY_COMMON_QUESTIONS.map(([q])=>api.questionKey(q)));
-    const saved=current.filter(a=>!keys.has(api.questionKey(a.question)));
+    const updated=new Map(current.map(a=>[api.questionKey(a.question),a]));
     let n=0;
     for(const el of rows){
-      const answer=el.value.trim(),question=el.dataset.question;
-      if(!answer)continue;
+      const answer=el.value.trim(),question=el.dataset.question,key=api.questionKey(question);
       if(api.isSensitiveQuestion(question))continue;
-      saved.push({question,answer:answer.slice(0,500),verifiedAt:new Date().toISOString()});n++;
+      if(!answer){updated.delete(key);continue;}
+      const prior=updated.get(key);
+      if(prior?.answer!==answer||!prior?.verifiedAt)n++;
+      updated.set(key,{question,answer:answer.slice(0,500),verifiedAt:prior?.answer===answer&&prior?.verifiedAt?prior.verifiedAt:new Date().toISOString()});
     }
-    state.screeningAnswers=api.normalizeAnswers(saved);
+    state.screeningAnswers=api.normalizeAnswers([...updated.values()]);
     activity('','apply-common-answers','Verified common application questions updated');
     await persist();
-    notify('Saved '+n+' verified answers. Blank questions remain unanswered.');
+    notify('Saved common answers. Completed questions are now collapsed.');
   }
   async function saveApplyPrivate(event){
     event.preventDefault();
     if(!state)return;
-    const values=new FormData(event.target),allowed=new Set(['prefer','yes','no','review']);
-    const answers={};
+    const values=new FormData(event.target),allowed=new Set(['prefer','yes','no','review','americanIndian','asian','black','hispanic','middleEastern','pacificIslander','white','multiple','other','woman','man','nonbinary','selfDescribe']);
+    const answers={...state.applicationPrivateAnswers};
     for(const [id] of APPLY_PRIVATE_QUESTIONS){
       const value=String(values.get(id)||'');
-      if(allowed.has(value))answers[id]=value;
+      if(value==='')delete answers[id];
+      else if(allowed.has(value))answers[id]=value;
     }
     state.applicationPrivateAnswers=answers;
     activity('','apply-private-preferences','Updated encrypted private application preferences');
