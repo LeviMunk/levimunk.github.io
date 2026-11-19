@@ -246,3 +246,20 @@
 .pj-directory-filter-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 15px}
 .pj-directory-filter-heading strong{color:#325c43;font-size:14px}
 .pj-directory-filter-heading button{border:1px solid #cfe0d3;background:#fff;color:#367a4e;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer}
+
+
+/* Subtle persistent marketplace discovery in main navigation */
+body[data-industry="cleaning"] .nav button.cos-modules-feature{
+ display:flex;align-items:center;gap:7px;margin-top:14px;padding:14px 11px;
+ background:linear-gradient(105deg,rgba(77,162,135,.20),rgba(77,162,135,.07));
+ border:1px solid rgba(136,210,171,.40);border-left:3px solid #90d7ae;
+ color:#d5f5df;border-radius:10px;
+}
+body[data-industry="cleaning"] .nav button.cos-modules-feature:hover,
+body[data-industry="cleaning"] .nav button.cos-modules-feature.active{
+ background:linear-gradient(105deg,rgba(88,184,146,.35),rgba(88,184,146,.16));
+ border-color:#9fe0bb;color:#fff;
+}
+body[data-industry="cleaning"] .nav button.cos-modules-feature .lc-nav-icon{color:#b2edc9}
+body[data-industry="cleaning"] .nav button.cos-modules-feature .lc-nav-name{flex:1;text-align:left;letter-spacing:.025em;font-size:12px}
+body[data-industry="cleaning"] .nav button.cos-modules-feature .cos-modules-spark{width:auto;font-size:13px;color:#b9ecca}
