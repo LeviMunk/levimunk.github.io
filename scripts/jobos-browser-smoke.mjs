@@ -106,6 +106,32 @@ try{
   const persisted=await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().textContent();
   if(!persisted.includes('verified')||!persisted.includes('Which analytics tools have you used?'))throw Error('JobOS Apply profile/answers not persisted in encrypted vault');
   if(!persisted.includes('QA Marketing Studio')||!persisted.includes('QA University'))throw Error('JobOS Apply employment/education did not persist after reload');
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  const suggestions={
+    format:'jobos-resume-suggestions-v1',
+    profile:{firstName:'Test',lastName:'Candidate',email:'candidate@example.com'},
+    experience:[{company:'Resume Imported Sample',title:'Analytics Specialist',startDate:'2021-01',endDate:'2023-09',description:'Imported but not yet verified'}],
+    education:[{school:'Resume Sample School',degree:'Associate Degree',endDate:'2012'}]
+  };
+  await page.locator('#apply-resume-import').setInputFiles({name:'test-resume-suggestions.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(suggestions))});
+  const closed=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  if(!(await closed.textContent()).includes('Resume Imported Sample'))throw Error('Resume suggestions were not imported');
+  await closed.locator('summary').click();
+  await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__jobosApplyCopied=text;}}});});
+  await page.locator('[data-action="applycopyprofile"]').click();
+  let beforeConfirmation=JSON.parse(await page.evaluate(()=>window.__jobosApplyCopied));
+  if(beforeConfirmation.experience.some(x=>x.company==='Resume Imported Sample')||beforeConfirmation.education.some(x=>x.school==='Resume Sample School'))throw Error('Unverified résumé suggestions were exported to extension');
+  await page.locator('[data-action="applyeditentry"][data-kind="experience"]').last().click();
+  await page.locator('.apply-entry-form[data-kind="experience"] [name="title"]').fill('Verified Analytics Specialist');
+  await page.locator('.apply-entry-form[data-kind="experience"] [name="confirmEntry"]').check();
+  await page.locator('.apply-entry-form[data-kind="experience"] button[type="submit"]').click();
+  const edited=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  await edited.locator('summary').click();
+  await page.locator('[data-action="applycopyprofile"]').click();
+  const afterConfirmation=JSON.parse(await page.evaluate(()=>window.__jobosApplyCopied));
+  if(!afterConfirmation.experience.some(x=>x.company==='Resume Imported Sample'&&x.title==='Verified Analytics Specialist'))throw Error('Reviewed imported experience not exported');
+  if(afterConfirmation.education.some(x=>x.school==='Resume Sample School'))throw Error('Unverified imported education exported');
+  console.log('PASS private résumé suggestions: unverified imported, excluded from autofill, reviewed entry exported');
   console.log('PASS encrypted JobOS Apply profile verification, exact answers, export and reload');
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
   await page.locator('#lock-button').click();
