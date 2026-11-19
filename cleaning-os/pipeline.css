@@ -82,3 +82,26 @@
 .pj-next-action p{font-size:12px;color:#b9d9ca;margin:0;max-width:235px}
 @media(max-width:1000px){.pj-checkpoint-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.pj-relationship,.pj-next-action{align-items:flex-start;flex-direction:column}.pj-checkpoint-grid{grid-template-columns:1fr}}
+
+
+/* Operational events bridged from service records into the lifecycle overview */
+.pj-connected{background:#fff;border:1px solid #d6e6dd;border-radius:18px;padding:clamp(18px,3vw,27px);margin:22px 0}
+.pj-connected-heading{display:flex;justify-content:space-between;align-items:start;gap:20px}
+.pj-connected-heading span{color:#5d8b6e;font-size:10px;font-weight:800;letter-spacing:.12em}
+.pj-connected-heading h2{font-size:clamp(20px,2.5vw,28px);color:#1e4933;margin:9px 0}
+.pj-connected-heading p{font-size:13px;color:#627a6b;line-height:1.6;max-width:720px}
+.pj-connected-heading button{border:1px solid #377b54;background:#f1faf4;color:#2b6d47;border-radius:8px;padding:10px 13px;font-weight:750;white-space:nowrap;cursor:pointer}
+.pj-connected-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.pj-connected-stats>div{display:grid;gap:7px;background:#f2f8f3;border:1px solid #e0e9e1;border-radius:10px;padding:15px}
+.pj-connected-stats strong{color:#286445;font-size:27px}
+.pj-connected-stats span{color:#627b69;font-size:12px}
+.pj-connected-list{display:grid;gap:8px}
+.pj-connected-list article{display:flex;justify-content:space-between;gap:18px;align-items:center;background:#f9fbf9;border:1px solid #e2ebe4;border-radius:10px;padding:13px}
+.pj-connected-list article>div{display:grid;gap:6px}
+.pj-connected-list article>div:last-child{text-align:right}
+.pj-connected-list article strong{font-size:14px;color:#264c35}
+.pj-connected-list article span:not(.pj-connected-signal),.pj-connected-list article small{color:#627868;font-size:11px}
+.pj-connected-signal{border-radius:15px;padding:5px 9px;color:#39724f;background:#e3f0e6;font-size:11px;font-weight:800;justify-self:end}
+.pj-connected-signal.issue{background:#fbe6dc;color:#994e32}
+.pj-connected-note,.pj-connected-empty{font-size:12px;line-height:1.6;color:#73857a;margin:18px 0 0}
+@media(max-width:690px){.pj-connected-heading,.pj-connected-list article{flex-direction:column;align-items:flex-start}.pj-connected-list article>div:last-child{text-align:left}.pj-connected-signal{justify-self:start}.pj-connected-stats{grid-template-columns:1fr}}
