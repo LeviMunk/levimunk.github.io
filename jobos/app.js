@@ -5,6 +5,7 @@
   const STORAGE_KEY = 'levios.outreach.encrypted.v1';
   const ITERATIONS = 320000;
   const TRUSTED_DB='jobos-trusted-device-v1',TRUSTED_STORE='keys';
+  const TRUSTED_LOCK_FLAG='jobos.trusted-device.block-autounlock.v1';
   const STAGES = ['Discovered','Researched','Draft Ready','Contacted','Responded','Concept Shared','Interested','Meeting Booked','Proposal','Won','Closed','Saved','Applied','Recruiter Screen','Interview','Offer','Rejected','Withdrawn'];
   const STRATEGY_STARTERS = [{"id":"subject","name":"Subject line: direct vs curiosity","question":"Does a truthful, specific subject outperform a short open-ended one?","a":"Direct: 'Idea for [business] website'","b":"Curiosity: 'Quick question about [business]'","status":"planned","notes":"One accurate subject only. Never fake a reply, urgency, or existing relationship."},{"id":"length","name":"Email length: brief vs detailed","question":"For the same offer, does 60–90 words outperform 130–170 words?","a":"Brief: one observation, one value statement, one question","b":"Detailed: observation, example, proof, one question","status":"planned","notes":"Hold the offer and recipient type constant. Word count is captured when you confirm a send."},{"id":"angle","name":"Problem reveal vs opportunity","question":"Does a verifiable business friction point earn more positive replies than an upside-focused idea?","a":"Specific, independently checked problem or missed opportunity","b":"Plausible upside tied to the business, without inventing results","status":"active","notes":"Don't assert revenue losses without evidence. A helpful observation beats fabricated urgency."},{"id":"cta","name":"Call-to-action friction","question":"Does asking permission to share an example work better than asking for a call immediately?","a":"Low friction: 'Worth sending you a quick example?'","b":"Direct ask: 'Open to a 15-minute call next week?'","status":"active","notes":"Keep the rest of the message as similar as possible."},{"id":"personal","name":"Personalization depth","question":"Does a specific business observation improve replies compared with category-level messaging?","a":"One verified observation about that exact organization","b":"One accurate industry-specific observation","status":"planned","notes":"Do not invent research findings."},{"id":"stakeholders","name":"Stakeholder involvement","question":"Does appropriately involving a second relevant stakeholder help with routing?","a":"One directly relevant recipient only","b":"Two genuinely relevant stakeholders, introduced transparently","status":"planned","notes":"CC is not a pressure tactic. Do not include unrelated executives or use mass CC."},{"id":"sender","name":"Sender presentation: authentic identity","question":"Does a consistent professional signature outperform a shorter personal signature?","a":"Real sender name + function + legitimate business affiliation","b":"Same real sender name + brief human signoff","status":"planned","notes":"Never claim to be a woman, colleague, or employee who is not actually sending the email."},{"id":"followup","name":"Follow-up approach","question":"Does a useful new detail improve reply quality compared with a simple reminder?","a":"One new concrete observation or offer of a useful example","b":"Short courteous reminder referring to the original message","status":"planned","notes":"Honor no-contact requests; avoid repetitive nudges."}];
   const VIEWS = {
@@ -100,13 +101,16 @@
     if(!encryptionKey||!salt)return;
     try{
       await trustedKey('put',{key:encryptionKey,salt:bytesToB64(salt),version:1});
+      localStorage.removeItem(TRUSTED_LOCK_FLAG);
     }catch(e){notify('JobOS opened, but this browser could not remember your unlock: '+e.message);}
   }
   async function forgetThisBrowser(){
+    // Synchronously suppress auto-unlock before any asynchronous IndexedDB operation.
+    localStorage.setItem(TRUSTED_LOCK_FLAG,'1');
     try{await trustedKey('delete');}catch(e){console.warn('Could not clear remembered unlock:',e.message);}
   }
   async function autoUnlockTrustedBrowser(){
-    if(state||!localStorage.getItem(STORAGE_KEY)||!globalThis.crypto?.subtle)return;
+    if(state||localStorage.getItem(TRUSTED_LOCK_FLAG)==='1'||!localStorage.getItem(STORAGE_KEY)||!globalThis.crypto?.subtle)return;
     try{
       const remembered=await trustedKey('get');
       if(!remembered)return;
@@ -1016,7 +1020,7 @@ async function saveStrategy(e){
   $('confirm-sent').addEventListener('click',markSent);
   $('confirm-not-sent').addEventListener('click',()=>{pendingSendId=null;$('confirm-modal').close();notify('Kept as draft. No send recorded.');});
   $('add-main').addEventListener('click',()=>editRecord());$('add-top').addEventListener('click',()=>editRecord());
-  $('lock-button').addEventListener('click',async()=>{await forgetThisBrowser();lockVault();notify('Locked and removed remembered access on this browser.');});
+  $('lock-button').addEventListener('click',async()=>{lockVault();await forgetThisBrowser();notify('Locked and removed remembered access on this browser.');});
   $('import-file').addEventListener('change',e=>importFile(e.target.files?.[0]));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state&&Date.now()-lastActivityAt>20*60*1000)lockVault();});
   setInterval(()=>{if(state&&Date.now()-lastActivityAt>20*60*1000)lockVault();},60_000);
