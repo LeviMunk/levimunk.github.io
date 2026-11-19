@@ -475,6 +475,88 @@
     ['linkedinUrl','LinkedIn profile URL'],['portfolioUrl','Portfolio website URL'],
     ['currentCompany','Current employer'],['currentTitle','Current position']
   ];
+  const APPLY_COMMON_QUESTIONS=[
+    ['When could you start a new position?','e.g. Two weeks after accepting an offer'],
+    ['Are you willing to work remotely?','e.g. Yes'],
+    ['Are you willing to work in a hybrid arrangement?','e.g. Yes, within the Fox Valley'],
+    ['Are you willing to work on-site?','e.g. Within reasonable commuting distance'],
+    ['Are you willing to relocate?','e.g. No'],
+    ['Are you willing to travel for work?','e.g. Up to 10%'],
+    ['What is your preferred work schedule?','e.g. Full-time'],
+    ['Which analytics tools have you used?','Only tools you have actually used'],
+    ['Which marketing platforms have you used?','Only tools you have actually used'],
+    ['Why are you interested in this role?','Usually tailor this to each employer']
+  ];
+  const APPLY_PRIVATE_QUESTIONS=[
+    ['veteran','Voluntary veteran self-identification','Do not assume veteran status from a résumé. Employer definitions and answer choices can vary.'],
+    ['disability','Voluntary disability self-identification','This is a voluntary disclosure; answer from the employer’s specific form.'],
+    ['gender','Voluntary gender self-identification','Optional, and categories can vary between applications.'],
+    ['raceEthnicity','Voluntary race / ethnicity self-identification','Optional, and categories can vary between applications.'],
+    ['workAuthorization','Legal work authorization','Use the exact employer question and your actual authorization status.'],
+    ['sponsorship','Current or future visa sponsorship','Do not infer from nationality or a previous application.'],
+    ['salary','Salary / compensation preference','Review the specific role and compensation before answering.']
+  ];
+  function applyQuestionPanel(api,answers){
+    const existing=new Map(answers.map(a=>[api.questionKey(a.question),a]));
+    const common=APPLY_COMMON_QUESTIONS.map(([question,placeholder])=>{
+      const item=existing.get(api.questionKey(question));
+      return '<label class="field" style="margin:10px 0"><span>'+escapeHtml(question)+'</span><input name="commonAnswer" data-question="'+escapeHtml(question)+'" value="'+escapeHtml(item?.answer||'')+'" placeholder="'+escapeHtml(placeholder)+'" maxlength="500" autocomplete="off"></label>';
+    }).join('');
+    const privateAnswers=state.applicationPrivateAnswers||{};
+    const privateFields=APPLY_PRIVATE_QUESTIONS.map(([id,label,info])=>
+      '<label class="field" style="margin:12px 0"><span>'+escapeHtml(label)+'</span><p class="small subtle">'+escapeHtml(info)+'</p><select name="'+id+'"><option value="">Not provided</option>'+[['prefer','Prefer not to answer / disclose'],['yes','Yes'],['no','No'],['review','Review each application manually']].map(([val,title])=>'<option value="'+val+'" '+(privateAnswers[id]===val?'selected':'')+'>'+title+'</option>').join('')+'</select></label>'
+    ).join('');
+    return '<h3 style="margin-top:22px">Common application questions</h3>'+
+      '<p>Fill in answers you have confirmed; leave others blank. JobOS uses the exact saved question text, not guesses. Employer-specific questions should be reviewed separately.</p>'+
+      '<form id="apply-common-form">'+common+
+      '<label class="field" style="display:flex;align-items:center;gap:8px;margin:12px 0"><input type="checkbox" name="confirmCommon" required style="width:auto"><span>I reviewed these answers for accuracy.</span></label>'+
+      '<button type="submit" class="button button-secondary button-small">Save verified common answers</button></form>'+
+      '<details class="simple-secondary" style="margin-top:18px"><summary>Private declarations · veteran, disability, and other sensitive questions</summary>'+
+      '<p>These are optional private reminders, not standard employer answers. Each organization may use different definitions and options. JobOS never exports or autofills these answers; you make each disclosure directly on the employer form.</p>'+
+      '<form id="apply-private-form">'+privateFields+
+      '<button type="submit" class="button button-secondary button-small">Save private preferences in encrypted vault</button>'+
+      '<button type="button" class="button button-secondary button-small" data-action="applyclearprivate">Clear private preferences</button></form></details>';
+  }
+  async function saveApplyCommon(event){
+    event.preventDefault();
+    if(!state||!window.JobOSApply)return;
+    const form=event.target,rows=[...form.querySelectorAll('[name="commonAnswer"]')];
+    if(new FormData(form).get('confirmCommon')!=='on')return notify('Confirm that you reviewed these answers.');
+    const api=window.JobOSApply,current=api.normalizeAnswers(state.screeningAnswers||[]);
+    const keys=new Set(APPLY_COMMON_QUESTIONS.map(([q])=>api.questionKey(q)));
+    const saved=current.filter(a=>!keys.has(api.questionKey(a.question)));
+    let n=0;
+    for(const el of rows){
+      const answer=el.value.trim(),question=el.dataset.question;
+      if(!answer)continue;
+      if(api.isSensitiveQuestion(question))continue;
+      saved.push({question,answer:answer.slice(0,500),verifiedAt:new Date().toISOString()});n++;
+    }
+    state.screeningAnswers=api.normalizeAnswers(saved);
+    activity('','apply-common-answers','Verified common application questions updated');
+    await persist();
+    notify('Saved '+n+' verified answers. Blank questions remain unanswered.');
+  }
+  async function saveApplyPrivate(event){
+    event.preventDefault();
+    if(!state)return;
+    const values=new FormData(event.target),allowed=new Set(['prefer','yes','no','review']);
+    const answers={};
+    for(const [id] of APPLY_PRIVATE_QUESTIONS){
+      const value=String(values.get(id)||'');
+      if(allowed.has(value))answers[id]=value;
+    }
+    state.applicationPrivateAnswers=answers;
+    activity('','apply-private-preferences','Updated encrypted private application preferences');
+    await persist();
+    notify('Private preferences saved. They will never be included in autofill data.');
+  }
+  async function clearApplyPrivate(){
+    if(!state)return;
+    state.applicationPrivateAnswers={};
+    activity('','apply-private-preferences','Cleared private application preferences');
+    await persist();notify('Private application preferences cleared.');
+  }
   function applyProfilePanel(){
     const api=window.JobOSApply;
     if(!api)return '<p class="small subtle">Application autofill module unavailable. Refresh JobOS.</p>';
@@ -507,6 +589,7 @@
       '<label class="field"><span>Your verified response</span><textarea name="answer" rows="3" maxlength="2500" required></textarea></label>'+
       '<label class="field" style="display:flex;align-items:center;gap:8px;margin:10px 0"><input type="checkbox" name="confirmAnswer" required style="width:auto"><span>I confirm this answer is accurate.</span></label>'+
       '<button type="submit" class="button button-secondary button-small">Save verified answer</button></form>'+
+      applyQuestionPanel(api,answers)+
       history('experience','Employment history')+history('education','Education')+
       '<h3 style="margin-top:22px">Chrome extension handoff</h3>'+
       '<p>Install the unpacked JobOS Apply extension from the repository. Copy this profile while your vault is unlocked, paste it into the extension, then fill supported forms from the extension toolbar. The extension keeps data only for your current browser session.</p>'+
@@ -1086,7 +1169,7 @@ async function saveStrategy(e){
     notify(proposed.length+' prospects and '+addedStrategies.length+' strategies imported. No email sent.');
     return report;
   }
-  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='applycopyprofile')return copyApplyProfile();if(action==='applyremoveentry')return removeApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyeditentry')return editApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyremoveanswer')return removeApplyAnswer(Number(el.dataset.index));if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
+  function handleAction(el){const action=el.dataset.action,id=el.dataset.id;if(action==='applycopyprofile')return copyApplyProfile();if(action==='applyclearprivate')return clearApplyPrivate();if(action==='applyremoveentry')return removeApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyeditentry')return editApplyEntry(el.dataset.kind,Number(el.dataset.index));if(action==='applyremoveanswer')return removeApplyAnswer(Number(el.dataset.index));if(action==='opensocial')return openBusinessSocial(id);if(action==='downloadkit')return downloadApplicationKit(id);if(action==='pdfresume')return downloadJobPDF(id,'Resume');if(action==='pdfcover')return downloadJobPDF(id,'Cover_Letter');if(action==='copyrecruiter')return copyRecruiterNote(id);if(action==='emailrecruiter')return openRecruiterEmail(id);if(action==='opendetail'){detailReturnView=activeView;selectedRecordId=id;return navigate('detail');}if(action==='detailback')return navigate(detailReturnView);if(action==='savedraft')return saveSuggestedDraft(id);if(action==='copydraft')return copyDraft(id);if(action==='retryjobfeed')return retryJobFeed();if(action==='scancareerinbox')return scanCareerInbox();if(action==='opencompose')return openGmailComposer(id);if(action==='emailoutreach')return openVerifiedOutreachEmail(id);if(action==='confirmsent')return confirmExternalSend(id);if(action==='approvequick')return approveMessage(id);if(action==='prepareats')return prepareATS(id);if(action==='recruiterdraft')return prepareRecruiterMessage(id);if(action==='researchsetup')return document.getElementById('cloud-open')?.click();if(action==='researchsync'){if(window.LeviCloud?.refreshResearch)return window.LeviCloud.refreshResearch().catch(e=>notify('Research inbox: '+e.message));return document.getElementById('cloud-open')?.click();}if(action==='passlead')return passLead(id,el.closest('.intake-item,.package-row')?.querySelector('[data-pass-reason]')?.value||'Not a fit');if(action==='approvelead')return approveLead(id);if(action==='rejectlead')return rejectLead(id);if(action==='approvemessage')return approveMessage(id);if(action==='applied')return markApplied(id);if(action==='scanreplies')return scanReplies();if(action==='classifyreply')return showReplyModal(id,el.dataset.message||'');if(action==='strategynew')return editStrategy();if(action==='strategyedit')return editStrategy(id);if(action==='new')return editRecord(null,el.dataset.type||null);if(action==='edit')return editRecord(id);if(action==='copyopen')return copyAndOpen(id);if(action==='gmaildraft'){const r=findRecord(id);if(r&&isPassed(r))return notify('Passed opportunities cannot be contacted.');if(!r||!isApproved(r)||!messageIsApproved(r))return notify('Approve the opportunity and current message in Intake first.');if(r?.optedOut)return notify('Do not contact: this prospect opted out.');if(!window.LeviCloud)return notify('Cloud integration unavailable.');window.LeviCloud.createDraft(r).then(()=>notify('Gmail draft created, not sent. Check Gmail Drafts.')).catch(e=>alert('Gmail draft was not created: '+e.message));return;}if(action==='reply')return markReply(id);if(action==='snooze')return snooze(id);if(action==='backup')return encryptedBackup();if(action==='csv')return exportCsv();if(action==='import')return $('import-file').click();}
   document.addEventListener('pointerdown',()=>lastActivityAt=Date.now(),{passive:true});document.addEventListener('keydown',()=>lastActivityAt=Date.now());
   document.addEventListener('click',e=>{const nav=e.target.closest('[data-nav],[data-view]');if(nav&&!nav.disabled){navigate(nav.dataset.nav||nav.dataset.view);return;}const close=e.target.closest('[data-close]');if(close){$(close.dataset.close).close();return;}const action=e.target.closest('[data-action]');if(action&&!action.disabled)handleAction(action);});
   document.addEventListener('input',e=>{if(e.target.id==='search-input'){filter.query=e.target.value;const pos=e.target.selectionStart;render();const input=$('search-input');if(input){input.focus();input.setSelectionRange(pos,pos);}}});
@@ -1110,7 +1193,7 @@ async function saveStrategy(e){
       else btn.textContent=localStorage.getItem(STORAGE_KEY)?'Unlock my workspace ↗':'Create my private workspace ↗';
     }
   });
-  document.addEventListener('submit',e=>{if(e.target.id==='apply-profile-form')return saveApplyProfile(e);if(e.target.id==='apply-answer-form')return saveApplyAnswer(e);if(e.target.classList?.contains('apply-entry-form'))return saveApplyEntry(e);});
+  document.addEventListener('submit',e=>{if(e.target.id==='apply-profile-form')return saveApplyProfile(e);if(e.target.id==='apply-answer-form')return saveApplyAnswer(e);if(e.target.id==='apply-common-form')return saveApplyCommon(e);if(e.target.id==='apply-private-form')return saveApplyPrivate(e);if(e.target.classList?.contains('apply-entry-form'))return saveApplyEntry(e);});
   $('record-form').addEventListener('submit',saveRecord);
   $('strategy-form').addEventListener('submit',saveStrategy);
   $('reply-form').addEventListener('submit',saveReplyReview);
