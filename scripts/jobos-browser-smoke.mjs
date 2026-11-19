@@ -72,12 +72,12 @@ try{
   await page.locator('#apply-profile-form [name="city"]').fill('Appleton');
   await page.locator('#apply-profile-form [name="confirmFacts"]').check();
   await page.locator('#apply-profile-form button[type="submit"]').click();
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   await page.locator('#apply-answer-form [name="question"]').fill('Which analytics tools have you used?');
   await page.locator('#apply-answer-form [name="answer"]').fill('Google Analytics and Excel');
   await page.locator('#apply-answer-form [name="confirmAnswer"]').check();
   await page.locator('#apply-answer-form button[type="submit"]').click();
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   const experienceForm=page.locator('.apply-entry-form[data-kind="experience"]');
   await experienceForm.locator('[name="company"]').fill('QA Marketing Studio');
   await experienceForm.locator('[name="title"]').fill('Marketing Analyst');
@@ -85,14 +85,14 @@ try{
   await experienceForm.locator('[name="endDate"]').fill('Present');
   await experienceForm.locator('[name="confirmEntry"]').check();
   await experienceForm.locator('button[type="submit"]').click();
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   const educationForm=page.locator('.apply-entry-form[data-kind="education"]');
   await educationForm.locator('[name="school"]').fill('QA University');
   await educationForm.locator('[name="degree"]').fill('Bachelor of Science');
   await educationForm.locator('[name="endDate"]').fill('2014-05');
   await educationForm.locator('[name="confirmEntry"]').check();
   await educationForm.locator('button[type="submit"]').click();
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__jobosApplyCopied=text;}}});});
   await page.locator('[data-action="applycopyprofile"]').click();
   const exported=await page.evaluate(()=>window.__jobosApplyCopied);
@@ -106,7 +106,7 @@ try{
   const persisted=await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().textContent();
   if(!persisted.includes('verified')||!persisted.includes('Which analytics tools have you used?'))throw Error('JobOS Apply profile/answers not persisted in encrypted vault');
   if(!persisted.includes('QA Marketing Studio')||!persisted.includes('QA University'))throw Error('JobOS Apply employment/education did not persist after reload');
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   const suggestions={
     format:'jobos-resume-suggestions-v1',
     profile:{firstName:'Test',lastName:'Candidate',email:'candidate@example.com'},
@@ -146,7 +146,7 @@ try{
   await page.locator('#apply-private-form [name="disability"]').selectOption('prefer');
   await page.locator('#apply-private-form [name="raceEthnicity"]').selectOption('review');
   await page.locator('#apply-private-form button[type="submit"]').first().click();
-  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator(':scope > summary').click();
   if(await page.locator('#apply-private-form > label:has([name="raceEthnicity"])').count())throw Error('Answered race/ethnicity still visible in primary list');
   if(!(await page.locator('#apply-private-form details summary').isVisible()))throw Error('Answered private answers not in collapsible section');
   if(await page.locator('#apply-common-form > label:has([data-question="When could you start a new position?"])').count())throw Error('Saved common answer still visible in primary list');
