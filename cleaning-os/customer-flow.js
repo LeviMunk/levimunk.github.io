@@ -21,7 +21,7 @@ const defaults=()=>({marketing:true,reviews:true,plans:true,revive:true,social:f
 function ensure(s){if(!s.customerFlow||typeof s.customerFlow!=='object')s.customerFlow={enabled:defaults(),selected:'inquiry'};const f=s.customerFlow;if(!f.enabled||typeof f.enabled!=='object')f.enabled=defaults();for(const a of addons)if(typeof f.enabled[a.id]!=='boolean')f.enabled[a.id]=defaults()[a.id];if(!phases.some(x=>x.id===f.selected))f.selected='inquiry';return f}
 function toggle(s,id,value){const f=ensure(s);if(!addons.some(a=>a.id===id))return false;f.enabled[id]=Boolean(value);return true}
 function select(s,id){if(!phases.some(x=>x.id===id))return false;ensure(s).selected=id;return true}
-function customerPosition(p){const index={new:0,warm:1,hot:2,first:5,repeat:6,plan:7};return index[p?.stage]??0}
+function customerPosition(p){const index={new:0,warm:1,hot:2,first:4,repeat:6,plan:7};return index[p?.stage]??0}
 function applicable(p,flags){
 const options=[];
 if(p?.optOut)options.push('Marketing suppressed: customer unsubscribed');
