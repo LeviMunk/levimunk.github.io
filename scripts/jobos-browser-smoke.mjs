@@ -76,7 +76,7 @@ try{
   await page.locator('#apply-answer-form [name="confirmAnswer"]').check();
   await page.locator('#apply-answer-form button[type="submit"]').click();
   await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
-  await page.evaluate(()=>{navigator.clipboard.writeText=async text=>{window.__jobosApplyCopied=text;};});
+  await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__jobosApplyCopied=text;}}});});
   await page.locator('[data-action="applycopyprofile"]').click();
   const exported=await page.evaluate(()=>window.__jobosApplyCopied);
   const applyExport=JSON.parse(exported||'{}');
