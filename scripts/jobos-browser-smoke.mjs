@@ -133,6 +133,26 @@ try{
   if(!afterConfirmation.experience.some(x=>x.company==='Resume Imported Sample'&&x.title==='Verified Analytics Specialist'))throw Error('Reviewed imported experience not exported');
   if(afterConfirmation.education.some(x=>x.school==='Resume Sample School'))throw Error('Unverified imported education exported');
   console.log('PASS private résumé suggestions: unverified imported, excluded from autofill, reviewed entry exported');
+  const applyQuestions=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  await applyQuestions.locator('summary').click();
+  await page.locator('#apply-common-form [data-question="When could you start a new position?"]').fill('Two weeks after accepting an offer');
+  await page.locator('#apply-common-form [name="confirmCommon"]').check();
+  await page.locator('#apply-common-form button[type="submit"]').click();
+  const panelAfterAnswer=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  await panelAfterAnswer.locator('summary').click();
+  await page.locator('details.simple-secondary').filter({hasText:/Private declarations · veteran/}).first().locator('summary').click();
+  await page.locator('#apply-private-form [name="veteran"]').selectOption('review');
+  await page.locator('#apply-private-form [name="disability"]').selectOption('prefer');
+  await page.locator('#apply-private-form button[type="submit"]').first().click();
+  const panelAfterPrivate=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  await panelAfterPrivate.locator('summary').click();
+  await page.locator('[data-action="applycopyprofile"]').click();
+  const questionnairePack=JSON.parse(await page.evaluate(()=>window.__jobosApplyCopied));
+  if(!questionnairePack.answers.some(a=>a.question==='When could you start a new position?'&&a.answer==='Two weeks after accepting an offer'))
+    throw Error('Verified common question not included in autofill export');
+  if(JSON.stringify(questionnairePack).includes('applicationPrivateAnswers')||JSON.stringify(questionnairePack).includes('"veteran"')||JSON.stringify(questionnairePack).includes('"disability"'))
+    throw Error('Private declarations leaked to extension export');
+  console.log('PASS verified common answers and private declaration exclusion');
   console.log('PASS encrypted JobOS Apply profile verification, exact answers, export and reload');
   console.log('PASS JobOS Open Draft: recipient, subject, body, and sent-queue transition');
   await page.locator('#lock-button').click();
