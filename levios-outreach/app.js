@@ -602,8 +602,8 @@
       '<label class="field" style="margin:12px 0;display:flex;align-items:center;gap:8px"><input type="checkbox" name="confirmFacts" required style="width:auto"><span>I reviewed these details and confirm they are accurate.</span></label>'+
       '<button type="submit" class="button button-primary button-small">Verify & save profile</button> '+
       '<span class="small subtle">'+(isVerified?'Last verified '+escapeHtml(state.applicationProfileVerifiedAt):'Not verified yet')+'</span></form>'+
-      '<h3 style="margin-top:22px">Saved screening answers</h3>'+
-      '<p>Only exact matches to verified, non-sensitive questions are filled. Legal, demographic, salary, and consent questions are always left for you.</p>'+list+
+      '<h3 style="margin-top:22px">Additional screening answers</h3>'+
+      '<p>Save exact, verified answers for employer-specific questions. Completed answers are tucked away below.</p>'+(answers.length?'<details class="simple-secondary"><summary>Saved custom answers · '+answers.length+' (edit or remove)</summary>'+list+'</details>':'')+
       '<form id="apply-answer-form"><label class="field"><span>Exact application question</span><input name="question" maxlength="300" required placeholder="e.g., Which analytics platforms have you used?"></label>'+
       '<label class="field"><span>Your verified response</span><textarea name="answer" rows="3" maxlength="2500" required></textarea></label>'+
       '<label class="field" style="display:flex;align-items:center;gap:8px;margin:10px 0"><input type="checkbox" name="confirmAnswer" required style="width:auto"><span>I confirm this answer is accurate.</span></label>'+
