@@ -140,10 +140,16 @@ try{
   await page.locator('#apply-common-form button[type="submit"]').click();
   const panelAfterAnswer=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
   await panelAfterAnswer.locator('summary').click();
-  await page.locator('details.simple-secondary').filter({hasText:/Private declarations · veteran/}).first().locator('summary').click();
+  if(!(await page.locator('#apply-private-form [name="raceEthnicity"]').isVisible()))throw Error('Race/ethnicity question should be visible without nested expansion');
+  if(!(await page.locator('#apply-private-form [name="gender"]').isVisible()))throw Error('Gender question should be visible without nested expansion');
   await page.locator('#apply-private-form [name="veteran"]').selectOption('review');
   await page.locator('#apply-private-form [name="disability"]').selectOption('prefer');
+  await page.locator('#apply-private-form [name="raceEthnicity"]').selectOption('review');
   await page.locator('#apply-private-form button[type="submit"]').first().click();
+  await page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first().locator('summary').click();
+  if(await page.locator('#apply-private-form > label:has([name="raceEthnicity"])').count())throw Error('Answered race/ethnicity still visible in primary list');
+  if(!(await page.locator('#apply-private-form details summary').isVisible()))throw Error('Answered private answers not in collapsible section');
+  if(await page.locator('#apply-common-form > label:has([data-question="When could you start a new position?"])').count())throw Error('Saved common answer still visible in primary list');
   const panelAfterPrivate=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
   await panelAfterPrivate.locator('summary').click();
   await page.locator('[data-action="applycopyprofile"]').click();
