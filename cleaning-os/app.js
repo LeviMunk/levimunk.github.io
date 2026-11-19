@@ -196,6 +196,8 @@ const move=e.target.closest('[data-layout-move]');if(move){const p=layoutPrefs()
 if(e.target.closest('[data-layout-reset]')){state.settings.layout={};layoutEditorOpen=true;save();render();return}
 const pjSelect=e.target.closest('[data-pj-select]');if(pjSelect){window.CleaningPipeline.select(state,pjSelect.dataset.pjSelect);save();render();return}
 if(e.target.closest('[data-pj-reset]')){window.CleaningPipeline.reset(state);save();render();return}
+const spExample=e.target.closest('[data-sp-example]');if(spExample){const result=window.CleaningSocial.loadExample(state,spExample.dataset.spExample);if(result.ok){save();render();document.getElementById('sp-editor')?.scrollIntoView({block:'start'})}else alert(result.reason);return}
+const spClear=e.target.closest('[data-sp-clear-example]');if(spClear){if(window.CleaningSocial.clearExample(state,spClear.dataset.spClearExample)){save();render()}return}
 const spEdit=e.target.closest('[data-sp-edit]');if(spEdit){if(window.CleaningSocial.edit(state,spEdit.dataset.spEdit)){save();render();document.getElementById('sp-editor')?.scrollIntoView({behavior:'smooth',block:'start'})}return}
 if(e.target.closest('[data-sp-close]')){state.socialPlan.editingId=null;save();render();return}
 const spDelete=e.target.closest('[data-sp-delete]');if(spDelete){if(confirm('Delete this fictional post draft?')){window.CleaningSocial.remove(state,spDelete.dataset.spDelete);save();render()}return}
