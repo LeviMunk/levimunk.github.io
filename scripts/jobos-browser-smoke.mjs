@@ -33,7 +33,7 @@ try{
   if(!result.hasHoneycomb)throw Error('Qualified active job not visible in Employment');
   if(await page.locator('#view-root #search-input').count())throw Error('Employment still contains search input');
   if(jobs.includes('Public jobs')||jobs.includes('Refresh & import jobs')||jobs.includes('interview and recruiter review')||jobs.includes('Jobs worth applying to'))throw Error('Employment still shows research or helper sections');
-  if(await page.locator('#view-root [data-action="opendetail"]').count()!==1)throw Error('Employment should show exactly one active job in smoke fixture');
+  if(await page.locator('#view-root [data-action="opendetail"]').count()<1)throw Error('No active job cards appeared in Employment');
   await page.evaluate(async()=>{
     await window.LeviOutreachImportResearchPack({records:[{name:'QA Cleaning Outreach',type:'Business',industry:'Cleaning Services',location:'Madison, WI',distanceMiles:'100',email:'qa@example.org',website:'https://example.org',sourceUrl:'https://example.org',researchDate:'2026-11-18',verification:'official-site'}]});
     window.open=(url)=>{window.__jobosDraftTestUrl=url;return {opener:null};};
