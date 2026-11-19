@@ -36,21 +36,46 @@
     }
     return output;
   }
-  function packageForExtension(profile,answers){
+  const EXPERIENCE_FIELDS=['company','title','location','startDate','endDate','description'];
+  const EDUCATION_FIELDS=['school','degree','field','startDate','endDate'];
+  function normalizeEntries(raw,kind){
+    const fields=kind==='experience'?EXPERIENCE_FIELDS:EDUCATION_FIELDS;
+    const limit=kind==='experience'?15:10;
+    const output=[];
+    if(!Array.isArray(raw))return output;
+    for(const item of raw.slice(0,limit)){
+      const row={};
+      for(const field of fields)row[field]=clean(item?.[field],field==='description'?1500:160);
+      row.verifiedAt=clean(item?.verifiedAt,40);
+      if(row[fields[0]]&&row[fields[1]])output.push(row);
+    }
+    return output;
+  }
+  function verifiedEntries(raw,kind){
+    return normalizeEntries(raw,kind).filter(r=>r.verifiedAt&&
+      (!r.startDate||/^\d{4}(?:-\d{2})?$/.test(r.startDate))&&
+      (!r.endDate||/^(?:\d{4}(?:-\d{2})?|Present)$/i.test(r.endDate)));
+  }
+  function entryValue(entries,kind,index,field){
+    if(!Number.isInteger(index)||index<0||index>9)return '';
+    if(!(kind==='experience'?EXPERIENCE_FIELDS:EDUCATION_FIELDS).includes(field))return '';
+    return verifiedEntries(entries,kind)[index]?.[field]||'';
+  }
+  function packageForExtension(profile,answers,experience=[],education=[]){
     const normalized=normalizeProfile(profile);
     const validationErrors=validProfile(normalized);
     if(validationErrors.length)throw Error(validationErrors.join(' '));
     const checked=normalizeAnswers(answers).filter(x=>x.verifiedAt);
-    return {format:VERSION,createdAt:new Date().toISOString(),profile:normalized,answers:checked};
+    return {format:VERSION,createdAt:new Date().toISOString(),profile:normalized,answers:checked,experience:verifiedEntries(experience,'experience'),education:verifiedEntries(education,'education')};
   }
   function parsePackage(data){
     const p=typeof data==='string'?JSON.parse(data):data;
     if(!p||p.format!==VERSION||!p.profile||!Array.isArray(p.answers))throw Error('Not a JobOS Apply Phase 1 export.');
     if(p.answers.length>100)throw Error('Too many saved answers.');
-    if(JSON.stringify(p).length>100000)throw Error('Export exceeds size limit.');
+    if(JSON.stringify(p).length>150000)throw Error('Export exceeds size limit.');
     const profile=normalizeProfile(p.profile),errors=validProfile(profile);
     if(errors.length)throw Error(errors.join(' '));
-    return {format:VERSION,profile,answers:normalizeAnswers(p.answers).filter(x=>x.verifiedAt)};
+    return {format:VERSION,profile,answers:normalizeAnswers(p.answers).filter(x=>x.verifiedAt),experience:verifiedEntries(p.experience,'experience'),education:verifiedEntries(p.education,'education')};
   }
   function matchingAnswer(answers,question){
     if(isSensitiveQuestion(question))return null;
@@ -59,5 +84,5 @@
     const answer=normalizeAnswers(answers).find(a=>a.verifiedAt&&questionKey(a.question)===key);
     return answer?.answer||null;
   }
-  return {VERSION,FIELDS,questionKey,isSensitiveQuestion,normalizeProfile,validProfile,normalizeAnswers,packageForExtension,parsePackage,matchingAnswer};
+  return {VERSION,FIELDS,questionKey,isSensitiveQuestion,normalizeProfile,validProfile,normalizeAnswers,normalizeEntries,verifiedEntries,entryValue,EXPERIENCE_FIELDS,EDUCATION_FIELDS,packageForExtension,parsePackage,matchingAnswer};
 });
