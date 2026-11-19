@@ -115,6 +115,7 @@ try{
   };
   await page.locator('#apply-resume-import').setInputFiles({name:'test-resume-suggestions.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(suggestions))});
   const closed=page.locator('details.simple-secondary').filter({hasText:/JobOS Apply · master profile/}).first();
+  await page.waitForFunction(()=>document.querySelector('#view-root')?.textContent?.includes('Resume Imported Sample'),null,{timeout:12000});
   if(!(await closed.textContent()).includes('Resume Imported Sample'))throw Error('Resume suggestions were not imported');
   await closed.locator('summary').click();
   await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__jobosApplyCopied=text;}}});});
