@@ -196,6 +196,9 @@ const move=e.target.closest('[data-layout-move]');if(move){const p=layoutPrefs()
 if(e.target.closest('[data-layout-reset]')){state.settings.layout={};layoutEditorOpen=true;save();render();return}
 const pjSelect=e.target.closest('[data-pj-select]');if(pjSelect){window.CleaningPipeline.select(state,pjSelect.dataset.pjSelect);save();render();return}
 if(e.target.closest('[data-pj-reset]')){window.CleaningPipeline.reset(state);save();render();return}
+const spEdit=e.target.closest('[data-sp-edit]');if(spEdit){if(window.CleaningSocial.edit(state,spEdit.dataset.spEdit)){save();render();document.getElementById('sp-editor')?.scrollIntoView({behavior:'smooth',block:'start'})}return}
+if(e.target.closest('[data-sp-close]')){state.socialPlan.editingId=null;save();render();return}
+const spDelete=e.target.closest('[data-sp-delete]');if(spDelete){if(confirm('Delete this fictional post draft?')){window.CleaningSocial.remove(state,spDelete.dataset.spDelete);save();render()}return}
 const spMonth=e.target.closest('[data-sp-month]');if(spMonth){window.CleaningSocial.shift(state,Number(spMonth.dataset.spMonth));save();render();return}
 const spDate=e.target.closest('[data-sp-date]');if(spDate){window.CleaningSocial.select(state,spDate.dataset.spDate);save();render();return}
 const navigation=e.target.closest('[data-page]');
@@ -230,6 +233,7 @@ if(x.matches('[data-layout-section]')){const p=layoutPrefs(),id=x.dataset.layout
 if(x.matches('[data-layout-metric]')){const p=layoutPrefs(),id=x.dataset.layoutMetric;p.hiddenMetrics=x.checked?p.hiddenMetrics.filter(v=>v!==id):[...new Set([...p.hiddenMetrics,id])];save();render();return}
 for(const [attr,field] of [['pjStage','stage'],['pjDays','days'],['pjConsent','consent'],['pjOptout','optOut']]){if(x.dataset[attr]!=null){window.CleaningPipeline.update(state,x.dataset[attr],field,field==='consent'||field==='optOut'?x.checked:x.value);save();render();return}}
 if(x.matches('[data-pj-checkpoint]')){if(window.CleaningPipeline.checkpoint(state,x.dataset.pjCheckpoint,x.dataset.checkpointKey,x.value)){save();render()}return}
+if(x.matches('[data-sp-image-upload]')){const file=x.files?.[0];if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>8*1024*1024){alert('Choose a JPEG, PNG, or WebP under 8 MB.');return}try{const url=URL.createObjectURL(file),picture=new Image();picture.onload=()=>{try{const factor=Math.min(1,800/Math.max(picture.width,picture.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(picture.width*factor));canvas.height=Math.max(1,Math.round(picture.height*factor));canvas.getContext('2d').drawImage(picture,0,0,canvas.width,canvas.height);let data=canvas.toDataURL('image/jpeg',0.72);if(data.length>220000)data=canvas.toDataURL('image/jpeg',0.45);if(data.length>220000){alert('Image remains too large for browser-local storage. Please use a smaller image.');return}const field=document.querySelector('#sp-edit-post [name="imageUrl"]');if(field){field.value=data;field.type='text';const preview=document.querySelector('.sp-preview-img');if(preview&&preview.tagName==='IMG')preview.src=data;else if(preview)preview.outerHTML='<img class="sp-preview-img" src="'+data+'" alt="Uploaded post preview">'} }finally{URL.revokeObjectURL(url)}};picture.onerror=()=>{URL.revokeObjectURL(url);alert('Image could not be opened.')};picture.src=url}catch(error){alert('Unable to process the image.')}return}
 if(x.matches('[data-ac-interest]')){const result=window.CleaningAftercare.update(state,x.dataset.acInterest,'interest',x.value);if(!result.ok)alert(result.reason);else{save();render()}return}
 if(x.matches('[data-fd-followup]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdFollowup);if(l){l.followUpDate=x.value;save();render()}return}
 if(x.matches('[data-fd-status]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdStatus);if(l){l.status=x.value;save();render()}return}
@@ -261,6 +265,7 @@ state.customRequests.unshift({id:uid(),title,problem,area,createdAt:new Date().t
 state.customRequests=state.customRequests.slice(0,20);
 save();render();document.getElementById('cos-market-custom')?.scrollIntoView();
 return}
+if(f.id==='sp-edit-post'){const result=window.CleaningSocial.savePost(state,{id:d.get('id'),title:d.get('title'),date:d.get('date'),category:d.get('category'),platform:d.get('platform'),status:d.get('status'),caption:d.get('caption'),imageUrl:d.get('imageUrl')});if(result.ok){save();render();document.getElementById('sp-editor')?.scrollIntoView({block:'start'})}else alert(result.reason||'Unable to save post.');return}
 if(f.id==='sp-new-post'){const result=window.CleaningSocial.add(state,{date:d.get('date'),title:d.get('title'),category:d.get('category'),platform:d.get('platform')});if(result.ok){save();render()}else alert('Enter a valid date and post idea.');return}
 if(f.id==='cos-builder-form'){const name=String(d.get('company')||'').trim(),focus=window.CleaningWelcome.chooseFocus(d.get('focus')).key;
  const url=window.CleaningWelcome.showcaseUrl(window.location.origin+window.location.pathname,name,focus);
