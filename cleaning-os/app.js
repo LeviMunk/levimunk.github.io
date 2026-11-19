@@ -227,6 +227,7 @@ $('#app').addEventListener('change',async e=>{const x=e.target;
 if(x.matches('[data-layout-section]')){const p=layoutPrefs(),id=x.dataset.layoutSection;p.hidden=x.checked?p.hidden.filter(v=>v!==id):[...new Set([...p.hidden,id])];save();render();return}
 if(x.matches('[data-layout-metric]')){const p=layoutPrefs(),id=x.dataset.layoutMetric;p.hiddenMetrics=x.checked?p.hiddenMetrics.filter(v=>v!==id):[...new Set([...p.hiddenMetrics,id])];save();render();return}
 for(const [attr,field] of [['pjStage','stage'],['pjDays','days'],['pjConsent','consent'],['pjOptout','optOut']]){if(x.dataset[attr]!=null){window.CleaningPipeline.update(state,x.dataset[attr],field,field==='consent'||field==='optOut'?x.checked:x.value);save();render();return}}
+if(x.matches('[data-pj-checkpoint]')){if(window.CleaningPipeline.checkpoint(state,x.dataset.pjCheckpoint,x.dataset.checkpointKey,x.value)){save();render()}return}
 if(x.matches('[data-ac-interest]')){const result=window.CleaningAftercare.update(state,x.dataset.acInterest,'interest',x.value);if(!result.ok)alert(result.reason);else{save();render()}return}
 if(x.matches('[data-fd-followup]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdFollowup);if(l){l.followUpDate=x.value;save();render()}return}
 if(x.matches('[data-fd-status]')){const l=window.CleaningFrontDoor.lead(state,x.dataset.fdStatus);if(l){l.status=x.value;save();render()}return}
