@@ -46,7 +46,7 @@ function safeImage(value){
 const x=String(value||'').trim();
 if(!x)return '';
 if(x.startsWith('data:image/jpeg;base64,')||x.startsWith('data:image/png;base64,')||x.startsWith('data:image/webp;base64,'))return x.length<=220000?x:'';
-try{const u=new URL(x);return u.protocol==='https:'?u.href.slice(0,600):''}catch(e){return ''}
+return /^https:\/\/[a-z0-9][a-z0-9.-]*(?::[0-9]{1,5})?(?:[/?#][^\\s<>]*)?$/i.test(x)&&x.length<=600?x:''
 }
 function add(s,values){
 const d=ensure(s),title=String(values.title||'').trim().slice(0,100),date=String(values.date||'');
