@@ -214,3 +214,55 @@ body[data-industry="real-estate"] .reos-hero{background:#203c5a!important}
   body[data-industry="cleaning"] .cos-glance-jump-grid button:last-child{border-bottom:0!important}
   body[data-industry="cleaning"] .cos-glance-photo{min-height:190px}
 }
+
+/* Hub: category information, not decorative feature cards. */
+body.atlas-hub h1,body.atlas-hub h2,body.atlas-hub h3{
+  letter-spacing:normal!important;
+}
+body.atlas-hub .lead{font-size:16px;max-width:600px}
+body.atlas-hub .card{
+  border-color:transparent!important;
+  border-bottom:1px solid rgb(255 255 255 / .14)!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  background:transparent!important;
+  padding:22px 12px!important;
+}
+body.atlas-hub .card .headrow{align-items:baseline}
+body.atlas-hub .card .tag{
+  border:0!important;background:none!important;
+  padding:0!important;border-radius:0!important;
+  font-size:11px;color:#9aafbc!important;
+}
+body.atlas-hub .box{
+  border:0!important;
+  border-radius:0!important;
+  background:rgb(255 255 255 / .025)!important;
+}
+body.atlas-hub .box .task{
+  border:0!important;
+  border-bottom:1px solid rgb(255 255 255 / .10)!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+body.atlas-hub .note{
+  background:transparent!important;
+  border:0!important;
+  border-left:2px solid rgb(135 201 178 / .55)!important;
+  border-radius:0!important;
+  color:#bbc9d5;
+}
+body.atlas-hub .link{border-radius:6px!important}
+body.atlas-hub .tab[aria-selected=true]{
+  background:transparent!important;
+  border-color:transparent!important;
+  border-bottom:2px solid #8fc5b2!important;
+}
+body.atlas-hub .tab:not([aria-selected=true]){
+  border-color:transparent!important;
+  background:transparent!important;
+}
+body.atlas-hub .eyebrow{display:none}
+@media (max-width:640px){
+  body.atlas-hub .card{padding:18px 0!important}
+}
