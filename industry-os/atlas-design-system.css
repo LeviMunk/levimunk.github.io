@@ -149,3 +149,54 @@ body[data-industry="cleaning"] .side .os-nav-more {
   body[data-industry] .content .dialog,
   body[data-industry] .content .lockedcard {border-color: currentColor;}
 }
+
+/* Public ATLAS product lab uses the same system, tuned for a dark canvas. */
+body.atlas-hub{
+  --atlas-radius-lg:20px;
+  --atlas-space-inset:16px;
+  --atlas-outline-alpha:rgb(255 255 255 / .14);
+  --atlas-outline-soft:rgb(255 255 255 / .10);
+  --atlas-surface-base:#142337;
+  --atlas-surface-raised:#1b3043;
+  --atlas-surface-subtle:#25394a;
+  --atlas-accent:#9adcc9;
+  min-height:100vh;
+  min-height:100dvh;
+}
+@supports (color:oklch(50% .1 150)){
+  body.atlas-hub{
+    --atlas-surface-base:oklch(26% .043 246);
+    --atlas-surface-raised:oklch(31% .046 244);
+    --atlas-surface-subtle:oklch(36% .046 244);
+    --atlas-accent:oklch(82% .077 175);
+  }
+}
+body.atlas-hub header{
+  border-bottom:1px solid var(--atlas-outline-soft);
+  background:var(--atlas-surface-raised);
+}
+body.atlas-hub .card,
+body.atlas-hub .box,
+body.atlas-hub .task{
+  border:1px solid var(--atlas-outline-alpha);
+  background:var(--atlas-surface-base);
+  border-radius:var(--atlas-radius-lg);
+}
+body.atlas-hub .card .task,
+body.atlas-hub .box .task{
+  border-radius:max(4px,calc(var(--atlas-radius-lg) - var(--atlas-space-inset)));
+  background:var(--atlas-surface-raised);
+}
+body.atlas-hub :is(.tab,.link,button.action,input[type=search],textarea){
+  border-color:var(--atlas-outline-alpha);
+  border-radius:var(--atlas-radius-sm);
+}
+body.atlas-hub .tab{background:var(--atlas-surface-raised)}
+body.atlas-hub .tab[aria-selected=true]{background:#205d52;border-color:rgb(180 241 215 / .42)}
+body.atlas-hub .link{background:var(--atlas-surface-raised)}
+body.atlas-hub .link.primary{background:#245f52}
+body.atlas-hub :is(button,input,textarea,a):focus-visible{outline:3px solid var(--atlas-accent);outline-offset:3px}
+body.atlas-hub :is(.brand,.eyebrow) {letter-spacing:.13em}
+@media (prefers-contrast:more){
+  body.atlas-hub :is(.card,.box,.task){border-color:rgb(255 255 255 / .54)}
+}
