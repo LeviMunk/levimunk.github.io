@@ -1,0 +1,58 @@
+/* ATLAS OS motion layer: restrained, performance-conscious, reduced-motion safe. */
+:root { --atlas-motion-duration: 220ms; --atlas-motion-curve: cubic-bezier(.22,1,.36,1); }
+@keyframes atlas-reveal {
+  from { opacity:0; transform:translate3d(0,9px,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
+}
+@keyframes atlas-mark-appear {
+  from { opacity:.4; transform:scale(.92); }
+  to { opacity:1; transform:scale(1); }
+}
+@media (prefers-reduced-motion:no-preference) {
+  body[data-industry="cleaning"] .cos-glance-hero,
+  body[data-industry="cleaning"] .cos-glance-metrics,
+  body[data-industry="cleaning"] .cos-glance-sections,
+  body[data-industry="cleaning"] .cos-glance-jumps,
+  body[data-industry="real-estate"] .content>.section,
+  body[data-industry="real-estate"] .content>.grid,
+  body.atlas-hub section:not(.hidden) {
+    animation:atlas-reveal 380ms var(--atlas-motion-curve) both;
+  }
+  body[data-industry="cleaning"] .cos-glance-metrics{animation-delay:45ms}
+  body[data-industry="cleaning"] .cos-glance-sections{animation-delay:90ms}
+  body[data-industry="cleaning"] .cos-glance-jumps{animation-delay:125ms}
+  body[data-industry="cleaning"] .cos-glance-stat,
+  body[data-industry="cleaning"] .cos-glance-attention-row,
+  body[data-industry="cleaning"] .cos-upcoming-row,
+  body[data-industry="real-estate"] .content .card,
+  body.atlas-hub .card {
+    transition: background-color var(--atlas-motion-duration) ease,
+      border-color var(--atlas-motion-duration) ease,
+      transform var(--atlas-motion-duration) var(--atlas-motion-curve);
+  }
+  body[data-industry="cleaning"] .cos-glance-attention-row:hover,
+  body[data-industry="cleaning"] .cos-upcoming-row:hover,
+  body.atlas-hub .card:hover {
+    transform:translate3d(0,-2px,0);
+  }
+  body[data-industry="cleaning"] .side .nav button,
+  body[data-industry="real-estate"] .sidebar .navbtn,
+  body.atlas-hub .tab {
+    transition: background-color 170ms ease, color 170ms ease,
+      border-color 170ms ease, transform 170ms var(--atlas-motion-curve);
+  }
+  body[data-industry="cleaning"] .side .nav button:active,
+  body[data-industry="real-estate"] .sidebar .navbtn:active,
+  body.atlas-hub .tab:active { transform:scale(.985); }
+  body[data-industry="cleaning"] .haven-brand-emblem svg {
+    animation:atlas-mark-appear 420ms var(--atlas-motion-curve) both;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  body[data-industry] *,body.atlas-hub *{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
