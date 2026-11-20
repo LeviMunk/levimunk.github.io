@@ -1,0 +1,151 @@
+/*
+ * ATLAS OS | Shared visual engineering rules
+ * Loaded AFTER each product's own theme. Tokens are semantic, allowing
+ * industry skins to keep distinct identities and accessible text contrast.
+ * CSS features degrade gracefully on browsers without OKLCH/interpolation.
+ */
+:root {
+  --atlas-radius-lg: 20px;
+  --atlas-radius-md: 14px;
+  --atlas-radius-sm: 10px;
+  --atlas-space-inset: 16px;
+  --atlas-outline-alpha: rgb(0 0 0 / .12);
+  --atlas-outline-soft: rgb(0 0 0 / .075);
+  --atlas-surface-base: #fffefa;
+  --atlas-surface-raised: #fff;
+  --atlas-surface-subtle: #f3f5f0;
+  --atlas-accent: #315f4c;
+  --atlas-focus: #33816c;
+  --atlas-icon-stroke: 1.9;
+  --atlas-ease: cubic-bezier(.2,.7,.25,1);
+}
+@supports (color: oklch(50% .1 150)) {
+  :root {
+    --atlas-surface-base: oklch(99.1% .008 105);
+    --atlas-surface-raised: oklch(100% 0 0);
+    --atlas-surface-subtle: oklch(96.1% .012 130);
+    --atlas-accent: oklch(42% .091 155);
+    --atlas-focus: oklch(55% .125 165);
+  }
+}
+/* Industry overlays only customize the color tokens; engine components stay reusable. */
+body[data-industry="cleaning"] {
+  --atlas-radius-lg: 18px;
+  --atlas-surface-base: #fffefa;
+  --atlas-surface-subtle: #f4f6f0;
+  --atlas-accent: #28553e;
+  --atlas-focus: #977349;
+}
+body[data-industry="real-estate"] {
+  --atlas-surface-base: #fff;
+  --atlas-surface-raised: #fff;
+  --atlas-surface-subtle: #f1f6fb;
+  --atlas-accent: #285d8e;
+  --atlas-focus: #327cac;
+}
+@supports (color: oklch(50% .1 150)) {
+  body[data-industry="cleaning"] {
+    --atlas-surface-base: oklch(99.2% .008 99);
+    --atlas-surface-subtle: oklch(96.6% .017 144);
+    --atlas-accent: oklch(43% .087 154);
+    --atlas-focus: oklch(58% .073 70);
+  }
+  body[data-industry="real-estate"] {
+    --atlas-surface-base: oklch(100% 0 0);
+    --atlas-surface-subtle: oklch(96.8% .016 241);
+    --atlas-accent: oklch(47% .10 248);
+    --atlas-focus: oklch(59% .12 240);
+  }
+}
+/* Responsive browser chrome: dynamic viewport handles iOS/Safari changes. */
+body[data-industry] .shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+body[data-industry="real-estate"] .shell {
+  height: 100vh;
+  height: 100dvh;
+}
+body[data-industry="cleaning"] .shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+/* Card shell + inner surfaces follow a coherent radius ladder. */
+body[data-industry] .content .card,
+body[data-industry] .content .dialog,
+body[data-industry] .content .lockedcard {
+  border-radius: var(--atlas-radius-lg);
+  border-color: var(--atlas-outline-alpha);
+}
+body[data-industry] .content .card > .card,
+body[data-industry] .content .dialog > .card,
+body[data-industry] .content .card > .box {
+  border-radius: max(4px, calc(var(--atlas-radius-lg) - var(--atlas-space-inset)));
+}
+body[data-industry] .content :is(button,.btn,.tab,input,select,textarea) {
+  border-radius: var(--atlas-radius-sm);
+}
+/* Transparencies work on independently tinted cards without changing meaning. */
+body[data-industry] .content :is(.line,.tablewrap,td,th) {
+  border-color: var(--atlas-outline-soft);
+}
+body[data-industry] :is(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid var(--atlas-focus);
+  outline-offset: 3px;
+}
+body[data-industry] button:disabled {transform:none!important;}
+/* Icons should visually harmonize with neighboring 600–750 weight text. */
+body[data-industry] :is(.nav,.topbar,.content) svg.lucide,
+body[data-industry] :is(.nav,.topbar,.content) svg[class*="icon"] {
+  stroke-width: var(--atlas-icon-stroke);
+  flex-shrink: 0;
+}
+/* Gradient interpolation in OKLCH avoids dull midpoints. */
+@supports (background: linear-gradient(90deg in oklch, red, blue)) {
+  body[data-industry="cleaning"] .cos-glance-copy {
+    background: radial-gradient(circle at 90% 10% in oklch, oklch(43% .045 150 / .42), transparent 55%),
+      linear-gradient(145deg in oklch, oklch(31% .055 156), oklch(24% .04 157))!important;
+  }
+  body[data-industry="real-estate"] .reos-hero {
+    background: linear-gradient(115deg in oklch, oklch(22% .047 252), oklch(33% .064 252) 64%, oklch(49% .086 247))!important;
+  }
+}
+/* Only scrollers with hidden overflow get a fade, never card galleries with no overflow. */
+body[data-industry="real-estate"] .reos-kanban {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+/* Class-based optional icon state changes, no animation for static icons. */
+.atlas-icon-swap {display:inline-grid;place-items:center;position:relative}
+.atlas-icon-swap > * {
+  grid-area:1 / 1;
+  transition: opacity .18s var(--atlas-ease), filter .18s var(--atlas-ease), transform .18s var(--atlas-ease);
+}
+.atlas-icon-swap > [data-inactive] {
+  opacity:0;filter:blur(4px);transform:scale(.95);pointer-events:none;
+}
+.atlas-icon-swap > [data-active] {opacity:1;filter:blur(0);transform:scale(1)}
+/* Use selectively on white-background product assets, not lifestyle photography. */
+.atlas-product-cutout {mix-blend-mode:multiply;object-fit:contain}
+body[data-industry="real-estate"] .sidebar,
+body[data-industry="cleaning"] .side {
+  border-right-color:rgb(255 255 255 / .10)!important;
+}
+/* Dark surfaces gain visual depth from tonal layers, not shadow strength alone. */
+body[data-industry="real-estate"] .sidebar .navbtn.active {
+  background:rgb(255 255 255 / .13);
+}
+body[data-industry="cleaning"] .side .os-nav-more {
+  border-top-color:rgb(255 255 255 / .12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-icon-swap > * {transition:none!important;filter:none!important;transform:none!important;}
+}
+/* High-contrast preference: don't rely on barely visible alpha strokes. */
+@media (prefers-contrast: more) {
+  body[data-industry] .content .card,
+  body[data-industry] .content .dialog,
+  body[data-industry] .content .lockedcard {border-color: currentColor;}
+}
