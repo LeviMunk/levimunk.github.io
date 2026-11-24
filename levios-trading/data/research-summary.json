@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-11-20",
+  "as_of": "2026-11-23",
   "broker_orders_enabled": false,
   "disclaimer": "Public research-only hypothetical portfolio and prediction aggregates. NOT Alpaca brokerage account P/L; no positions, orders, credentials or private data. Overlapping forward predictions are not independent trades. A zero or positive simulated P/L does not prove an investment edge.",
   "equity_curve": [
@@ -26,14 +26,18 @@
     {
       "date": "2026-11-20",
       "equity": 10000.0
+    },
+    {
+      "date": "2026-11-23",
+      "equity": 10000.0
     }
   ],
   "max_drawdown_pct": 0.0,
   "mode": "PUBLIC_AGGREGATE_PAPER_SIMULATION",
   "pending_predictions": 630,
-  "recorded_predictions": 630,
-  "resolved_long_hypotheses": 0,
-  "resolved_predictions": 0,
+  "recorded_predictions": 735,
+  "resolved_long_hypotheses": 20,
+  "resolved_predictions": 105,
   "schema": "levios-public-paper-v1",
   "simulated_equity": 10000.0,
   "simulated_pnl": 0.0,
@@ -41,75 +45,75 @@
   "starting_simulated_cash": 10000.0,
   "strategy_leaderboard": [
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 2.582,
       "family": "breakout",
-      "long_resolved": 0,
+      "long_resolved": 1,
       "long_wins": 0,
       "name": "breakout_20",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 2.582,
       "family": "breakout",
-      "long_resolved": 0,
+      "long_resolved": 1,
       "long_wins": 0,
       "name": "breakout_55",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 3.031,
       "family": "reversion",
-      "long_resolved": 0,
-      "long_wins": 0,
+      "long_resolved": 1,
+      "long_wins": 1,
       "name": "mean_revert_10_5pct",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 3.031,
       "family": "reversion",
-      "long_resolved": 0,
-      "long_wins": 0,
+      "long_resolved": 1,
+      "long_wins": 1,
       "name": "mean_revert_5_3pct",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 1.902,
       "family": "trend",
-      "long_resolved": 0,
-      "long_wins": 0,
+      "long_resolved": 5,
+      "long_wins": 1,
       "name": "trend_10_30",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 1.794,
       "family": "trend",
-      "long_resolved": 0,
-      "long_wins": 0,
+      "long_resolved": 5,
+      "long_wins": 1,
       "name": "trend_20_50",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     },
     {
-      "average_excess_pp": null,
+      "average_excess_pp": 0.912,
       "family": "trend",
-      "long_resolved": 0,
+      "long_resolved": 6,
       "long_wins": 0,
       "name": "trend_5_20",
       "pending": 90,
-      "recorded": 90,
-      "resolved": 0
+      "recorded": 105,
+      "resolved": 15
     }
   ],
-  "winning_long_hypotheses": 0
+  "winning_long_hypotheses": 4
 }
