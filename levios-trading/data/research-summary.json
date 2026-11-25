@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-11-23",
+  "as_of": "2026-11-24",
   "broker_orders_enabled": false,
   "disclaimer": "Public research-only hypothetical portfolio and prediction aggregates. NOT Alpaca brokerage account P/L; no positions, orders, credentials or private data. Overlapping forward predictions are not independent trades. A zero or positive simulated P/L does not prove an investment edge.",
   "equity_curve": [
@@ -30,12 +30,16 @@
     {
       "date": "2026-11-23",
       "equity": 10000.0
+    },
+    {
+      "date": "2026-11-24",
+      "equity": 10000.0
     }
   ],
   "max_drawdown_pct": 0.0,
   "mode": "PUBLIC_AGGREGATE_PAPER_SIMULATION",
-  "pending_predictions": 630,
-  "recorded_predictions": 735,
+  "pending_predictions": 735,
+  "recorded_predictions": 840,
   "resolved_long_hypotheses": 20,
   "resolved_predictions": 105,
   "schema": "levios-public-paper-v1",
@@ -50,8 +54,8 @@
       "long_resolved": 1,
       "long_wins": 0,
       "name": "breakout_20",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -60,8 +64,8 @@
       "long_resolved": 1,
       "long_wins": 0,
       "name": "breakout_55",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -70,8 +74,8 @@
       "long_resolved": 1,
       "long_wins": 1,
       "name": "mean_revert_10_5pct",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -80,8 +84,8 @@
       "long_resolved": 1,
       "long_wins": 1,
       "name": "mean_revert_5_3pct",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -90,8 +94,8 @@
       "long_resolved": 5,
       "long_wins": 1,
       "name": "trend_10_30",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -100,8 +104,8 @@
       "long_resolved": 5,
       "long_wins": 1,
       "name": "trend_20_50",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     },
     {
@@ -110,8 +114,8 @@
       "long_resolved": 6,
       "long_wins": 0,
       "name": "trend_5_20",
-      "pending": 90,
-      "recorded": 105,
+      "pending": 105,
+      "recorded": 120,
       "resolved": 15
     }
   ],
