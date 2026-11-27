@@ -1618,3 +1618,7 @@ body.rail-layout .rail-experience-section .rail-timeline-prior-logos .rail-timel
   body.rail-layout .rail-mobile-shortcuts a{gap:5px;font-size:12px;padding:9px 3px}
   body.rail-layout .rail-mobile-shortcuts a>span{font-size:15px}
 }
+
+/* UI-06/07: predictable focus and comfortable touch actions. */
+body.rail-layout :is(.rail-nav a,.rail-mobile-shortcuts a,.rail-menu-button,.rail-primary-cta,.rail-secondary-cta,.rail-resume-link,.rail-portfolio-link,.rail-contact a,.footer a):focus-visible{outline:3px solid #81bde8;outline-offset:3px}
+@media(hover:none),(pointer:coarse){body.rail-layout .rail-nav a,body.rail-layout .rail-mobile-shortcuts a{min-height:44px}body.rail-layout .rail-cta-row a{touch-action:manipulation}}
