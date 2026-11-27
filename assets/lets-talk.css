@@ -184,3 +184,14 @@ body.rail-layout.awwwards-v2 section#contact #talk-calendar-panel[hidden]{
     padding:30px 18px 62px;
   }
 }
+
+/* UI-02, UI-05–08: legible rhythm, persistent labels and clear feedback. */
+.talk-page .talk-interest-selection{margin:12px 0 0;color:#496950;font:600 13px/1.4 var(--text)}
+.talk-page .talk-interest-panel>p{max-width:65ch}
+.talk-page .talk-interest-notes{line-height:1.5}
+.talk-page .talk-interest-option{box-shadow:0 1px 2px #193c2710,0 4px 12px #193c2707}
+.talk-page .talk-interest-option[aria-pressed="true"]{box-shadow:inset 0 0 0 1px #426949,0 1px 2px #193c2710}
+.talk-page .talk-interest-option:focus-visible,.talk-page .talk-email-option:focus-visible,.talk-page .talk-booking-fallback a:focus-visible,.talk-page #talk-interest-notes:focus-visible{outline:3px solid #3174b9;outline-offset:3px}
+.talk-page #calendly-embed[aria-busy="true"]{display:grid;place-items:center;min-height:200px;color:#385b44;font:500 15px/1.6 var(--text)}
+.talk-page #talk-calendar-panel:focus{outline:none}
+@media(prefers-reduced-motion:reduce){.talk-page .talk-interest-option,.talk-page .talk-show-times{transition:none!important;transform:none!important}}
