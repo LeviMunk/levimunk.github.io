@@ -19,6 +19,8 @@ if(validCalendly){
    const pressed=selected.has(interest);
    button.setAttribute('aria-pressed',String(pressed));
    button.querySelector('span').textContent=pressed?'✓':'+';
+   const summary=document.getElementById('talk-interest-selection');
+   if(summary)summary.textContent=selected.size===0?'No topics selected yet':selected.size===1?'1 topic selected':selected.size+' topics selected';
  }));
  const buildAnswer=()=>[...(selected.size?['Interests: '+[...selected].join(', ')]:[]),...(notes.value.trim()?['Details: '+notes.value.trim()]:[])].join(' | ').slice(0,1000);
  const bookingUrl=new URL(eventUrl);
@@ -29,16 +31,20 @@ if(validCalendly){
    if(answer)directUrl.searchParams.set('a1',answer);
    direct.href=directUrl.toString();
    calendar.hidden=false;
-   showTimes.textContent='Update calendar details';
+   showTimes.innerHTML='Update calendar details <span aria-hidden="true">↘</span>';
+   parent.setAttribute('aria-busy','true');
+   parent.textContent='Loading the booking calendar…';
    // Reload the widget only when the visitor explicitly asks to proceed.
-   parent.replaceChildren();
    const init=()=>{
+     parent.replaceChildren();
      if(window.Calendly?.initInlineWidget){
        window.Calendly.initInlineWidget({
          url:bookingUrl.toString(),parentElement:parent,resize:true,
          ...(answer?{prefill:{customAnswers:{a1:answer}}}:{})
        });
+       parent.setAttribute('aria-busy','false');
      } else {
+       parent.setAttribute('aria-busy','false');
        parent.textContent='The embedded calendar could not load. Use the direct link below.';
      }
    };
@@ -48,7 +54,7 @@ if(validCalendly){
      script.src='https://assets.calendly.com/assets/external/widget.js';
      script.async=true;
      script.onload=init;
-     script.onerror=()=>{parent.textContent='The embedded calendar could not load. Use the direct link below.';};
+     script.onerror=()=>{parent.setAttribute('aria-busy','false');parent.textContent='The embedded calendar could not load. Use the direct link below.';};
      document.head.appendChild(script);
    }
    // Let mobile layout settle, then align the calendar below the sticky navigation.
