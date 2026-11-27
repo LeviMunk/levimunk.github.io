@@ -531,3 +531,6 @@ body.awwwards-v2 .rail-home-intro .rail-talk-cta:focus-visible{outline:3px solid
   body.awwwards-v2 .v2-feature{max-width:100%}
   body.awwwards-v2 .v2-feature-copy{min-width:0}
 }
+
+/* UI-08/M-04: conspicuous CTA, no simulated hover lift on touch. */
+@media(hover:none),(pointer:coarse){body.awwwards-v2 .rail-home-intro .rail-talk-cta:hover{transform:none;box-shadow:0 5px 0 #3a60301b,0 10px 24px #203a2020}}
