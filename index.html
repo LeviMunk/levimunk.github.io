@@ -139,7 +139,7 @@
 <div class="talk-booking-highlights"><span>◷ 30 minutes</span><span>☎ Phone or video</span><span>✓ No cost or commitment</span></div>
 <div class="talk-interest-panel" aria-labelledby="talk-interest-heading">
 <h2 id="talk-interest-heading">What would you like to discuss?</h2>
-<p>Select any that apply. I'll see your interests with your booking.</p>
+<p>Choose the topics that matter to you. Select more than one, or continue without selecting anything.</p>
 <div class="talk-interest-options" role="group" aria-label="Conversation interests">
 <button type="button" class="talk-interest-option" aria-pressed="false" data-interest="Marketing & social media">Marketing & social media <span aria-hidden="true">+</span></button>
 <button type="button" class="talk-interest-option" aria-pressed="false" data-interest="Analytics & reporting">Analytics & reporting <span aria-hidden="true">+</span></button>
@@ -148,13 +148,14 @@
 <button type="button" class="talk-interest-option" aria-pressed="false" data-interest="Career opportunity">Career opportunity <span aria-hidden="true">+</span></button>
 <button type="button" class="talk-interest-option" aria-pressed="false" data-interest="Something else">Something else <span aria-hidden="true">+</span></button>
 </div>
+<p class="talk-interest-selection" id="talk-interest-selection" role="status" aria-live="polite">No topics selected yet</p>
 <label class="talk-interest-notes" for="talk-interest-notes">Anything else you'd like me to know? <span>Optional</span></label>
-<textarea id="talk-interest-notes" maxlength="400" rows="2" placeholder="A sentence or two is plenty."></textarea>
-<button type="button" id="talk-show-times" class="talk-show-times">See available times <span aria-hidden="true">↘</span></button>
+<textarea id="talk-interest-notes" maxlength="400" rows="2" placeholder="Briefly describe your idea or opportunity."></textarea>
+<button type="button" id="talk-show-times" class="talk-show-times">Choose a time <span aria-hidden="true">↘</span></button>
 </div>
-<div id="talk-calendar-panel" hidden>
+<div id="talk-calendar-panel" hidden tabindex="-1">
 <p class="talk-booking-help">Choose a time that works for you. Calendly will collect your name and email.</p>
-<div id="calendly-embed" class="talk-calendly-embed" aria-label="Calendly appointment booking"></div>
+<div id="calendly-embed" class="talk-calendly-embed" aria-label="Calendly appointment booking" aria-busy="false"></div>
 </div>
 <p class="talk-booking-fallback">Calendar not appearing? <a id="talk-direct-booking" href="#" target="_blank" rel="noopener noreferrer">Open the booking calendar directly ↗</a></p>
 </section>
